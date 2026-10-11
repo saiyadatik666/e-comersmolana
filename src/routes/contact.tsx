@@ -40,12 +40,12 @@ function ContactPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16">
-        <div className="text-center max-w-2xl mx-auto mb-12 space-y-3">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-8 sm:py-16">
+        <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12 space-y-2 sm:space-y-3">
           <span className="text-xs font-bold text-primary uppercase tracking-wider">
             सीधा संपर्क एवं परामर्श
           </span>
-          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-foreground">
+          <h1 className="font-serif text-2xl sm:text-4xl font-bold text-foreground">
             हकीम जी से मुफ्त सलाह प्राप्त करें
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
@@ -53,9 +53,9 @@ function ContactPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
           {/* Contact Details Card */}
-          <div className="lg:col-span-5 bg-card border border-border rounded-3xl p-6 sm:p-8 space-y-6 shadow-xs">
+          <div className="lg:col-span-5 bg-card border border-border rounded-3xl p-4 sm:p-8 space-y-6 shadow-xs">
             <h3 className="font-serif text-xl font-bold text-foreground border-b border-border pb-3">
               दुकान का पता व संपर्क
             </h3>

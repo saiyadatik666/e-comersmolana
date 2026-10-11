@@ -58,34 +58,36 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
         </Link>
 
         {/* Badges on Image */}
-        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5 z-10">
+        <div className="absolute top-2 left-2 flex flex-col gap-1 z-10 max-w-[85%]">
           {product.isVerifiedPrice && (
-            <Badge className="bg-amber-600 hover:bg-amber-600 text-white font-bold text-[10px] px-2 py-0.5 shadow-sm border border-amber-400">
-              पोस्टर प्रमाणित मूल्य ₹{product.price}
+            <Badge className="bg-amber-600 hover:bg-amber-600 text-white font-bold text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 shadow-sm border border-amber-400 truncate">
+              <span className="sm:hidden">₹{product.price} प्रमाणित</span>
+              <span className="hidden sm:inline">पोस्टर प्रमाणित मूल्य ₹{product.price}</span>
             </Badge>
           )}
           {product.isBestseller && !product.isVerifiedPrice && (
-            <Badge className="bg-emerald-700 hover:bg-emerald-700 text-white font-semibold text-[10px] px-2 py-0.5 shadow-sm">
-              लोकप्रिय नुस्खा
+            <Badge className="bg-emerald-700 hover:bg-emerald-700 text-white font-semibold text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 shadow-sm truncate">
+              लोकप्रिय
             </Badge>
           )}
           {discountPercent > 0 && (
-            <span className="bg-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
-              {discountPercent}% OFF
+            <span className="bg-rose-600 text-white text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full shadow-xs self-start">
+              {discountPercent}% छूट
             </span>
           )}
         </div>
 
         {/* Wishlist & Zoom Actions */}
-        <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5 z-10">
+        <div className="absolute top-2 right-2 flex flex-col gap-1.5 z-10">
           <button
             onClick={handleWishlist}
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110 shadow-md ${
+            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-transform active:scale-95 hover:scale-105 shadow-md ${
               inWish ? "bg-red-500 text-white" : "bg-white/90 text-stone-700 hover:bg-white"
             }`}
             title="Add to Wishlist"
+            aria-label="Wishlist"
           >
-            <Heart className={`w-4 h-4 ${inWish ? "fill-white" : ""}`} />
+            <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${inWish ? "fill-white" : ""}`} />
           </button>
 
           {onOpenPoster && (
@@ -95,16 +97,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
                 e.stopPropagation();
                 onOpenPoster(product);
               }}
-              className="w-8 h-8 rounded-full bg-white/90 text-stone-700 hover:bg-white flex items-center justify-center transition-transform hover:scale-110 shadow-md"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 text-stone-700 hover:bg-white flex items-center justify-center transition-transform active:scale-95 hover:scale-105 shadow-md"
               title="View Original Poster"
+              aria-label="View original poster"
             >
-              <Eye className="w-4 h-4" />
+              <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           )}
         </div>
 
-        {/* Quick WhatsApp Order Ribbon on Hover */}
-        <div className="absolute bottom-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+        {/* Quick WhatsApp Order Ribbon on Hover (Desktop) */}
+        <div className="hidden sm:block absolute bottom-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
           <a
             href={formatWhatsAppUrl(
               settings.whatsapp,
@@ -121,61 +124,55 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
       </div>
 
       {/* Product Details Section */}
-      <div className="p-4 flex flex-col flex-1 justify-between gap-3">
+      <div className="p-2.5 sm:p-4 flex flex-col flex-1 justify-between gap-2 sm:gap-3">
         <div>
           {/* Category & Rating */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-            <span className="font-medium text-emerald-800 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded text-[11px]">
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1 gap-1">
+            <span className="font-medium text-emerald-800 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-[11px] truncate max-w-[65%]">
               {product.categoryHindi}
             </span>
-            <div className="flex items-center gap-1 text-amber-500">
-              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-              <span className="font-semibold text-foreground text-xs">{product.rating}</span>
-              <span className="text-muted-foreground text-[10px]">({product.reviewCount})</span>
+            <div className="flex items-center gap-0.5 sm:gap-1 text-amber-500 shrink-0">
+              <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-amber-400 text-amber-400" />
+              <span className="font-semibold text-foreground text-[11px] sm:text-xs">{product.rating}</span>
             </div>
           </div>
 
           {/* Bilingual Title */}
           <Link to="/product/$id" params={{ id: product.id }} className="block group-hover:text-primary transition-colors">
-            <h3 className="font-serif font-bold text-base text-foreground leading-snug line-clamp-1">
+            <h3 className="font-serif font-bold text-xs sm:text-base text-foreground leading-snug line-clamp-1">
               {product.name}
             </h3>
-            <p className="text-xs font-medium text-muted-foreground line-clamp-1 mt-0.5">
+            <p className="text-[10px] sm:text-xs font-medium text-muted-foreground line-clamp-1 mt-0.5">
               {product.nameHindi}
             </p>
           </Link>
 
-          {/* Subtitle / Key Benefit */}
-          <p className="text-[11px] text-stone-500 line-clamp-1 mt-1">
-            {product.subtitle}
-          </p>
-
           {/* Pack Size */}
-          <div className="mt-2 text-[11px] text-stone-600 dark:text-stone-300 font-medium bg-secondary/60 px-2 py-1 rounded-md inline-block">
-            पैकिंग: {product.packSize}
+          <div className="mt-1.5 text-[10px] sm:text-[11px] text-stone-600 dark:text-stone-300 font-medium bg-secondary/60 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md inline-block">
+            {product.packSize}
           </div>
         </div>
 
         {/* Pricing and Cart Action */}
-        <div className="pt-2 border-t border-border/60 flex items-center justify-between gap-2">
-          <div>
+        <div className="pt-2 border-t border-border/60 flex flex-col xs:flex-row items-stretch xs:items-center justify-between gap-2">
+          <div className="flex xs:flex-col items-baseline xs:items-start justify-between xs:justify-start gap-1">
             <div className="flex items-baseline gap-1.5">
-              <span className="text-lg font-bold text-primary">₹{product.price}</span>
+              <span className="text-base sm:text-lg font-bold text-primary">₹{product.price}</span>
               {product.compareAtPrice && (
-                <span className="text-xs text-muted-foreground line-through">
+                <span className="text-[10px] sm:text-xs text-muted-foreground line-through">
                   ₹{product.compareAtPrice}
                 </span>
               )}
             </div>
-            <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium">
-              कैश ऑन डिलीवरी
+            <span className="text-[9px] sm:text-[10px] text-emerald-700 dark:text-emerald-400 font-medium">
+              COD उपलब्ध
             </span>
           </div>
 
           <Button
             size="sm"
             onClick={handleAddToCart}
-            className={`rounded-xl px-3 text-xs font-semibold transition-all ${
+            className={`w-full xs:w-auto rounded-xl px-2.5 sm:px-3 text-[11px] sm:text-xs font-semibold h-8 sm:h-9 transition-all ${
               added
                 ? "bg-emerald-700 text-white"
                 : "bg-primary text-primary-foreground hover:bg-primary/90"

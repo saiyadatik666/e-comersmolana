@@ -73,9 +73,9 @@ function AccountPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-12">
         {/* User Banner */}
-        <div className="bg-card border border-border rounded-3xl p-6 sm:p-8 mb-8 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="bg-card border border-border rounded-3xl p-4 sm:p-8 mb-6 sm:mb-8 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center font-serif text-2xl font-bold shadow-md">
               {currentUser?.name?.charAt(0) || "U"}
@@ -153,7 +153,7 @@ function AccountPage() {
               orders.map((order) => (
                 <div
                   key={order.id}
-                  className="bg-card border border-border rounded-2xl p-5 sm:p-6 shadow-xs space-y-4"
+                  className="bg-card border border-border rounded-2xl p-4 sm:p-6 shadow-xs space-y-4"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
                     <div>
@@ -249,7 +249,7 @@ function AccountPage() {
         {activeTab === "wishlist" && (
           <div>
             {wishlistProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
                 {wishlistProducts.map((p) => (
                   <ProductCard key={p.id} product={p} />
                 ))}

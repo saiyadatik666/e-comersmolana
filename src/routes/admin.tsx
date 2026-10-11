@@ -203,12 +203,12 @@ function AdminPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-12">
         {/* Admin Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 border-b border-border pb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8 border-b border-border pb-6">
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-serif text-3xl font-bold text-foreground">
+              <span className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
                 एडमिन डैशबोर्ड (Admin Portal)
               </span>
               <Badge className="bg-emerald-700 text-white font-bold text-[10px]">
@@ -685,7 +685,7 @@ function AdminPage() {
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">शहर (City)</Label>
                 <Input
@@ -753,13 +753,13 @@ function AdminPage() {
 
         {/* Product Edit / Create Modal */}
         {editingProduct && (
-          <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-card border border-border rounded-3xl max-w-xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl">
-              <h3 className="font-serif text-lg font-bold text-foreground">
+          <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4">
+            <div className="bg-card border border-border rounded-2xl sm:rounded-3xl max-w-xl w-full p-4 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto shadow-2xl">
+              <h3 className="font-serif text-base sm:text-lg font-bold text-foreground">
                 {isNewProduct ? "नया उत्पाद जोड़ें" : `संपादित करें: ${editingProduct.name}`}
               </h3>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs">अंग्रेजी नाम</Label>
                   <Input
@@ -782,7 +782,7 @@ function AdminPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs">कीमत (₹)</Label>
                   <Input

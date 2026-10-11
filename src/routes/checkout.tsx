@@ -39,14 +39,14 @@ function CheckoutPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-12">
         {/* Breadcrumb / Title */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <div className="flex items-center gap-2 text-xs text-primary font-bold uppercase tracking-wider mb-1">
             <ShieldCheck className="w-4 h-4" />
             <span>सुरक्षित व्हाट्सएप चेकआउट (Secure WhatsApp Checkout)</span>
           </div>
-          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-foreground">
+          <h1 className="font-serif text-2xl sm:text-4xl font-bold text-foreground">
             ऑर्डर विवरण एवं चेकआउट
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 max-w-2xl leading-relaxed">
@@ -55,11 +55,11 @@ function CheckoutPage() {
         </div>
 
         {cart.length === 0 && !orderReference ? (
-          <div className="text-center py-20 bg-card border border-border rounded-3xl p-8 max-w-md mx-auto space-y-4">
+          <div className="text-center py-16 sm:py-20 bg-card border border-border rounded-3xl p-6 sm:p-8 max-w-md mx-auto space-y-4">
             <div className="w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 flex items-center justify-center mx-auto">
               <ShoppingBag className="w-8 h-8" />
             </div>
-            <h2 className="font-serif text-2xl font-bold text-foreground">
+            <h2 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
               आपकी कार्ट खाली है
             </h2>
             <p className="text-xs text-muted-foreground leading-relaxed">
@@ -74,7 +74,7 @@ function CheckoutPage() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
             {/* Left Column: Customer Details & WhatsApp Order Request (Section 6 & 7) */}
             <div className="lg:col-span-7">
               <CustomerDetailsForm
@@ -87,9 +87,9 @@ function CheckoutPage() {
             </div>
 
             {/* Right Column: Order Summary & Amazon/Flipkart/Meesho Trust Card */}
-            <div className="lg:col-span-5 space-y-6 sticky top-24">
+            <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
               {/* Order Items Review Box */}
-              <div className="bg-card border border-border rounded-3xl p-6 shadow-xs space-y-4">
+              <div className="bg-card border border-border rounded-3xl p-4 sm:p-6 shadow-xs space-y-4">
                 <div className="flex items-center justify-between border-b border-border pb-3">
                   <h2 className="font-serif text-lg font-bold text-foreground">
                     ऑर्डर सारांश ({cart.length} उत्पाद)

@@ -67,7 +67,7 @@ function ProductDetailPage() {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 pb-28 sm:pb-12">
         {/* Breadcrumb Navigation */}
         <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
           <Link to="/" className="hover:text-primary transition-colors">
@@ -203,16 +203,18 @@ function ProductDetailPage() {
                 <div className="flex items-center border border-border rounded-xl bg-card overflow-hidden">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-3 py-1.5 text-sm font-bold hover:bg-secondary transition-colors"
+                    className="w-10 h-10 flex items-center justify-center text-sm font-bold hover:bg-secondary transition-colors active:bg-secondary/80"
+                    aria-label="Decrease quantity"
                   >
                     -
                   </button>
-                  <span className="px-4 py-1.5 text-sm font-bold min-w-8 text-center">
+                  <span className="px-4 py-2 text-sm font-bold min-w-10 text-center">
                     {quantity}
                   </span>
                   <button
                     onClick={() => setQuantity(quantity + 1)}
-                    className="px-3 py-1.5 text-sm font-bold hover:bg-secondary transition-colors"
+                    className="w-10 h-10 flex items-center justify-center text-sm font-bold hover:bg-secondary transition-colors active:bg-secondary/80"
+                    aria-label="Increase quantity"
                   >
                     +
                   </button>
@@ -409,7 +411,7 @@ function ProductDetailPage() {
             <h2 className="font-serif text-2xl font-bold text-foreground mb-6">
               इसी श्रेणी के अन्य प्रमाणित उत्पाद
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-4">
               {relatedProducts.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
@@ -435,8 +437,8 @@ function ProductDetailPage() {
       />
 
       {/* Mobile Sticky Buy Action Bar (Amazon / Flipkart / Meesho Style) */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t border-border p-3 flex items-center justify-between gap-3 shadow-lg">
-        <div>
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] flex items-center justify-between gap-3 shadow-xl">
+        <div className="shrink-0">
           <span className="text-[10px] text-muted-foreground block">कुल मूल्य</span>
           <span className="text-base font-bold text-primary">₹{product.price * quantity}</span>
         </div>
@@ -445,7 +447,7 @@ function ProductDetailPage() {
             size="sm"
             variant="outline"
             onClick={handleAddToCart}
-            className="text-xs rounded-xl px-3"
+            className="text-xs rounded-xl px-3 h-10 border-primary/30"
           >
             <ShoppingBag className="w-3.5 h-3.5 mr-1" />
             <span>{added ? "जुड़ गया" : "कार्ट"}</span>
@@ -453,7 +455,7 @@ function ProductDetailPage() {
           <Button
             size="sm"
             onClick={handleBuyNow}
-            className="text-xs rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold px-4"
+            className="text-xs rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold px-4 h-10 shadow-sm"
           >
             <span>अभी खरीदें</span>
           </Button>

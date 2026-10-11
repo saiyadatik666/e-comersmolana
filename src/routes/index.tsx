@@ -52,7 +52,7 @@ function IndexPage() {
 
       <main className="flex-1">
         {/* HERO SECTION */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-emerald-950 via-emerald-900 to-stone-900 text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8 border-b border-emerald-800/40">
+        <section className="relative overflow-hidden bg-gradient-to-b from-emerald-950 via-emerald-900 to-stone-900 text-white py-10 sm:py-24 px-3 sm:px-6 lg:px-8 border-b border-emerald-800/40">
           {/* Subtle Decorative Aura */}
           <div className="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#fde047_1px,transparent_1px)] [background-size:20px_20px]" />
           <div className="absolute -top-32 -right-32 w-96 h-96 bg-emerald-600/30 rounded-full blur-3xl pointer-events-none" />
@@ -183,28 +183,28 @@ function IndexPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {/* Product 1: Arq Abe Hayat ₹250 */}
-              <div className="bg-card border-2 border-amber-500/40 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex gap-4 items-center">
+              <div className="bg-card border-2 border-amber-500/40 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col xs:flex-row gap-3 sm:gap-4 items-center xs:items-start text-center xs:text-left">
                 <img
                   src="/assets/molana/IMG-20261009-WA0013.jpg"
                   alt="Arq Abe Hayat"
-                  className="w-24 h-32 object-cover rounded-xl border shrink-0"
+                  className="w-20 h-28 sm:w-24 sm:h-32 object-cover rounded-xl border shrink-0"
                 />
-                <div className="space-y-1.5 flex-1 min-w-0">
+                <div className="space-y-1.5 flex-1 min-w-0 w-full">
                   <Badge className="bg-amber-600 text-white font-bold text-[10px]">
                     कीमत ओन्ली ₹250
                   </Badge>
-                  <h3 className="font-serif font-bold text-base text-foreground leading-snug truncate">
+                  <h3 className="font-serif font-bold text-sm sm:text-base text-foreground leading-snug truncate">
                     इर्क आबे हयात (Arq Abe Hayat)
                   </h3>
                   <p className="text-xs text-muted-foreground line-clamp-2">
                     हर घर का मसीहा • सर्दी, सिरदर्द, कफ, दांत दर्द व जोड़ों में तुरंत राहत
                   </p>
                   <div className="pt-2 flex items-center justify-between">
-                    <span className="font-bold text-primary text-lg">₹250</span>
+                    <span className="font-bold text-primary text-base sm:text-lg">₹250</span>
                     <Link to="/product/$id" params={{ id: "shifa-arq-abe-hayat" }}>
-                      <Button size="sm" variant="outline" className="text-xs rounded-lg">
+                      <Button size="sm" variant="outline" className="text-xs rounded-lg h-8">
                         ऑर्डर करें
                       </Button>
                     </Link>
@@ -213,26 +213,26 @@ function IndexPage() {
               </div>
 
               {/* Product 2: Tanavai Tel ₹200 */}
-              <div className="bg-card border-2 border-amber-500/40 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex gap-4 items-center">
+              <div className="bg-card border-2 border-amber-500/40 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col xs:flex-row gap-3 sm:gap-4 items-center xs:items-start text-center xs:text-left">
                 <img
                   src="/assets/molana/IMG-20261009-WA0021.jpg"
                   alt="Tanavai Tel"
-                  className="w-24 h-32 object-cover rounded-xl border shrink-0"
+                  className="w-20 h-28 sm:w-24 sm:h-32 object-cover rounded-xl border shrink-0"
                 />
-                <div className="space-y-1.5 flex-1 min-w-0">
+                <div className="space-y-1.5 flex-1 min-w-0 w-full">
                   <Badge className="bg-amber-600 text-white font-bold text-[10px]">
                     सिर्फ़ ₹200/-
                   </Badge>
-                  <h3 className="font-serif font-bold text-base text-foreground leading-snug truncate">
+                  <h3 className="font-serif font-bold text-sm sm:text-base text-foreground leading-snug truncate">
                     तनावई तेल (Tanavai Nabhi Tel)
                   </h3>
                   <p className="text-xs text-muted-foreground line-clamp-2">
                     नाभि में डालने का तेल • 72,000 नसों के लिए कुदरत का करिश्मा
                   </p>
                   <div className="pt-2 flex items-center justify-between">
-                    <span className="font-bold text-primary text-lg">₹200</span>
+                    <span className="font-bold text-primary text-base sm:text-lg">₹200</span>
                     <Link to="/product/$id" params={{ id: "shifa-tanavai-tel" }}>
-                      <Button size="sm" variant="outline" className="text-xs rounded-lg">
+                      <Button size="sm" variant="outline" className="text-xs rounded-lg h-8">
                         ऑर्डर करें
                       </Button>
                     </Link>
@@ -241,26 +241,26 @@ function IndexPage() {
               </div>
 
               {/* Product 3: Gas Ki Goliyan ₹199 */}
-              <div className="bg-card border border-border rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow flex gap-4 items-center">
+              <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col xs:flex-row gap-3 sm:gap-4 items-center xs:items-start text-center xs:text-left">
                 <img
                   src="/assets/molana/IMG-20261009-WA0016.jpg"
                   alt="Gas Ki Goliyan"
-                  className="w-24 h-32 object-cover rounded-xl border shrink-0"
+                  className="w-20 h-28 sm:w-24 sm:h-32 object-cover rounded-xl border shrink-0"
                 />
-                <div className="space-y-1.5 flex-1 min-w-0">
+                <div className="space-y-1.5 flex-1 min-w-0 w-full">
                   <Badge className="bg-emerald-700 text-white font-semibold text-[10px]">
                     100% आयुर्वेदिक
                   </Badge>
-                  <h3 className="font-serif font-bold text-base text-foreground leading-snug truncate">
+                  <h3 className="font-serif font-bold text-sm sm:text-base text-foreground leading-snug truncate">
                     गैस की गोलियां (Gas Tablets)
                   </h3>
                   <p className="text-xs text-muted-foreground line-clamp-2">
                     पेट की गैस और अपच का रामबाण इलाज • भोजन के बाद तुरंत हल्कापन
                   </p>
                   <div className="pt-2 flex items-center justify-between">
-                    <span className="font-bold text-primary text-lg">₹199</span>
+                    <span className="font-bold text-primary text-base sm:text-lg">₹199</span>
                     <Link to="/product/$id" params={{ id: "shifa-gas-ki-goliyan" }}>
-                      <Button size="sm" variant="outline" className="text-xs rounded-lg">
+                      <Button size="sm" variant="outline" className="text-xs rounded-lg h-8">
                         ऑर्डर करें
                       </Button>
                     </Link>
@@ -272,26 +272,26 @@ function IndexPage() {
         </section>
 
         {/* POPULAR CATEGORIES */}
-        <section className="py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-10">
+        <section className="py-10 sm:py-14 px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <div className="text-center max-w-2xl mx-auto mb-6 sm:mb-10">
             <span className="text-xs font-bold text-primary tracking-wider uppercase">
               प्राकृतिक समाधान
             </span>
-            <h2 className="font-serif text-3xl font-bold text-foreground mt-1">
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-foreground mt-1">
               स्वास्थ्य समस्याओं के अनुसार खोजें
             </h2>
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1.5">
               अपनी समस्या चुनें और हकीम जी द्वारा तैयार किए गए विशेष नुस्खों का लाभ उठाएं।
             </p>
           </div>
 
           {/* Category Tabs */}
-          <div className="flex items-center justify-start sm:justify-center gap-2 overflow-x-auto pb-4 scrollbar-none">
+          <div className="flex items-center justify-start sm:justify-center gap-2 overflow-x-auto pb-3 scrollbar-none">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
+                className={`px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all border shrink-0 ${
                   activeCategory === cat.id
                     ? "bg-primary text-primary-foreground border-primary shadow-sm"
                     : "bg-secondary/70 text-foreground border-border hover:bg-secondary"
@@ -302,8 +302,8 @@ function IndexPage() {
             ))}
           </div>
 
-          {/* Filtered Products Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-8">
+          {/* Filtered Products Grid (2-column on mobile) */}
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 mt-6 sm:mt-8">
             {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}

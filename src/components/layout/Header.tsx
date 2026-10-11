@@ -48,22 +48,19 @@ export const Header: React.FC = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur-md shadow-xs transition-all">
       {/* Top Heritage & Trust Bar */}
-      <div className="bg-primary text-primary-foreground text-xs py-1.5 px-4">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-1 text-center sm:text-left">
-          <div className="flex items-center gap-2">
-            <span className="font-serif tracking-widest text-amber-300 font-medium">
-              بِسْمِ ٱللّٰهِ ٱلرَّحْمٰنِ ٱلرَّحِيمِ
+      <div className="bg-primary text-primary-foreground text-xs py-1.5 px-3 sm:px-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 text-[11px] sm:text-xs">
+          <div className="flex items-center gap-1.5 sm:gap-2 truncate">
+            <span className="font-serif tracking-wider text-amber-300 font-medium whitespace-nowrap">
+              بِسْمِ ٱللّٰهِ
             </span>
-            <span className="hidden md:inline text-primary-foreground/40">•</span>
-            <span className="hidden md:inline font-medium">
-              {settings.tagline}
+            <span className="text-primary-foreground/40">•</span>
+            <span className="truncate text-emerald-100 font-medium">
+              100% शुद्ध आयुर्वेदिक व यूनानी • COD उपलब्ध
             </span>
           </div>
 
-          <div className="flex items-center gap-4 text-xs font-medium">
-            <span className="hidden sm:inline-flex items-center gap-1 text-amber-200">
-              <ShieldCheck className="w-3.5 h-3.5" /> 100% शुद्ध जड़ी-बूटी • कैश ऑन डिलीवरी उपलब्ध
-            </span>
+          <div className="flex items-center gap-3 shrink-0">
             <a
               href={formatWhatsAppUrl(
                 settings.whatsapp,
@@ -71,31 +68,31 @@ export const Header: React.FC = () => {
               )}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-emerald-200 hover:text-white transition-colors"
+              className="inline-flex items-center gap-1 text-amber-200 hover:text-white transition-colors font-medium whitespace-nowrap"
             >
-              <MessageCircle className="w-3.5 h-3.5 fill-emerald-500 text-emerald-500" />
-              <span>WhatsApp: +91 {settings.whatsapp}</span>
+              <MessageCircle className="w-3.5 h-3.5 fill-emerald-500 text-emerald-500 shrink-0" />
+              <span className="hidden xs:inline">हेल्पलाइन:</span> +91 {settings.whatsapp}
             </a>
           </div>
         </div>
       </div>
 
       {/* Main Header Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-4">
         {/* Brand Logo */}
-        <Link to="/" className="flex items-center gap-3 group shrink-0">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-800 to-primary flex items-center justify-center text-amber-300 shadow-md border border-amber-400/30 group-hover:scale-105 transition-transform">
-            <Sparkles className="w-6 h-6" />
+        <Link to="/" className="flex items-center gap-2 sm:gap-3 group shrink-0 min-w-0">
+          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-emerald-800 to-primary flex items-center justify-center text-amber-300 shadow-md border border-amber-400/30 group-hover:scale-105 transition-transform shrink-0">
+            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
-          <div className="flex flex-col">
-            <span className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-primary leading-tight flex items-center gap-1.5">
+          <div className="flex flex-col min-w-0">
+            <span className="font-serif text-base xs:text-lg sm:text-2xl font-bold tracking-tight text-primary leading-tight flex items-center gap-1 sm:gap-1.5 truncate">
               Shifa A Hayat
-              <span className="text-[10px] font-sans px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 font-semibold border border-amber-400/30">
+              <span className="text-[9px] sm:text-[10px] font-sans px-1 sm:px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-700 font-semibold border border-amber-400/30 shrink-0">
                 हर्बल
               </span>
             </span>
-            <span className="text-xs text-muted-foreground font-medium tracking-wide">
-              शिफा ए हयात • हकीम इनायत अहमदी (पालनपुर)
+            <span className="text-[10px] sm:text-xs text-muted-foreground font-medium tracking-wide truncate max-w-[130px] xs:max-w-[200px] sm:max-w-none">
+              हकीम इनायत अहमदी (पालनपुर)
             </span>
           </div>
         </Link>
@@ -117,7 +114,8 @@ export const Header: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -154,8 +152,8 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* WhatsApp Direct Consult Button */}
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          {/* WhatsApp Direct Consult Button (Desktop & Tablet) */}
           <a
             href={formatWhatsAppUrl(
               settings.whatsapp,
@@ -163,21 +161,22 @@ export const Header: React.FC = () => {
             )}
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-600/10 text-emerald-800 hover:bg-emerald-600/20 border border-emerald-600/30 transition-colors"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold bg-emerald-600/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-600/20 border border-emerald-600/30 transition-colors min-h-[40px]"
           >
-            <MessageCircle className="w-4 h-4 text-emerald-600" />
+            <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>हकीम जी से सलाह</span>
           </a>
 
           {/* Wishlist Link */}
           <Link
             to="/account"
-            className="p-2 rounded-full hover:bg-secondary text-foreground relative transition-colors"
+            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-secondary text-foreground relative transition-colors"
             title="Wishlist"
+            aria-label="Wishlist"
           >
             <Heart className="w-5 h-5 text-muted-foreground hover:text-red-500 transition-colors" />
             {wishlist.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center">
+              <span className="absolute 1 -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center shadow-xs">
                 {wishlist.length}
               </span>
             )}
@@ -186,23 +185,24 @@ export const Header: React.FC = () => {
           {/* Cart Drawer / Page Link */}
           <Link
             to="/cart"
-            className="flex items-center gap-2 px-3 py-2 rounded-full bg-primary/10 hover:bg-primary/15 text-primary font-semibold text-sm transition-colors border border-primary/20"
+            className="flex items-center gap-1.5 h-10 px-3 rounded-full bg-primary/10 hover:bg-primary/15 text-primary font-semibold text-sm transition-colors border border-primary/20 min-w-[44px] justify-center"
+            aria-label={`Shopping cart with ${cartCount} items`}
           >
             <div className="relative">
               <ShoppingBag className="w-5 h-5" />
               {cartCount > 0 && (
-                <span className="absolute -top-1.5 -right-2 bg-amber-600 text-white rounded-full text-[10px] font-bold px-1.5 py-0.2 min-w-4 text-center">
+                <span className="absolute -top-2 -right-2.5 bg-amber-600 text-white rounded-full text-[10px] font-bold px-1.5 min-w-4 h-4 flex items-center justify-center text-center shadow-xs">
                   {cartCount}
                 </span>
               )}
             </div>
-            <span className="hidden md:inline text-xs font-bold">Cart</span>
+            <span className="hidden md:inline text-xs font-bold ml-1">Cart</span>
           </Link>
 
           {/* Account / Admin Link */}
           <Link
             to="/admin"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-secondary hover:bg-secondary/80 text-foreground transition-colors border border-border"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-secondary hover:bg-secondary/80 text-foreground transition-colors border border-border min-h-[40px]"
           >
             <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
             <span>Admin</span>
@@ -212,12 +212,37 @@ export const Header: React.FC = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden text-foreground"
+            className="lg:hidden text-foreground w-10 h-10 flex items-center justify-center rounded-xl"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </Button>
         </div>
+      </div>
+
+      {/* Prominent Mobile Search Bar (Flipkart / Meesho / Amazon style) */}
+      <div className="lg:hidden px-3 pb-2.5 pt-0">
+        <form onSubmit={handleSearchSubmit} className="relative">
+          <Input
+            type="text"
+            placeholder="उत्पाद खोजें (ज़ाफरानी गोल्ड, तेल, दर्द...)"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-9 py-2 bg-secondary/60 border-border/80 rounded-xl text-xs sm:text-sm h-10"
+          />
+          <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              aria-label="Clear search query"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </form>
       </div>
 
       {/* Desktop Navigation Links */}
@@ -236,7 +261,7 @@ export const Header: React.FC = () => {
               className="text-foreground hover:text-primary transition-colors font-medium"
               activeProps={{ className: "text-primary font-bold" }}
             >
-              सभी उत्पाद (All Products)
+              सभी 21 उत्पाद (All Products)
             </Link>
             <Link
               to="/shop"
@@ -281,113 +306,162 @@ export const Header: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3 py-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1 text-emerald-700 font-semibold">
-              <Phone className="w-3 h-3" /> ऑर्डर हेल्पलाइन: +91 9586037331
+            <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold">
+              <Phone className="w-3 h-3" /> ऑर्डर हेल्पलाइन: +91 {settings.phone}
             </span>
           </div>
         </div>
       </nav>
 
-      {/* Mobile Drawer Navigation */}
+      {/* Mobile Drawer Navigation with Backdrop Overlay */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-border bg-background px-4 pt-3 pb-6 space-y-4 animate-in slide-in-from-top-3">
-          {/* Mobile Search */}
-          <form onSubmit={handleSearchSubmit} className="relative">
-            <Input
-              type="text"
-              placeholder="सर्च करें हर्बल प्रोडक्ट्स..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-8 bg-secondary/60 rounded-lg text-sm"
-            />
-            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-          </form>
+        <div className="lg:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end">
+          <div
+            className="fixed inset-0"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="relative bg-background border-t border-border rounded-t-3xl max-h-[85vh] overflow-y-auto px-4 pt-4 pb-8 space-y-4 shadow-2xl animate-in slide-in-from-bottom duration-300">
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary text-amber-300 flex items-center justify-center">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-serif font-bold text-sm text-foreground">Shifa A Hayat</h3>
+                  <p className="text-[10px] text-muted-foreground">नेविगेशन एवं श्रेणियां</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full w-9 h-9"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label="Close navigation menu"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
 
-          {/* Links */}
-          <div className="flex flex-col space-y-2.5 text-sm font-medium">
-            <Link
-              to="/"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-2 px-3 rounded-lg hover:bg-secondary text-foreground"
-            >
-              होम (Home)
-            </Link>
-            <Link
-              to="/shop"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-2 px-3 rounded-lg hover:bg-secondary text-foreground"
-            >
-              सभी 21 उत्पाद (Shop All Products)
-            </Link>
-            <Link
-              to="/shop"
-              search={{ category: "mens-wellness" } as any}
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-2 px-3 rounded-lg hover:bg-secondary text-muted-foreground"
-            >
-              पुरुष स्वास्थ्य एवं मर्दाना ताकत
-            </Link>
-            <Link
-              to="/shop"
-              search={{ category: "digestive-care" } as any}
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-2 px-3 rounded-lg hover:bg-secondary text-muted-foreground"
-            >
-              पेट, गैस, कब्ज व पाचन
-            </Link>
-            <Link
-              to="/shop"
-              search={{ category: "joint-pain" } as any}
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-2 px-3 rounded-lg hover:bg-secondary text-muted-foreground"
-            >
-              कमर, साइटिका व जोड़ों का दर्द
-            </Link>
-            <Link
-              to="/shop"
-              search={{ category: "classical-tonics" } as any}
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-2 px-3 rounded-lg hover:bg-secondary text-muted-foreground"
-            >
-              शास्त्रीय अर्क व टॉनिक (आबे हयात ₹250)
-            </Link>
-            <Link
-              to="/account"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-2 px-3 rounded-lg hover:bg-secondary text-foreground"
-            >
-              माय अकाउंट व ऑर्डर्स (My Account)
-            </Link>
-            <Link
-              to="/admin"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-2 px-3 rounded-lg bg-amber-500/10 text-amber-800 font-semibold border border-amber-400/30"
-            >
-              एडमिन डैशबोर्ड (Admin Dashboard)
-            </Link>
-          </div>
+            {/* Navigation Links */}
+            <div className="flex flex-col space-y-1 text-sm font-medium">
+              <Link
+                to="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2.5 px-3 rounded-xl hover:bg-secondary text-foreground flex items-center justify-between"
+              >
+                <span>होम (Home)</span>
+                <span className="text-xs text-muted-foreground">→</span>
+              </Link>
+              <Link
+                to="/shop"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2.5 px-3 rounded-xl hover:bg-secondary text-foreground font-semibold flex items-center justify-between bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300"
+              >
+                <span>सभी 21 उत्पाद देखें (Shop All)</span>
+                <span className="text-xs">→</span>
+              </Link>
+              <Link
+                to="/shop"
+                search={{ category: "mens-wellness" } as any}
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2.5 px-3 rounded-xl hover:bg-secondary text-stone-700 dark:text-stone-300 flex items-center justify-between text-xs"
+              >
+                <span>पुरुष स्वास्थ्य एवं मर्दाना ताकत</span>
+                <span className="text-muted-foreground">→</span>
+              </Link>
+              <Link
+                to="/shop"
+                search={{ category: "digestive-care" } as any}
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2.5 px-3 rounded-xl hover:bg-secondary text-stone-700 dark:text-stone-300 flex items-center justify-between text-xs"
+              >
+                <span>पेट, गैस, कब्ज व पाचन</span>
+                <span className="text-muted-foreground">→</span>
+              </Link>
+              <Link
+                to="/shop"
+                search={{ category: "joint-pain" } as any}
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2.5 px-3 rounded-xl hover:bg-secondary text-stone-700 dark:text-stone-300 flex items-center justify-between text-xs"
+              >
+                <span>कमर, साइटिका व जोड़ों का दर्द</span>
+                <span className="text-muted-foreground">→</span>
+              </Link>
+              <Link
+                to="/shop"
+                search={{ category: "classical-tonics" } as any}
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2.5 px-3 rounded-xl hover:bg-secondary text-stone-700 dark:text-stone-300 flex items-center justify-between text-xs"
+              >
+                <span>शास्त्रीय अर्क व टॉनिक (आबे हयात ₹250)</span>
+                <span className="text-muted-foreground">→</span>
+              </Link>
+              <Link
+                to="/cart"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2.5 px-3 rounded-xl hover:bg-secondary text-foreground flex items-center justify-between"
+              >
+                <span>शॉपिंग कार्ट ({cartCount} सामग्री)</span>
+                <span className="text-xs text-primary font-bold">₹{useStore.getState().cartGrandTotal}</span>
+              </Link>
+              <Link
+                to="/account"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2.5 px-3 rounded-xl hover:bg-secondary text-foreground flex items-center justify-between"
+              >
+                <span>माय अकाउंट व ऑर्डर्स (My Account)</span>
+                <span className="text-xs text-muted-foreground">→</span>
+              </Link>
+              <Link
+                to="/about"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2.5 px-3 rounded-xl hover:bg-secondary text-foreground flex items-center justify-between"
+              >
+                <span>हकीम जी का परिचय (About)</span>
+                <span className="text-xs text-muted-foreground">→</span>
+              </Link>
+              <Link
+                to="/contact"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2.5 px-3 rounded-xl hover:bg-secondary text-foreground flex items-center justify-between"
+              >
+                <span>संपर्क व परामर्श (Contact)</span>
+                <span className="text-xs text-muted-foreground">→</span>
+              </Link>
+              <Link
+                to="/admin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2.5 px-3 rounded-xl bg-amber-500/10 text-amber-800 dark:text-amber-300 font-semibold border border-amber-400/30 flex items-center justify-between"
+              >
+                <span>एडमिन डैशबोर्ड (Admin Portal)</span>
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+              </Link>
+            </div>
 
-          {/* Quick Consultation Call on Mobile */}
-          <div className="pt-2 border-t border-border flex flex-col gap-2">
-            <a
-              href={formatWhatsAppUrl(
-                settings.whatsapp,
-                "السلام علیکم Hakim Inayat Ji, I want consultation regarding products."
-              )}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 text-white font-semibold text-sm shadow-sm"
-            >
-              <MessageCircle className="w-4 h-4 fill-white" />
-              <span>WhatsApp पर सीधे बात करें</span>
-            </a>
-            <a
-              href="tel:9586037331"
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-primary text-primary font-semibold text-sm"
-            >
-              <Phone className="w-4 h-4" />
-              <span>कॉल करें: +91 9586037331</span>
-            </a>
+            {/* Quick Consultation Call on Mobile */}
+            <div className="pt-3 border-t border-border flex flex-col gap-2.5">
+              <a
+                href={formatWhatsAppUrl(
+                  settings.whatsapp,
+                  "السلام علیکم Hakim Inayat Ji, I want consultation regarding products."
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-md transition-colors"
+              >
+                <MessageCircle className="w-4 h-4 fill-white" />
+                <span>WhatsApp पर सीधे बात करें (+91 {settings.whatsapp})</span>
+              </a>
+              <a
+                href={`tel:${settings.phone}`}
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl border border-primary text-primary font-semibold text-xs transition-colors"
+              >
+                <Phone className="w-4 h-4" />
+                <span>कॉल करें: +91 {settings.phone}</span>
+              </a>
+            </div>
           </div>
         </div>
       )}

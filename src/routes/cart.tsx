@@ -98,56 +98,58 @@ function CartPage() {
               {/* Items Card List */}
               <div className="bg-card border border-border rounded-3xl divide-y divide-border overflow-hidden shadow-xs">
                 {cart.map((item) => (
-                  <div key={item.product.id} className="p-4 sm:p-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                    <div className="flex gap-4 items-center flex-1 min-w-0">
+                  <div key={item.product.id} className="p-3.5 sm:p-6 flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center justify-between">
+                    <div className="flex gap-3 sm:gap-4 items-center flex-1 min-w-0">
                       <Link to="/product/$id" params={{ id: item.product.id }} className="shrink-0">
                         <img
                           src={item.product.image}
                           alt={item.product.name}
-                          className="w-20 h-24 object-cover rounded-xl border border-border"
+                          className="w-16 h-20 sm:w-20 sm:h-24 object-cover rounded-xl border border-border"
                         />
                       </Link>
 
-                      <div className="space-y-1 min-w-0">
+                      <div className="space-y-1 min-w-0 flex-1">
                         <span className="text-[10px] font-medium text-emerald-800 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded">
                           {item.product.categoryHindi}
                         </span>
                         <Link to="/product/$id" params={{ id: item.product.id }} className="block hover:text-primary transition-colors">
-                          <h3 className="font-serif font-bold text-base text-foreground truncate">
+                          <h3 className="font-serif font-bold text-sm sm:text-base text-foreground truncate">
                             {item.product.name}
                           </h3>
                           <p className="text-xs text-muted-foreground truncate">{item.product.nameHindi}</p>
                         </Link>
-                        <p className="text-xs text-stone-500 font-medium">{item.packSize || item.product.packSize}</p>
-                        <span className="text-sm font-bold text-primary sm:hidden block pt-1">
+                        <p className="text-[11px] sm:text-xs text-stone-500 font-medium">{item.packSize || item.product.packSize}</p>
+                        <span className="text-xs font-bold text-primary sm:hidden block">
                           ₹{item.product.price}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between w-full sm:w-auto gap-6 pt-2 sm:pt-0 border-t sm:border-0 border-border">
+                    <div className="flex items-center justify-between w-full sm:w-auto gap-3 sm:gap-6 pt-2 sm:pt-0 border-t sm:border-0 border-border">
                       {/* Quantity Controller */}
                       <div className="flex items-center border border-border rounded-xl bg-secondary/30 overflow-hidden">
                         <button
                           onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}
-                          className="p-2 hover:bg-secondary transition-colors"
+                          className="w-8 h-8 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-secondary transition-colors"
+                          aria-label="Decrease quantity"
                         >
                           <Minus className="w-3.5 h-3.5" />
                         </button>
-                        <span className="px-3 text-xs font-bold min-w-7 text-center">
+                        <span className="px-2.5 text-xs font-bold min-w-7 text-center">
                           {item.quantity}
                         </span>
                         <button
                           onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}
-                          className="p-2 hover:bg-secondary transition-colors"
+                          className="w-8 h-8 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-secondary transition-colors"
+                          aria-label="Increase quantity"
                         >
                           <Plus className="w-3.5 h-3.5" />
                         </button>
                       </div>
 
                       {/* Line Item Total */}
-                      <div className="text-right min-w-[70px]">
-                        <p className="text-base font-bold text-foreground">
+                      <div className="text-right min-w-[60px] sm:min-w-[70px]">
+                        <p className="text-sm sm:text-base font-bold text-foreground">
                           ₹{item.product.price * item.quantity}
                         </p>
                         <p className="text-[10px] text-muted-foreground">
@@ -158,8 +160,9 @@ function CartPage() {
                       {/* Remove Button */}
                       <button
                         onClick={() => removeFromCart(item.product.id)}
-                        className="text-stone-400 hover:text-rose-600 p-2 rounded-lg transition-colors"
+                        className="text-stone-400 hover:text-rose-600 w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
                         title="Remove from cart"
+                        aria-label="Remove item from cart"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -171,7 +174,7 @@ function CartPage() {
               <div className="flex items-center justify-between pt-2">
                 <Link to="/shop">
                   <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground">
-                    ← अन्य उत्पाद जोड़ें (Continue Shopping)
+                    ← अन्य उत्पाद जोड़ें
                   </Button>
                 </Link>
                 <Button
@@ -180,13 +183,13 @@ function CartPage() {
                   onClick={clearCart}
                   className="text-xs text-rose-600 hover:text-rose-700"
                 >
-                  कार्ट खाली करें (Clear Cart)
+                  कार्ट खाली करें
                 </Button>
               </div>
             </div>
 
             {/* Right: Order Summary Card */}
-            <div className="lg:col-span-4 bg-card border border-border rounded-3xl p-6 shadow-sm space-y-5 sticky top-24">
+            <div className="lg:col-span-4 bg-card border border-border rounded-3xl p-4 sm:p-6 shadow-sm space-y-5 sticky top-24">
               <h2 className="font-serif text-xl font-bold text-foreground border-b border-border pb-3">
                 ऑर्डर सारांश (Order Summary)
               </h2>

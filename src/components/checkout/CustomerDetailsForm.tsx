@@ -87,6 +87,7 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
   const [submittedWhatsAppWebUrl, setSubmittedWhatsAppWebUrl] = useState<string>("");
   const [createdOrderId, setCreatedOrderId] = useState<string>("");
   const [hasCopied, setHasCopied] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
     if (savedCustomerDetails) {
@@ -147,124 +148,132 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
 
   const handleProceedToReview = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!validateForm()) {
       toast.error("कृपया सभी आवश्यक फ़ील्ड सही तरीके से भरें।");
       return;
     }
 
-    const details: CustomerDeliveryDetails = {
-      fullName: fullName.trim(),
-      phone: phone.trim(),
-      addressLine: addressLine.trim(),
-      cityVillage: cityVillage.trim(),
-      state: state.trim(),
-      pincode: pincode.trim(),
-      country: country.trim() || "India",
-      landmark: landmark.trim() || undefined,
-      email: email.trim() || undefined,
-    };
+    setIsSubmitting(true);
+    try {
+      const details: CustomerDeliveryDetails = {
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        addressLine: addressLine.trim(),
+        cityVillage: cityVillage.trim(),
+        state: state.trim(),
+        pincode: pincode.trim(),
+        country: country.trim() || "India",
+        landmark: landmark.trim() || undefined,
+        email: email.trim() || undefined,
+      };
 
-    // Save with consent
-    saveCustomerDetails(details, consentToSave);
+      // Save with consent
+      saveCustomerDetails(details, consentToSave);
 
-    // Prepare WhatsApp Message & URL
-    const origin = typeof window !== "undefined" ? window.location.origin : "https://shifa-a-hayat.com";
-    const msg = buildWhatsAppOrderMessage({
-      customer: details,
-      items: items.map((i) => ({
-        product: i.product,
-        quantity: i.quantity,
-        packSize: i.packSize || i.product.packSize,
-      })),
-      subtotal,
-      shippingCharge: shippingFee,
-      finalAmount: finalTotal,
-      origin,
-    });
+      // Prepare WhatsApp Message & URL
+      const origin = typeof window !== "undefined" ? window.location.origin : "https://shifa-a-hayat.com";
+      const msg = buildWhatsAppOrderMessage({
+        customer: details,
+        items: items.map((i) => ({
+          product: i.product,
+          quantity: i.quantity,
+          packSize: i.packSize || i.product.packSize,
+        })),
+        subtotal,
+        shippingCharge: shippingFee,
+        finalAmount: finalTotal,
+        origin,
+      });
 
-    const waUrl = generateWhatsAppOrderUrl({
-      customer: details,
-      items: items.map((i) => ({
-        product: i.product,
-        quantity: i.quantity,
-        packSize: i.packSize || i.product.packSize,
-      })),
-      subtotal,
-      shippingCharge: shippingFee,
-      finalAmount: finalTotal,
-      whatsappNumber: settings.whatsapp,
-      origin,
-    });
+      const waUrl = generateWhatsAppOrderUrl({
+        customer: details,
+        items: items.map((i) => ({
+          product: i.product,
+          quantity: i.quantity,
+          packSize: i.packSize || i.product.packSize,
+        })),
+        subtotal,
+        shippingCharge: shippingFee,
+        finalAmount: finalTotal,
+        whatsappNumber: settings.whatsapp,
+        origin,
+      });
 
-    // Record order locally with status "Pending Confirmation"
-    const newOrder = createOrder({
-      customerName: details.fullName,
-      customerPhone: details.phone,
-      customerEmail: details.email,
-      shippingAddress: {
-        id: `addr-${Date.now()}`,
-        fullName: details.fullName,
-        phone: details.phone,
-        addressLine: details.addressLine,
-        landmark: details.landmark,
-        city: details.cityVillage,
-        state: details.state,
-        pincode: details.pincode,
-      },
-      customerDeliveryDetails: details,
-      items: items.map((i) => ({
-        productId: i.product.id,
-        productName: i.product.name,
-        productImage: i.product.image,
-        price: i.product.price,
-        quantity: i.quantity,
-        packSize: i.packSize || i.product.packSize,
-      })),
-      subtotal,
-      shippingCharge: shippingFee,
-      discount: 0,
-      total: finalTotal,
-      paymentMethod: "WhatsApp Direct Order",
-      paymentStatus: "Pending Confirmation",
-      notes: "Submitted via WhatsApp order request",
-    });
+      // Record order locally with status "Pending Confirmation"
+      const newOrder = createOrder({
+        customerName: details.fullName,
+        customerPhone: details.phone,
+        customerEmail: details.email,
+        shippingAddress: {
+          id: `addr-${Date.now()}`,
+          fullName: details.fullName,
+          phone: details.phone,
+          addressLine: details.addressLine,
+          landmark: details.landmark,
+          city: details.cityVillage,
+          state: details.state,
+          pincode: details.pincode,
+        },
+        customerDeliveryDetails: details,
+        items: items.map((i) => ({
+          productId: i.product.id,
+          productName: i.product.name,
+          productImage: i.product.image,
+          price: i.product.price,
+          quantity: i.quantity,
+          packSize: i.packSize || i.product.packSize,
+        })),
+        subtotal,
+        shippingCharge: shippingFee,
+        discount: 0,
+        total: finalTotal,
+        paymentMethod: "WhatsApp Direct Order",
+        paymentStatus: "Pending Confirmation",
+        notes: "Submitted via WhatsApp order request",
+      });
 
-    const waWebUrl = generateWhatsAppWebOrderUrl({
-      customer: details,
-      items: items.map((i) => ({
-        product: i.product,
-        quantity: i.quantity,
-        packSize: i.packSize || i.product.packSize,
-      })),
-      subtotal,
-      shippingCharge: shippingFee,
-      finalAmount: finalTotal,
-      whatsappNumber: settings.whatsapp,
-      origin,
-    });
+      const waWebUrl = generateWhatsAppWebOrderUrl({
+        customer: details,
+        items: items.map((i) => ({
+          product: i.product,
+          quantity: i.quantity,
+          packSize: i.packSize || i.product.packSize,
+        })),
+        subtotal,
+        shippingCharge: shippingFee,
+        finalAmount: finalTotal,
+        whatsappNumber: settings.whatsapp,
+        origin,
+      });
 
-    setCreatedOrderId(newOrder.id);
-    setSubmittedMessage(msg);
-    setSubmittedWhatsAppUrl(waUrl);
-    setSubmittedWhatsAppWebUrl(waWebUrl);
-    setMode("confirm-order");
+      setCreatedOrderId(newOrder.id);
+      setSubmittedMessage(msg);
+      setSubmittedWhatsAppUrl(waUrl);
+      setSubmittedWhatsAppWebUrl(waWebUrl);
+      setMode("confirm-order");
 
-    if (onOrderCompleted) {
-      onOrderCompleted(newOrder.id);
+      if (onOrderCompleted) {
+        onOrderCompleted(newOrder.id);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleUseSavedAddress = () => {
-    if (!savedCustomerDetails) return;
-    setFullName(savedCustomerDetails.fullName);
-    setPhone(savedCustomerDetails.phone);
-    setAddressLine(savedCustomerDetails.addressLine);
-    setCityVillage(savedCustomerDetails.cityVillage);
-    setState(savedCustomerDetails.state);
-    setPincode(savedCustomerDetails.pincode);
-    setCountry(savedCustomerDetails.country || "India");
-    setLandmark(savedCustomerDetails.landmark || "");
-    setEmail(savedCustomerDetails.email || "");
+    if (!savedCustomerDetails || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      setFullName(savedCustomerDetails.fullName);
+      setPhone(savedCustomerDetails.phone);
+      setAddressLine(savedCustomerDetails.addressLine);
+      setCityVillage(savedCustomerDetails.cityVillage);
+      setState(savedCustomerDetails.state);
+      setPincode(savedCustomerDetails.pincode);
+      setCountry(savedCustomerDetails.country || "India");
+      setLandmark(savedCustomerDetails.landmark || "");
+      setEmail(savedCustomerDetails.email || "");
 
     // Prepare WhatsApp Message & URL
     const origin = typeof window !== "undefined" ? window.location.origin : "https://shifa-a-hayat.com";
@@ -350,7 +359,10 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
     if (onOrderCompleted) {
       onOrderCompleted(newOrder.id);
     }
-  };
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const handleOpenWhatsApp = (e: React.MouseEvent, targetUrl: string) => {
     try {
@@ -377,7 +389,7 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
     <div className={`space-y-6 ${className}`}>
       {/* 1. RETURNING CUSTOMER SAVED CARD */}
       {mode === "review-saved" && savedCustomerDetails && (
-        <div className="bg-card border-2 border-primary/20 rounded-3xl p-6 shadow-sm space-y-5">
+        <div className="bg-card border-2 border-primary/20 rounded-3xl p-4 sm:p-6 shadow-sm space-y-4 sm:space-y-5">
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-400 flex items-center justify-center">
@@ -416,11 +428,12 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
             <Button
               type="button"
               size="lg"
+              disabled={isSubmitting}
               onClick={handleUseSavedAddress}
-              className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2"
+              className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 disabled:opacity-60"
             >
               <MessageCircle className="w-5 h-5 fill-white" />
-              <span>इसी पते पर WhatsApp पर ऑर्डर भेजें</span>
+              <span>{isSubmitting ? "ऑर्डर तैयार हो रहा है..." : "इसी पते पर WhatsApp पर ऑर्डर भेजें"}</span>
             </Button>
 
             <div className="flex items-center justify-between gap-3 pt-1 text-xs">
@@ -455,7 +468,7 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
 
       {/* 2. FIRST-TIME OR EDITING CUSTOMER FORM */}
       {mode === "fill-form" && (
-        <form onSubmit={handleProceedToReview} className="bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+        <form onSubmit={handleProceedToReview} className="bg-card border border-border rounded-3xl p-4 sm:p-8 shadow-xs space-y-5 sm:space-y-6">
           <div className="border-b border-border pb-4">
             <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider mb-1">
               <Truck className="w-4 h-4" />
@@ -504,6 +517,7 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
                 id="cust-phone"
                 required
                 type="tel"
+                inputMode="tel"
                 placeholder="उदा: 98250 12345"
                 value={phone}
                 onChange={(e) => {
@@ -603,6 +617,7 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
                 id="cust-pincode"
                 required
                 maxLength={6}
+                inputMode="numeric"
                 placeholder="उदा: 385001"
                 value={pincode}
                 onChange={(e) => {
@@ -698,17 +713,18 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
           <Button
             type="submit"
             size="lg"
-            className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2"
+            disabled={isSubmitting}
+            className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 disabled:opacity-60"
           >
             <MessageCircle className="w-5 h-5 fill-white" />
-            <span>WhatsApp पर ऑर्डर अनुरोध भेजें (Send via WhatsApp)</span>
+            <span>{isSubmitting ? "ऑर्डर तैयार हो रहा है..." : "WhatsApp पर ऑर्डर अनुरोध भेजें (Send via WhatsApp)"}</span>
           </Button>
         </form>
       )}
 
       {/* 3. ORDER SUBMITTED / CONFIRMATION SCREEN */}
       {mode === "confirm-order" && (
-        <div className="bg-card border-2 border-emerald-500/50 rounded-3xl p-6 sm:p-8 shadow-xl text-center space-y-6">
+        <div className="bg-card border-2 border-emerald-500/50 rounded-3xl p-4 sm:p-8 shadow-xl text-center space-y-5 sm:space-y-6">
           <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center mx-auto border-2 border-emerald-500">
             <CheckCircle2 className="w-9 h-9" />
           </div>
