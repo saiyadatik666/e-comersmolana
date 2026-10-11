@@ -2,6 +2,18 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { INITIAL_PRODUCTS, Product } from "@/data/products";
 import { toast } from "sonner";
 
+export interface CustomerDeliveryDetails {
+  fullName: string;
+  phone: string;
+  addressLine: string;
+  cityVillage: string;
+  state: string;
+  pincode: string;
+  country: string; // Defaults to India, editable
+  landmark?: string;
+  email?: string;
+}
+
 export interface CartItem {
   product: Product;
   quantity: number;
@@ -30,6 +42,14 @@ export interface OrderItem {
   packSize: string;
 }
 
+export type OrderStatus =
+  | "Pending Confirmation"
+  | "Confirmed"
+  | "Processing"
+  | "Shipped"
+  | "Delivered"
+  | "Cancelled";
+
 export interface Order {
   id: string;
   createdAt: string;
@@ -37,14 +57,15 @@ export interface Order {
   customerPhone: string;
   customerEmail?: string;
   shippingAddress: Address;
+  customerDeliveryDetails?: CustomerDeliveryDetails;
   items: OrderItem[];
   subtotal: number;
   shippingCharge: number;
   discount: number;
   total: number;
-  paymentMethod: "COD" | "ONLINE_UPI";
-  paymentStatus: "Pending" | "Paid" | "Failed";
-  orderStatus: "Placed" | "Confirmed" | "Dispatched" | "Delivered" | "Cancelled";
+  paymentMethod: "WhatsApp Direct Order" | "COD" | "ONLINE_UPI";
+  paymentStatus: "Pending Confirmation" | "Pending" | "Paid" | "Failed";
+  orderStatus: OrderStatus;
   trackingNumber?: string;
   notes?: string;
 }
@@ -75,6 +96,117 @@ export interface StoreSettings {
   codAvailable: boolean;
   onlinePaymentAvailable: boolean;
   upiId: string;
+  adminPin: string;
+}
+
+/**
+ * WhatsApp message builder conforming to Section 7 of Shifa A Hayat requirements
+ */
+export function buildWhatsAppOrderMessage({
+  customer,
+  items,
+  subtotal,
+  shippingCharge,
+  finalAmount,
+  origin = typeof window !== "undefined" ? window.location.origin : "https://shifa-a-hayat.com",
+}: {
+  customer: CustomerDeliveryDetails;
+  items: Array<{
+    product: {
+      name: string;
+      nameHindi: string;
+      price: number;
+      id: string;
+      image: string;
+      packSize: string;
+    };
+    quantity: number;
+    packSize?: string;
+  }>;
+  subtotal: number;
+  shippingCharge: number;
+  finalAmount: number;
+  origin?: string;
+}): string {
+  let msg = "SHIFA A HAYAT — NEW ORDER REQUEST\n\n";
+  msg += "CUSTOMER DETAILS\n";
+  msg += `- Full name: ${customer.fullName}\n`;
+  msg += `- Mobile number: ${customer.phone}\n`;
+  msg += `- Complete delivery address: ${customer.addressLine}\n`;
+  msg += `- City or village: ${customer.cityVillage}\n`;
+  msg += `- State: ${customer.state}\n`;
+  msg += `- PIN code: ${customer.pincode}\n`;
+  msg += `- Country: ${customer.country || "India"}\n`;
+  if (customer.landmark && customer.landmark.trim()) {
+    msg += `- Landmark: ${customer.landmark.trim()}\n`;
+  }
+  if (customer.email && customer.email.trim()) {
+    msg += `- Email: ${customer.email.trim()}\n`;
+  }
+
+  msg += "\nPRODUCT DETAILS\n";
+  items.forEach((item, index) => {
+    const itemPrefix = items.length > 1 ? `[Product #${index + 1}] ` : "";
+    msg += `${itemPrefix}- Product name: ${item.product.name} (${item.product.nameHindi})\n`;
+    msg += `  - Product price: ₹${item.product.price}\n`;
+    msg += `  - Selected quantity: ${item.quantity}\n`;
+    msg += `  - Product variant: ${item.packSize || item.product.packSize}\n`;
+    const imgUrl = item.product.image.startsWith("http")
+      ? item.product.image
+      : `${origin}${item.product.image}`;
+    const prodUrl = `${origin}/product/${item.product.id}`;
+    msg += `  - Product image URL: ${imgUrl}\n`;
+    msg += `  - Product page URL: ${prodUrl}\n`;
+  });
+
+  msg += "\nORDER SUMMARY\n";
+  msg += `- Subtotal: ₹${subtotal}\n`;
+  msg += `- Shipping charge: ${shippingCharge === 0 ? "₹0 (Free Delivery)" : `₹${shippingCharge}`}\n`;
+  msg += `- Final amount: ₹${finalAmount}\n\n`;
+  msg += "Please review this order request and press Send to submit to Shifa A Hayat.";
+
+  return msg;
+}
+
+export function generateWhatsAppOrderUrl({
+  customer,
+  items,
+  subtotal,
+  shippingCharge,
+  finalAmount,
+  whatsappNumber,
+  origin,
+}: {
+  customer: CustomerDeliveryDetails;
+  items: Array<{
+    product: {
+      name: string;
+      nameHindi: string;
+      price: number;
+      id: string;
+      image: string;
+      packSize: string;
+    };
+    quantity: number;
+    packSize?: string;
+  }>;
+  subtotal: number;
+  shippingCharge: number;
+  finalAmount: number;
+  whatsappNumber: string;
+  origin?: string;
+}): string {
+  const message = buildWhatsAppOrderMessage({
+    customer,
+    items,
+    subtotal,
+    shippingCharge,
+    finalAmount,
+    origin,
+  });
+  const cleanPhone = whatsappNumber.replace(/[^0-9]/g, "");
+  const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+  return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
 }
 
 interface StoreContextType {
@@ -103,6 +235,11 @@ interface StoreContextType {
   wishlist: string[];
   toggleWishlist: (productId: string) => void;
   isInWishlist: (productId: string) => boolean;
+
+  // Customer Delivery Details & Consent
+  savedCustomerDetails: CustomerDeliveryDetails | null;
+  saveCustomerDetails: (details: CustomerDeliveryDetails, consent: boolean) => void;
+  clearSavedCustomerDetails: () => void;
 
   // Auth / User
   currentUser: User | null;
@@ -133,10 +270,11 @@ const DEFAULT_SETTINGS: StoreSettings = {
   country: "India",
   freeShippingThreshold: 499,
   standardShippingFee: 49,
-  announcementText: "✨ ऑल इंडिया फ्री डिलीवरी ₹499 के ऑर्डर्स पर • Cash On Delivery (COD) उपलब्ध!",
+  announcementText: "✨ ऑल इंडिया फ्री डिलीवरी ₹499 के ऑर्डर्स पर • WhatsApp Direct Ordering",
   codAvailable: true,
   onlinePaymentAvailable: true,
   upiId: "9586037331@upi",
+  adminPin: "9586",
 };
 
 const StoreContext = createContext<StoreContextType | null>(null);
@@ -489,6 +627,44 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const isInWishlist = (productId: string) => wishlist.includes(productId);
 
   // Auth actions
+  // Saved Customer Details & Consent (Section 6)
+  const [savedCustomerDetails, setSavedCustomerDetails] = useState<CustomerDeliveryDetails | null>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("shifa_saved_customer_details");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error("Failed to parse saved customer details", e);
+        }
+      }
+    }
+    return null;
+  });
+
+  const saveCustomerDetails = (details: CustomerDeliveryDetails, consent: boolean) => {
+    if (consent) {
+      setSavedCustomerDetails(details);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("shifa_saved_customer_details", JSON.stringify(details));
+      }
+      toast.success("डिलीवरी विवरण इस डिवाइस पर सुरक्षित कर लिए गए हैं");
+    } else {
+      setSavedCustomerDetails(null);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("shifa_saved_customer_details");
+      }
+    }
+  };
+
+  const clearSavedCustomerDetails = () => {
+    setSavedCustomerDetails(null);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("shifa_saved_customer_details");
+    }
+    toast.info("सहेजे गए ग्राहक विवरण हटा दिए गए हैं (Saved details cleared)");
+  };
+
   const login = (email: string, role: "customer" | "admin" = "customer") => {
     setCurrentUser({
       id: `usr-${Date.now()}`,
@@ -524,12 +700,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       ...orderData,
       id: `ORD-${Math.floor(10000 + Math.random() * 90000)}`,
       createdAt: new Date().toISOString(),
-      orderStatus: "Confirmed",
+      orderStatus: "Pending Confirmation",
+      paymentMethod: orderData.paymentMethod || "WhatsApp Direct Order",
+      paymentStatus: "Pending Confirmation",
       trackingNumber: `SHIFA-${Math.floor(100000 + Math.random() * 900000)}`,
     };
     setOrders((prev) => [newOrder, ...prev]);
     clearCart();
-    toast.success(`Order #${newOrder.id} successfully placed!`);
+    toast.success(`ऑर्डर अनुरोध #${newOrder.id} तैयार हुआ (Order Request Generated)`);
     return newOrder;
   };
 
@@ -569,6 +747,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         wishlist,
         toggleWishlist,
         isInWishlist,
+        savedCustomerDetails,
+        saveCustomerDetails,
+        clearSavedCustomerDetails,
         currentUser,
         login,
         logout,

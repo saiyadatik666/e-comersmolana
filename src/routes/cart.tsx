@@ -14,6 +14,7 @@ import {
   X,
   Plus,
   Minus,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -261,14 +262,15 @@ function CartPage() {
                 <Button
                   size="lg"
                   onClick={() => navigate({ to: "/checkout" })}
-                  className="w-full rounded-2xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold shadow-md text-sm"
+                  className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md text-sm flex items-center justify-center gap-2"
                 >
-                  <span>चेकआउट करें (Proceed to Checkout)</span>
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  <MessageCircle className="w-5 h-5 fill-white" />
+                  <span>WhatsApp पर ऑर्डर भेजें (Proceed to Order)</span>
+                  <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
 
                 <p className="text-[11px] text-center text-muted-foreground">
-                  कैश ऑन डिलीवरी (COD) एवं ऑनलाइन पेमेंट दोनों उपलब्ध हैं।
+                  डिलीवरी विवरण दर्ज करें और हकीम जी को WhatsApp पर सीधा ऑर्डर भेजें।
                 </p>
               </div>
             </div>

@@ -51,6 +51,41 @@ function AdminPage() {
   const [activeTab, setActiveTab] = useState<"overview" | "products" | "assets" | "orders" | "settings">("overview");
   const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
 
+  // Admin PIN Authentication Gate (Section 10)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("shifa_admin_authenticated") === "true";
+    }
+    return false;
+  });
+  const [pinInput, setPinInput] = useState("");
+  const [showPinError, setShowPinError] = useState(false);
+
+  const handleVerifyPin = (e: React.FormEvent) => {
+    e.preventDefault();
+    const currentPin = settings.adminPin || "9586";
+    if (pinInput.trim() === currentPin) {
+      setIsAuthenticated(true);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("shifa_admin_authenticated", "true");
+      }
+      toast.success("सुरक्षा पिन सत्यापित! एडमिन पोर्टल अनलॉक हो गया।");
+      setShowPinError(false);
+    } else {
+      setShowPinError(true);
+      toast.error("गलत सुरक्षा पिन (Incorrect Store PIN).");
+    }
+  };
+
+  const handleLogoutAdmin = () => {
+    setIsAuthenticated(false);
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("shifa_admin_authenticated");
+    }
+    setPinInput("");
+    toast.info("एडमिन पोर्टल लॉक हो गया है।");
+  };
+
   // Search in products
   const [productSearch, setProductSearch] = useState("");
 
@@ -91,6 +126,79 @@ function AdminPage() {
     updateSettings(settingsForm);
   };
 
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+
+        <main className="flex-1 max-w-md w-full mx-auto px-4 py-16 sm:py-24 flex items-center justify-center">
+          <form
+            onSubmit={handleVerifyPin}
+            className="w-full bg-card border-2 border-border rounded-3xl p-6 sm:p-8 shadow-xl text-center space-y-6"
+          >
+            <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-700 flex items-center justify-center mx-auto border-2 border-amber-500">
+              <Settings className="w-8 h-8" />
+            </div>
+
+            <div>
+              <span className="text-xs font-bold text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 px-3 py-1 rounded-full uppercase tracking-wider">
+                सुरक्षित एडमिन द्वार (Admin Gate)
+              </span>
+              <h1 className="font-serif text-2xl font-bold text-foreground mt-2">
+                हकीम जी / स्टोर व्यवस्थापक लॉगिन
+              </h1>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                यह क्षेत्र केवल अधिकृत व्यवस्थापक के लिए है। उत्पाद, 21 पोस्टर इन्वेंट्री या सेटिंग्स बदलने के लिए कृपया अपना स्टोर सुरक्षा पिन दर्ज करें।
+              </p>
+            </div>
+
+            <div className="space-y-2 text-left">
+              <Label htmlFor="admin-pin" className="text-xs font-semibold">
+                स्टोर सुरक्षा पिन (Security PIN) *
+              </Label>
+              <Input
+                id="admin-pin"
+                type="password"
+                required
+                autoFocus
+                placeholder="पिन दर्ज करें..."
+                value={pinInput}
+                onChange={(e) => {
+                  setPinInput(e.target.value);
+                  if (showPinError) setShowPinError(false);
+                }}
+                className={`text-center font-mono tracking-widest text-lg bg-secondary/50 ${
+                  showPinError ? "border-rose-500" : ""
+                }`}
+              />
+              {showPinError && (
+                <p className="text-[11px] text-rose-600 font-medium text-center">
+                  अमान्य पिन। कृपया सही स्टोर सुरक्षा पिन दर्ज करें।
+                </p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm shadow-md"
+            >
+              डैशबोर्ड अनलॉक करें (Unlock Portal)
+            </Button>
+
+            <div className="pt-2">
+              <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">
+                ← मुख्य वेबसाइट पर वापस जाएँ
+              </Link>
+            </div>
+          </form>
+        </main>
+
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -103,8 +211,8 @@ function AdminPage() {
               <span className="font-serif text-3xl font-bold text-foreground">
                 एडमिन डैशबोर्ड (Admin Portal)
               </span>
-              <Badge className="bg-amber-600 text-white font-bold text-[10px]">
-                Authorized
+              <Badge className="bg-emerald-700 text-white font-bold text-[10px]">
+                Authorized Active
               </Badge>
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
@@ -118,6 +226,14 @@ function AdminPage() {
                 दुकान देखें (View Storefront)
               </Button>
             </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogoutAdmin}
+              className="rounded-xl text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950"
+            >
+              पोर्टल लॉक करें (Lock Admin)
+            </Button>
           </div>
         </div>
 
@@ -498,9 +614,10 @@ function AdminPage() {
                             onChange={(e) => updateOrderStatus(ord.id, e.target.value as any)}
                             className="bg-secondary border border-border rounded-lg text-xs py-1 px-2 font-semibold"
                           >
-                            <option value="Placed">Placed</option>
+                            <option value="Pending Confirmation">Pending Confirmation</option>
                             <option value="Confirmed">Confirmed</option>
-                            <option value="Dispatched">Dispatched</option>
+                            <option value="Processing">Processing</option>
+                            <option value="Shipped">Shipped</option>
                             <option value="Delivered">Delivered</option>
                             <option value="Cancelled">Cancelled</option>
                           </select>
@@ -610,6 +727,21 @@ function AdminPage() {
                 }
                 className="text-xs"
               />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">एडमिन सुरक्षा पिन (Admin Security PIN)</Label>
+              <Input
+                type="text"
+                value={settingsForm.adminPin || "9586"}
+                onChange={(e) =>
+                  setSettingsForm({ ...settingsForm, adminPin: e.target.value })
+                }
+                className="text-xs font-mono font-bold"
+              />
+              <p className="text-[10px] text-muted-foreground">
+                पोर्टल अनलॉक करने के लिए आवश्यक गुप्त पिन (Default: 9586)
+              </p>
             </div>
 
             <Button type="submit" className="rounded-xl text-xs font-bold px-6">

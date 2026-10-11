@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ProductPosterModal } from "@/components/product/ProductPosterModal";
 import { ProductCard } from "@/components/product/ProductCard";
+import { QuickBuyModal } from "@/components/checkout/QuickBuyModal";
 import {
   ShoppingBag,
   Heart,
@@ -37,6 +38,7 @@ function ProductDetailPage() {
   const product = products.find((p) => p.id === id) || products[0];
   const [quantity, setQuantity] = useState(1);
   const [showPosterModal, setShowPosterModal] = useState(false);
+  const [showQuickBuy, setShowQuickBuy] = useState(false);
   const [added, setAdded] = useState(false);
 
   const inWish = isInWishlist(product.id);
@@ -48,8 +50,7 @@ function ProductDetailPage() {
   };
 
   const handleBuyNow = () => {
-    addToCart(product, quantity);
-    navigate({ to: "/checkout" });
+    setShowQuickBuy(true);
   };
 
   // Related products from same category
@@ -423,6 +424,40 @@ function ProductDetailPage() {
         product={showPosterModal ? product : null}
         onClose={() => setShowPosterModal(false)}
       />
+
+      {/* Instant Direct Buy Modal */}
+      <QuickBuyModal
+        product={product}
+        quantity={quantity}
+        isOpen={showQuickBuy}
+        onClose={() => setShowQuickBuy(false)}
+      />
+
+      {/* Mobile Sticky Buy Action Bar (Amazon / Flipkart / Meesho Style) */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t border-border p-3 flex items-center justify-between gap-3 shadow-lg">
+        <div>
+          <span className="text-[10px] text-muted-foreground block">कुल मूल्य</span>
+          <span className="text-base font-bold text-primary">₹{product.price * quantity}</span>
+        </div>
+        <div className="flex gap-2 flex-1 justify-end">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleAddToCart}
+            className="text-xs rounded-xl px-3"
+          >
+            <ShoppingBag className="w-3.5 h-3.5 mr-1" />
+            <span>{added ? "जुड़ गया" : "कार्ट"}</span>
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleBuyNow}
+            className="text-xs rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold px-4"
+          >
+            <span>अभी खरीदें</span>
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

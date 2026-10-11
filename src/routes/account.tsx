@@ -170,15 +170,25 @@ function AccountPage() {
                         className={`text-xs font-semibold ${
                           order.orderStatus === "Delivered"
                             ? "bg-emerald-600 text-white"
-                            : order.orderStatus === "Dispatched"
+                            : order.orderStatus === "Shipped"
+                            ? "bg-purple-600 text-white"
+                            : order.orderStatus === "Processing"
+                            ? "bg-indigo-600 text-white"
+                            : order.orderStatus === "Confirmed"
                             ? "bg-blue-600 text-white"
+                            : order.orderStatus === "Cancelled"
+                            ? "bg-rose-600 text-white"
                             : "bg-amber-600 text-white"
                         }`}
                       >
                         {order.orderStatus}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
-                        {order.paymentMethod === "COD" ? "कैश ऑन डिलीवरी" : "ऑनलाइन UPI"}
+                        {order.paymentMethod === "WhatsApp Direct Order"
+                          ? "WhatsApp ऑर्डर अनुरोध"
+                          : order.paymentMethod === "COD"
+                          ? "कैश ऑन डिलीवरी"
+                          : "ऑनलाइन UPI"}
                       </span>
                     </div>
                   </div>
