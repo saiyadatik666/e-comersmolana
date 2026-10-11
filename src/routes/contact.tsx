@@ -53,9 +53,9 @@ function ContactPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 items-start">
           {/* Contact Details Card */}
-          <div className="lg:col-span-5 bg-card border border-border rounded-3xl p-4 sm:p-8 space-y-6 shadow-xs">
+          <div className="md:col-span-5 bg-card border border-border rounded-3xl p-4 sm:p-8 space-y-6 shadow-xs">
             <h3 className="font-serif text-xl font-bold text-foreground border-b border-border pb-3">
               दुकान का पता व संपर्क
             </h3>
@@ -136,7 +136,7 @@ function ContactPage() {
           </div>
 
           {/* Consultation Form */}
-          <div className="lg:col-span-7 bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-xs">
+          <div className="md:col-span-7 bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-xs">
             {sent ? (
               <div className="text-center py-12 space-y-4">
                 <div className="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 flex items-center justify-center mx-auto">

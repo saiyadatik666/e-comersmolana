@@ -71,9 +71,9 @@ function CartPage() {
         </div>
 
         {cart.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 items-start">
             {/* Left: Cart Items List */}
-            <div className="lg:col-span-8 space-y-4">
+            <div className="md:col-span-7 lg:col-span-8 space-y-4">
               {/* Free Shipping Progress Indicator */}
               <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-4">
                 <div className="flex items-center justify-between text-xs font-semibold text-emerald-900 dark:text-emerald-200 mb-2">
@@ -189,7 +189,7 @@ function CartPage() {
             </div>
 
             {/* Right: Order Summary Card */}
-            <div className="lg:col-span-4 bg-card border border-border rounded-3xl p-4 sm:p-6 shadow-sm space-y-5 sticky top-24">
+            <div className="md:col-span-5 lg:col-span-4 bg-card border border-border rounded-3xl p-4 sm:p-6 shadow-sm space-y-5 md:sticky md:top-24">
               <h2 className="font-serif text-xl font-bold text-foreground border-b border-border pb-3">
                 ऑर्डर सारांश (Order Summary)
               </h2>

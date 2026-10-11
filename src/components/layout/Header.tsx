@@ -97,25 +97,25 @@ export const Header: React.FC = () => {
           </div>
         </Link>
 
-        {/* Desktop Search Bar */}
-        <div className="hidden lg:flex flex-1 max-w-md relative mx-4">
+        {/* Desktop & Tablet Search Bar */}
+        <div className="hidden md:flex flex-1 max-w-xs lg:max-w-md relative mx-2 lg:mx-4">
           <form onSubmit={handleSearchSubmit} className="w-full relative">
             <Input
               type="text"
-              placeholder="सर्च करें: ज़ाफरानी गोल्ड, हब्बे हवा, हेअर ऑयल, दर्द निवारण..."
+              placeholder="सर्च करें: ज़ाफरानी, तेल, दर्द..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
-              className="w-full pl-10 pr-10 py-2 bg-secondary/50 border-border/80 focus:bg-background rounded-full text-sm"
+              className="w-full pl-9 pr-9 py-2 bg-secondary/50 border-border/80 focus:bg-background rounded-full text-xs sm:text-sm h-9 sm:h-10"
             />
-            <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
                 aria-label="Clear search"
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -152,8 +152,8 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-          {/* WhatsApp Direct Consult Button (Desktop & Tablet) */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          {/* WhatsApp Direct Consult Button (Large Tablet & Desktop) */}
           <a
             href={formatWhatsAppUrl(
               settings.whatsapp,
@@ -161,7 +161,7 @@ export const Header: React.FC = () => {
             )}
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold bg-emerald-600/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-600/20 border border-emerald-600/30 transition-colors min-h-[40px]"
+            className="hidden xl:inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold bg-emerald-600/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-600/20 border border-emerald-600/30 transition-colors min-h-[40px]"
           >
             <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>हकीम जी से सलाह</span>
@@ -196,19 +196,19 @@ export const Header: React.FC = () => {
                 </span>
               )}
             </div>
-            <span className="hidden md:inline text-xs font-bold ml-1">Cart</span>
+            <span className="hidden sm:inline text-xs font-bold ml-1">Cart</span>
           </Link>
 
           {/* Account / Admin Link */}
           <Link
             to="/admin"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-secondary hover:bg-secondary/80 text-foreground transition-colors border border-border min-h-[40px]"
+            className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-secondary hover:bg-secondary/80 text-foreground transition-colors border border-border min-h-[40px]"
           >
             <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
             <span>Admin</span>
           </Link>
 
-          {/* Mobile Menu Toggle */}
+          {/* Mobile & Tablet Menu Toggle */}
           <Button
             variant="ghost"
             size="icon"
@@ -221,8 +221,8 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Prominent Mobile Search Bar (Flipkart / Meesho / Amazon style) */}
-      <div className="lg:hidden px-3 pb-2.5 pt-0">
+      {/* Mobile-only Search Bar (Phones < 768px) */}
+      <div className="md:hidden px-3 pb-2.5 pt-0">
         <form onSubmit={handleSearchSubmit} className="relative">
           <Input
             type="text"
@@ -247,8 +247,8 @@ export const Header: React.FC = () => {
 
       {/* Desktop Navigation Links */}
       <nav className="hidden lg:block border-t border-border/40 bg-secondary/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between text-sm font-medium">
-          <div className="flex items-center gap-7 py-2.5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between text-sm font-medium overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-4 xl:gap-7 py-2.5 whitespace-nowrap">
             <Link
               to="/"
               className="text-foreground hover:text-primary transition-colors font-medium"
@@ -315,13 +315,13 @@ export const Header: React.FC = () => {
 
       {/* Mobile Drawer Navigation with Backdrop Overlay */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end">
+        <div className="lg:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end p-0 sm:p-4">
           <div
             className="fixed inset-0"
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden="true"
           />
-          <div className="relative bg-background border-t border-border rounded-t-3xl max-h-[85vh] overflow-y-auto px-4 pt-4 pb-8 space-y-4 shadow-2xl animate-in slide-in-from-bottom duration-300">
+          <div className="relative bg-background border border-border rounded-t-3xl sm:rounded-3xl max-w-lg w-full mx-auto max-h-[85vh] overflow-y-auto px-4 pt-4 pb-8 space-y-4 shadow-2xl animate-in slide-in-from-bottom duration-300">
             {/* Drawer Header */}
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">

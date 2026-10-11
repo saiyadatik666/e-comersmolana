@@ -74,9 +74,9 @@ function CheckoutPage() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 items-start">
             {/* Left Column: Customer Details & WhatsApp Order Request (Section 6 & 7) */}
-            <div className="lg:col-span-7">
+            <div className="md:col-span-7">
               <CustomerDetailsForm
                 items={cart}
                 subtotal={cartSubtotal}
@@ -87,7 +87,7 @@ function CheckoutPage() {
             </div>
 
             {/* Right Column: Order Summary & Amazon/Flipkart/Meesho Trust Card */}
-            <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
+            <div className="md:col-span-5 space-y-6 md:sticky md:top-24">
               {/* Order Items Review Box */}
               <div className="bg-card border border-border rounded-3xl p-4 sm:p-6 shadow-xs space-y-4">
                 <div className="flex items-center justify-between border-b border-border pb-3">

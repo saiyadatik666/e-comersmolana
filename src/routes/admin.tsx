@@ -238,64 +238,64 @@ function AdminPage() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex border-b border-border mb-8 gap-2 overflow-x-auto text-xs sm:text-sm font-semibold">
+        <div className="flex border-b border-border mb-8 gap-2 overflow-x-auto scrollbar-none pb-1 text-xs sm:text-sm font-semibold">
           <button
             onClick={() => setActiveTab("overview")}
-            className={`flex items-center gap-2 py-3 px-4 border-b-2 whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-2 py-3 px-4 border-b-2 whitespace-nowrap shrink-0 transition-colors ${
               activeTab === "overview"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            <TrendingUp className="w-4 h-4" />
+            <TrendingUp className="w-4 h-4 shrink-0" />
             <span>डैशबोर्ड सांख्यिकी (Overview)</span>
           </button>
 
           <button
             onClick={() => setActiveTab("products")}
-            className={`flex items-center gap-2 py-3 px-4 border-b-2 whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-2 py-3 px-4 border-b-2 whitespace-nowrap shrink-0 transition-colors ${
               activeTab === "products"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Package className="w-4 h-4" />
+            <Package className="w-4 h-4 shrink-0" />
             <span>उत्पाद प्रबंधन ({products.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab("assets")}
-            className={`flex items-center gap-2 py-3 px-4 border-b-2 whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-2 py-3 px-4 border-b-2 whitespace-nowrap shrink-0 transition-colors ${
               activeTab === "assets"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            <ImageIcon className="w-4 h-4" />
+            <ImageIcon className="w-4 h-4 shrink-0" />
             <span>21 पोस्टर इन्वेंट्री (molana.zip Assets)</span>
           </button>
 
           <button
             onClick={() => setActiveTab("orders")}
-            className={`flex items-center gap-2 py-3 px-4 border-b-2 whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-2 py-3 px-4 border-b-2 whitespace-nowrap shrink-0 transition-colors ${
               activeTab === "orders"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            <ShoppingBag className="w-4 h-4" />
+            <ShoppingBag className="w-4 h-4 shrink-0" />
             <span>ग्राहक ऑर्डर्स ({orders.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab("settings")}
-            className={`flex items-center gap-2 py-3 px-4 border-b-2 whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-2 py-3 px-4 border-b-2 whitespace-nowrap shrink-0 transition-colors ${
               activeTab === "settings"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Settings className="w-4 h-4" />
+            <Settings className="w-4 h-4 shrink-0" />
             <span>स्टोर सेटिंग्स</span>
           </button>
         </div>
@@ -424,7 +424,7 @@ function AdminPage() {
             {/* Products Table */}
             <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-xs">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+                <table className="w-full text-left text-xs min-w-[640px]">
                   <thead className="bg-secondary/60 text-muted-foreground font-semibold border-b border-border">
                     <tr>
                       <th className="py-3 px-4">फोटो</th>
@@ -565,7 +565,7 @@ function AdminPage() {
           <div className="space-y-6">
             <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-xs">
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+                <table className="w-full text-left text-xs min-w-[700px]">
                   <thead className="bg-secondary/60 text-muted-foreground font-semibold border-b border-border">
                     <tr>
                       <th className="py-3 px-4">ऑर्डर नंबर</th>

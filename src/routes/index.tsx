@@ -58,9 +58,9 @@ function IndexPage() {
           <div className="absolute -top-32 -right-32 w-96 h-96 bg-emerald-600/30 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="max-w-7xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          <div className="max-w-7xl mx-auto relative z-10 grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 items-center">
             {/* Left Hero Content */}
-            <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
+            <div className="md:col-span-7 space-y-6 text-center md:text-left">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-800/80 border border-emerald-600/40 text-amber-300 text-xs font-semibold backdrop-blur-xs">
                 <Sparkles className="w-4 h-4" />
                 <span>हकीम इनायत अहमदी (पालनपुर, गुजरात) के प्रमाणित नुस्खे</span>
@@ -71,12 +71,12 @@ function IndexPage() {
                 <span className="text-amber-400 italic">सच्ची शिफा</span> व भरपूर ताकत
               </h1>
 
-              <p className="text-stone-300 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto lg:mx-0">
+              <p className="text-stone-300 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto md:mx-0">
                 शिफा ए हयात (Shifa A Hayat) पर आपका स्वागत है। हमारे पास मर्दाना ताकत, पेट व पाचन समस्या, जोड़ों व कमर का दर्द, और शास्त्रीय यूनानी अर्क के 100% सुरक्षित और प्राकृतिक नुस्खे उपलब्ध हैं।
               </p>
 
               {/* CTAs */}
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3.5 pt-2">
+              <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-3.5 pt-2">
                 <Link to="/shop">
                   <Button
                     size="lg"
@@ -129,7 +129,7 @@ function IndexPage() {
             </div>
 
             {/* Right Hero Product Feature Card */}
-            <div className="lg:col-span-5 flex justify-center">
+            <div className="md:col-span-5 flex justify-center">
               <div className="relative max-w-sm w-full bg-stone-900/90 border border-emerald-600/40 rounded-3xl p-4 shadow-2xl backdrop-blur-md">
                 <div className="absolute -top-3 left-6">
                   <Badge className="bg-amber-500 text-stone-950 font-bold px-3 py-1 shadow-md">
@@ -183,7 +183,7 @@ function IndexPage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
               {/* Product 1: Arq Abe Hayat ₹250 */}
               <div className="bg-card border-2 border-amber-500/40 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col xs:flex-row gap-3 sm:gap-4 items-center xs:items-start text-center xs:text-left">
                 <img
@@ -302,8 +302,8 @@ function IndexPage() {
             ))}
           </div>
 
-          {/* Filtered Products Grid (2-column on mobile) */}
-          <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 mt-6 sm:mt-8">
+          {/* Filtered Products Grid (2-col mobile, 3-col tablet, 4-col desktop) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6 mt-6 sm:mt-8">
             {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
@@ -325,8 +325,8 @@ function IndexPage() {
 
         {/* HAKEEM INAYAT AHMADI HERITAGE SECTION */}
         <section className="py-16 bg-stone-900 text-stone-100 border-y border-stone-800 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            <div className="lg:col-span-5 relative">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-10 items-center">
+            <div className="md:col-span-5 relative">
               <div className="relative rounded-3xl overflow-hidden border border-emerald-500/30 p-2 bg-stone-950/80 shadow-2xl">
                 <img
                   src="/assets/molana/IMG-20261009-WA0023.jpg"
@@ -344,7 +344,7 @@ function IndexPage() {
               </div>
             </div>
 
-            <div className="lg:col-span-7 space-y-5">
+            <div className="md:col-span-7 space-y-5">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950 border border-emerald-700/50 text-emerald-300 text-xs font-semibold">
                 <Award className="w-3.5 h-3.5" />
                 <span>पारंपरिक यूनानी व आयुर्वेदिक विरासत</span>

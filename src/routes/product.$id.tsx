@@ -91,10 +91,10 @@ function ProductDetailPage() {
           </span>
         </nav>
 
-        {/* Product Hero Section (2-Column) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        {/* Product Hero Section (2-Column on Tablet & Desktop) */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 lg:gap-10">
           {/* Left Column: High-Res Poster Image Viewer */}
-          <div className="lg:col-span-6 space-y-4">
+          <div className="md:col-span-5 lg:col-span-6 space-y-4">
             <div className="relative aspect-4/5 rounded-3xl overflow-hidden bg-secondary/30 border border-border shadow-md group">
               <img
                 src={product.image}
@@ -134,7 +134,7 @@ function ProductDetailPage() {
           </div>
 
           {/* Right Column: Information, Pricing, Dosage, Ordering */}
-          <div className="lg:col-span-6 space-y-6">
+          <div className="md:col-span-7 lg:col-span-6 space-y-6">
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Badge className="bg-emerald-800 text-emerald-100 font-medium text-xs">
@@ -307,8 +307,8 @@ function ProductDetailPage() {
         </div>
 
         {/* Detailed Tabs / Accordion for Description, Benefits & Ingredients */}
-        <div className="mt-16 grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-8 space-y-8">
+        <div className="mt-12 sm:mt-16 grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
+          <div className="md:col-span-7 lg:col-span-8 space-y-8">
             {/* Description & Heritage */}
             <div className="bg-card border border-border rounded-3xl p-6 sm:p-8 space-y-4">
               <h2 className="font-serif text-2xl font-bold text-foreground">
@@ -367,7 +367,7 @@ function ProductDetailPage() {
           </div>
 
           {/* Hakim Ji Contact & Order Card on Side */}
-          <div className="lg:col-span-4 space-y-6">
+          <div className="md:col-span-5 lg:col-span-4 space-y-6">
             <div className="bg-stone-900 text-stone-200 rounded-3xl p-6 border border-stone-800 space-y-4">
               <div className="w-12 h-12 rounded-xl bg-emerald-800/80 text-amber-300 flex items-center justify-center border border-amber-400/40">
                 <Sparkles className="w-6 h-6" />
@@ -411,7 +411,7 @@ function ProductDetailPage() {
             <h2 className="font-serif text-2xl font-bold text-foreground mb-6">
               इसी श्रेणी के अन्य प्रमाणित उत्पाद
             </h2>
-            <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
               {relatedProducts.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}

@@ -120,9 +120,9 @@ function ShopPage() {
 
         {/* Filter Controls Bar */}
         <div className="bg-card border border-border rounded-2xl p-4 mb-8 shadow-xs space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
             {/* Search Input */}
-            <div className="md:col-span-5 relative">
+            <div className="sm:col-span-12 md:col-span-5 relative">
               <Input
                 type="text"
                 placeholder="उत्पाद खोजें (जैसे: ज़ाफरानी, हब्बे हवा, तेल, दर्द...)"
@@ -142,7 +142,7 @@ function ShopPage() {
             </div>
 
             {/* Category Select on mobile / small screens */}
-            <div className="md:col-span-4">
+            <div className="sm:col-span-6 md:col-span-4">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="w-full bg-secondary/40 rounded-xl text-xs sm:text-sm">
                   <SelectValue placeholder="श्रेणी चुनें" />
@@ -158,7 +158,7 @@ function ShopPage() {
             </div>
 
             {/* Sort Select */}
-            <div className="md:col-span-3">
+            <div className="sm:col-span-6 md:col-span-3">
               <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
                 <SelectTrigger className="w-full bg-secondary/40 rounded-xl text-xs sm:text-sm">
                   <SelectValue placeholder="क्रमबद्ध करें" />
@@ -191,9 +191,9 @@ function ShopPage() {
           </div>
         </div>
 
-        {/* Product Grid (2-column on mobile, up to 4-column on desktop) */}
+        {/* Product Grid (2-column on mobile, 3-column on tablet, 4-column on desktop) */}
         {filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
             {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
