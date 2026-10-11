@@ -12,6 +12,8 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { Toaster } from "@/components/ui/sonner";
+import { StoreProvider } from "@/context/StoreContext";
 
 function NotFoundComponent() {
   return (
@@ -78,16 +80,37 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Shifa A Hayat — Premium Ayurvedic & Unani Wellness" },
+      {
+        name: "description",
+        content:
+          "Authentic Ayurvedic & Unani herbal wellness formulations by Hakeem Inayat Ahmadi (Palanpur, Gujarat). Pure natural remedies with All-India delivery and Cash on Delivery.",
+      },
+      { name: "author", content: "Shifa A Hayat" },
+      { property: "og:title", content: "Shifa A Hayat — Premium Ayurvedic & Unani Store" },
+      {
+        property: "og:description",
+        content:
+          "Experience pure herbal formulations crafted by Hakeem Inayat Ahmadi. Trusted wellness, hair care, vitality tonics and natural healthcare.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "theme-color", content: "#14532d" },
     ],
     links: [
+      {
+        rel: "preconnect",
+        href: "https://fonts.googleapis.com",
+      },
+      {
+        rel: "preconnect",
+        href: "https://fonts.gstatic.com",
+        crossOrigin: "anonymous",
+      },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,600&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap",
+      },
       {
         rel: "stylesheet",
         href: appCss,
@@ -107,8 +130,9 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body className="min-h-screen bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary">
         {children}
+        <Toaster richColors position="top-right" />
         <Scripts />
       </body>
     </html>
@@ -120,8 +144,9 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <StoreProvider>
+        <Outlet />
+      </StoreProvider>
     </QueryClientProvider>
   );
 }

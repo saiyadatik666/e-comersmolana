@@ -1,0 +1,757 @@
+import React, { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useStore, Order } from "@/context/StoreContext";
+import { Product, CATEGORIES } from "@/data/products";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+import { ProductPosterModal } from "@/components/product/ProductPosterModal";
+import {
+  SlidersHorizontal,
+  Package,
+  ShoppingBag,
+  DollarSign,
+  TrendingUp,
+  Image as ImageIcon,
+  Settings,
+  Plus,
+  Edit,
+  Trash2,
+  CheckCircle,
+  Clock,
+  Eye,
+  Truck,
+  Phone,
+  MessageCircle,
+  Save,
+  Search,
+  Filter,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/admin")({
+  component: AdminPage,
+});
+
+function AdminPage() {
+  const {
+    products,
+    updateProduct,
+    addProduct,
+    deleteProduct,
+    orders,
+    updateOrderStatus,
+    settings,
+    updateSettings,
+  } = useStore();
+
+  const [activeTab, setActiveTab] = useState<"overview" | "products" | "assets" | "orders" | "settings">("overview");
+  const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
+
+  // Search in products
+  const [productSearch, setProductSearch] = useState("");
+
+  // Product Edit Modal
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isNewProduct, setIsNewProduct] = useState(false);
+
+  // Settings local state
+  const [settingsForm, setSettingsForm] = useState(settings);
+
+  // Stats
+  const totalSales = orders.reduce((sum, ord) => sum + ord.total, 0);
+  const totalOrders = orders.length;
+  const publishedProducts = products.filter((p) => p.status === "published").length;
+  const lowStockCount = products.filter((p) => p.stockCount <= 30).length;
+
+  const filteredProducts = products.filter(
+    (p) =>
+      p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+      p.nameHindi.includes(productSearch) ||
+      p.category.toLowerCase().includes(productSearch.toLowerCase())
+  );
+
+  const handleSaveProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+
+    if (isNewProduct) {
+      addProduct(editingProduct);
+    } else {
+      updateProduct(editingProduct);
+    }
+    setEditingProduct(null);
+  };
+
+  const handleSaveSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateSettings(settingsForm);
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      <Header />
+
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        {/* Admin Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 border-b border-border pb-6">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-serif text-3xl font-bold text-foreground">
+                एडमिन डैशबोर्ड (Admin Portal)
+              </span>
+              <Badge className="bg-amber-600 text-white font-bold text-[10px]">
+                Authorized
+              </Badge>
+            </div>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+              उत्पाद प्रबंधन, 21 पोस्टर इन्वेंट्री, ऑर्डर्स और स्टोर सेटिंग्स।
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link to="/shop">
+              <Button variant="outline" size="sm" className="rounded-xl text-xs">
+                दुकान देखें (View Storefront)
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Navigation Tabs */}
+        <div className="flex border-b border-border mb-8 gap-2 overflow-x-auto text-xs sm:text-sm font-semibold">
+          <button
+            onClick={() => setActiveTab("overview")}
+            className={`flex items-center gap-2 py-3 px-4 border-b-2 whitespace-nowrap transition-colors ${
+              activeTab === "overview"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <TrendingUp className="w-4 h-4" />
+            <span>डैशबोर्ड सांख्यिकी (Overview)</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("products")}
+            className={`flex items-center gap-2 py-3 px-4 border-b-2 whitespace-nowrap transition-colors ${
+              activeTab === "products"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Package className="w-4 h-4" />
+            <span>उत्पाद प्रबंधन ({products.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("assets")}
+            className={`flex items-center gap-2 py-3 px-4 border-b-2 whitespace-nowrap transition-colors ${
+              activeTab === "assets"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <ImageIcon className="w-4 h-4" />
+            <span>21 पोस्टर इन्वेंट्री (molana.zip Assets)</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("orders")}
+            className={`flex items-center gap-2 py-3 px-4 border-b-2 whitespace-nowrap transition-colors ${
+              activeTab === "orders"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <ShoppingBag className="w-4 h-4" />
+            <span>ग्राहक ऑर्डर्स ({orders.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("settings")}
+            className={`flex items-center gap-2 py-3 px-4 border-b-2 whitespace-nowrap transition-colors ${
+              activeTab === "settings"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            <span>स्टोर सेटिंग्स</span>
+          </button>
+        </div>
+
+        {/* TAB 1: OVERVIEW */}
+        {activeTab === "overview" && (
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-card border border-border rounded-2xl p-5 shadow-xs space-y-2">
+                <span className="text-xs text-muted-foreground font-semibold">कुल बिक्री (Total Sales)</span>
+                <p className="font-serif text-3xl font-bold text-primary">₹{totalSales}</p>
+                <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
+                  {orders.length} ऑर्डर्स से संकलित
+                </span>
+              </div>
+
+              <div className="bg-card border border-border rounded-2xl p-5 shadow-xs space-y-2">
+                <span className="text-xs text-muted-foreground font-semibold">कुल ऑर्डर्स (Orders)</span>
+                <p className="font-serif text-3xl font-bold text-foreground">{totalOrders}</p>
+                <span className="text-[11px] text-muted-foreground">
+                  कैश ऑन डिलीवरी एवं ऑनलाइन
+                </span>
+              </div>
+
+              <div className="bg-card border border-border rounded-2xl p-5 shadow-xs space-y-2">
+                <span className="text-xs text-muted-foreground font-semibold">प्रमाणित उत्पाद (Catalog)</span>
+                <p className="font-serif text-3xl font-bold text-foreground">{publishedProducts}</p>
+                <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
+                  21 पोस्टर में से सभी सक्रिय
+                </span>
+              </div>
+
+              <div className="bg-card border border-border rounded-2xl p-5 shadow-xs space-y-2">
+                <span className="text-xs text-muted-foreground font-semibold">कम स्टॉक अलर्ट</span>
+                <p className="font-serif text-3xl font-bold text-amber-600">{lowStockCount}</p>
+                <span className="text-[11px] text-muted-foreground">
+                  पुनः निर्माण आवश्यक उत्पाद
+                </span>
+              </div>
+            </div>
+
+            {/* Recent Orders Overview */}
+            <div className="bg-card border border-border rounded-3xl p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <h3 className="font-serif text-lg font-bold text-foreground">
+                  हालिया ऑर्डर्स (Recent Orders)
+                </h3>
+                <button
+                  onClick={() => setActiveTab("orders")}
+                  className="text-xs font-semibold text-primary hover:underline"
+                >
+                  सभी देखें →
+                </button>
+              </div>
+
+              <div className="divide-y divide-border">
+                {orders.slice(0, 5).map((ord) => (
+                  <div key={ord.id} className="py-3 flex items-center justify-between text-xs">
+                    <div>
+                      <span className="font-bold text-foreground">#{ord.id}</span> • {ord.customerName} ({ord.customerPhone})
+                      <p className="text-[11px] text-muted-foreground">
+                        {ord.items.length} उत्पाद • {ord.paymentMethod} • {ord.shippingAddress.city}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-primary">₹{ord.total}</span>
+                      <Badge className="text-[10px]">{ord.orderStatus}</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: PRODUCT MANAGEMENT */}
+        {activeTab === "products" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="relative max-w-sm w-full">
+                <Input
+                  type="text"
+                  placeholder="उत्पाद खोजें..."
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  className="pl-9 text-xs"
+                />
+                <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+              </div>
+
+              <Button
+                onClick={() => {
+                  setIsNewProduct(true);
+                  setEditingProduct({
+                    id: `shifa-custom-${Date.now()}`,
+                    slug: `new-product-${Date.now()}`,
+                    name: "नया हर्बल उत्पाद",
+                    nameHindi: "नया हर्बल उत्पाद",
+                    subtitle: "शुद्ध आयुर्वेदिक नुस्खा",
+                    category: "mens-wellness",
+                    categoryHindi: "पुरुष स्वास्थ्य",
+                    price: 500,
+                    compareAtPrice: 650,
+                    rating: 4.8,
+                    reviewCount: 1,
+                    image: "/assets/molana/IMG-20261009-WA0003.jpg",
+                    imageName: "IMG-20261009-WA0003.jpg",
+                    packSize: "60 Capsules",
+                    inStock: true,
+                    stockCount: 50,
+                    isVerifiedPrice: false,
+                    status: "published",
+                    dosage: "1-2 गोली दिन में दो बार",
+                    description: "हकीम इनायत अहमदी द्वारा तैयार शुद्ध नुस्खा।",
+                    benefits: ["ताकत और स्फूर्ति", "प्राकृतिक संतुलन"],
+                    ingredients: ["शुद्ध जड़ी-बूटी"],
+                  });
+                }}
+                className="rounded-xl text-xs"
+              >
+                <Plus className="w-4 h-4 mr-1.5" />
+                <span>नया उत्पाद जोड़ें (Add Product)</span>
+              </Button>
+            </div>
+
+            {/* Products Table */}
+            <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-secondary/60 text-muted-foreground font-semibold border-b border-border">
+                    <tr>
+                      <th className="py-3 px-4">फोटो</th>
+                      <th className="py-3 px-4">उत्पाद का नाम</th>
+                      <th className="py-3 px-4">श्रेणी</th>
+                      <th className="py-3 px-4">मूल्य (Price)</th>
+                      <th className="py-3 px-4">स्टॉक</th>
+                      <th className="py-3 px-4">स्थिति</th>
+                      <th className="py-3 px-4 text-right">कार्य (Actions)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {filteredProducts.map((p) => (
+                      <tr key={p.id} className="hover:bg-secondary/30 transition-colors">
+                        <td className="py-3 px-4">
+                          <img
+                            src={p.image}
+                            alt={p.name}
+                            className="w-10 h-12 object-cover rounded-md border"
+                          />
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="font-bold text-foreground block">{p.name}</span>
+                          <span className="text-[11px] text-muted-foreground">{p.nameHindi}</span>
+                          {p.isVerifiedPrice && (
+                            <span className="text-[9px] bg-amber-500/20 text-amber-700 px-1.5 py-0.2 rounded font-semibold inline-block mt-0.5">
+                              पोस्टर प्रमाणित मूल्य
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-stone-600 dark:text-stone-300">
+                          {p.categoryHindi}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="font-bold text-primary text-sm">₹{p.price}</span>
+                          {p.compareAtPrice && (
+                            <span className="text-[10px] text-muted-foreground line-through block">
+                              ₹{p.compareAtPrice}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className={`font-semibold ${
+                              p.stockCount <= 30 ? "text-amber-600" : "text-emerald-700"
+                            }`}
+                          >
+                            {p.stockCount} उपलब्ध
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <Badge
+                            className={`text-[10px] ${
+                              p.status === "published"
+                                ? "bg-emerald-700 text-white"
+                                : "bg-stone-500 text-white"
+                            }`}
+                          >
+                            {p.status}
+                          </Badge>
+                        </td>
+                        <td className="py-3 px-4 text-right space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setIsNewProduct(false);
+                              setEditingProduct(p);
+                            }}
+                            className="text-xs h-7 px-2"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteProduct(p.id)}
+                            className="text-xs h-7 px-2 text-rose-600 hover:text-rose-700"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: 21 ASSETS INVENTORY */}
+        {activeTab === "assets" && (
+          <div className="space-y-6">
+            <div className="bg-card border border-border rounded-2xl p-5 shadow-xs">
+              <h3 className="font-serif text-lg font-bold text-foreground mb-1">
+                molana.zip प्रारंभिक प्रचार पोस्टर इन्वेंट्री (21 JPG Images)
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                प्रत्येक पोस्टर का निरीक्षण कर उत्पाद डेटाबेस से जोड़ा गया है। क्लिक करके मूल पोस्टर का पूर्ण रिज़ॉल्यूशन देखें।
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {products.map((p, idx) => (
+                <div
+                  key={p.id}
+                  onClick={() => setSelectedPoster(p)}
+                  className="bg-card border border-border rounded-2xl overflow-hidden p-2.5 shadow-xs hover:shadow-lg transition-all cursor-pointer group flex flex-col justify-between"
+                >
+                  <div className="aspect-4/5 rounded-xl overflow-hidden bg-secondary mb-2 relative">
+                    <img
+                      src={p.image}
+                      alt={p.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs font-semibold gap-1">
+                      <Eye className="w-4 h-4" />
+                      <span>बड़ा करें</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-0.5 text-center">
+                    <span className="text-[10px] text-muted-foreground block truncate">
+                      #{idx + 1} {p.imageName}
+                    </span>
+                    <h4 className="font-bold text-xs text-foreground truncate">{p.name}</h4>
+                    <span className="text-xs font-semibold text-primary">₹{p.price}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: ORDERS MANAGEMENT */}
+        {activeTab === "orders" && (
+          <div className="space-y-6">
+            <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-secondary/60 text-muted-foreground font-semibold border-b border-border">
+                    <tr>
+                      <th className="py-3 px-4">ऑर्डर नंबर</th>
+                      <th className="py-3 px-4">ग्राहक व संपर्क</th>
+                      <th className="py-3 px-4">सामान (Items)</th>
+                      <th className="py-3 px-4">डिलीवरी पता</th>
+                      <th className="py-3 px-4">कुल राशि</th>
+                      <th className="py-3 px-4">भुगतान</th>
+                      <th className="py-3 px-4">स्थिति बदलें</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {orders.map((ord) => (
+                      <tr key={ord.id} className="hover:bg-secondary/30 transition-colors">
+                        <td className="py-3 px-4 font-bold text-foreground">
+                          #{ord.id}
+                          <span className="block text-[10px] text-muted-foreground font-normal">
+                            {new Date(ord.createdAt).toLocaleDateString()}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="font-bold text-foreground block">{ord.customerName}</span>
+                          <span className="text-stone-500">{ord.customerPhone}</span>
+                        </td>
+                        <td className="py-3 px-4">
+                          {ord.items.map((it, i) => (
+                            <span key={i} className="block text-stone-700 dark:text-stone-300">
+                              • {it.productName} ({it.quantity}x)
+                            </span>
+                          ))}
+                        </td>
+                        <td className="py-3 px-4 text-stone-600 dark:text-stone-300 max-w-[200px] truncate">
+                          {ord.shippingAddress.addressLine}, {ord.shippingAddress.city} ({ord.shippingAddress.pincode})
+                        </td>
+                        <td className="py-3 px-4 font-bold text-primary text-sm">
+                          ₹{ord.total}
+                        </td>
+                        <td className="py-3 px-4">
+                          <Badge variant="outline" className="text-[10px]">
+                            {ord.paymentMethod}
+                          </Badge>
+                        </td>
+                        <td className="py-3 px-4">
+                          <select
+                            value={ord.orderStatus}
+                            onChange={(e) => updateOrderStatus(ord.id, e.target.value as any)}
+                            className="bg-secondary border border-border rounded-lg text-xs py-1 px-2 font-semibold"
+                          >
+                            <option value="Placed">Placed</option>
+                            <option value="Confirmed">Confirmed</option>
+                            <option value="Dispatched">Dispatched</option>
+                            <option value="Delivered">Delivered</option>
+                            <option value="Cancelled">Cancelled</option>
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: STORE SETTINGS */}
+        {activeTab === "settings" && (
+          <form onSubmit={handleSaveSettings} className="max-w-2xl bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-xs space-y-5">
+            <h3 className="font-serif text-xl font-bold text-foreground border-b border-border pb-3">
+              दुकान व संपर्क सेटिंग्स
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">दुकान का नाम (Store Name)</Label>
+                <Input
+                  value={settingsForm.storeName}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, storeName: e.target.value })}
+                  className="text-xs"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">हकीम जी का नाम (Founder)</Label>
+                <Input
+                  value={settingsForm.founderName}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, founderName: e.target.value })}
+                  className="text-xs"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">मोबाइल फोन (Helpline)</Label>
+                <Input
+                  value={settingsForm.phone}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, phone: e.target.value })}
+                  className="text-xs"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">WhatsApp नंबर</Label>
+                <Input
+                  value={settingsForm.whatsapp}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, whatsapp: e.target.value })}
+                  className="text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">दुकान का पता (Address)</Label>
+              <Input
+                value={settingsForm.address}
+                onChange={(e) => setSettingsForm({ ...settingsForm, address: e.target.value })}
+                className="text-xs"
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">शहर (City)</Label>
+                <Input
+                  value={settingsForm.city}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, city: e.target.value })}
+                  className="text-xs"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">राज्य (State)</Label>
+                <Input
+                  value={settingsForm.state}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, state: e.target.value })}
+                  className="text-xs"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">फ्री शिपिंग सीमा (₹)</Label>
+                <Input
+                  type="number"
+                  value={settingsForm.freeShippingThreshold}
+                  onChange={(e) =>
+                    setSettingsForm({
+                      ...settingsForm,
+                      freeShippingThreshold: Number(e.target.value),
+                    })
+                  }
+                  className="text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">घोषणा पट्टी (Announcement Text)</Label>
+              <Input
+                value={settingsForm.announcementText}
+                onChange={(e) =>
+                  setSettingsForm({ ...settingsForm, announcementText: e.target.value })
+                }
+                className="text-xs"
+              />
+            </div>
+
+            <Button type="submit" className="rounded-xl text-xs font-bold px-6">
+              <Save className="w-4 h-4 mr-1.5" />
+              <span>सेटिंग्स सुरक्षित करें (Save Settings)</span>
+            </Button>
+          </form>
+        )}
+
+        {/* Product Edit / Create Modal */}
+        {editingProduct && (
+          <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-card border border-border rounded-3xl max-w-xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto shadow-2xl">
+              <h3 className="font-serif text-lg font-bold text-foreground">
+                {isNewProduct ? "नया उत्पाद जोड़ें" : `संपादित करें: ${editingProduct.name}`}
+              </h3>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">अंग्रेजी नाम</Label>
+                  <Input
+                    value={editingProduct.name}
+                    onChange={(e) =>
+                      setEditingProduct({ ...editingProduct, name: e.target.value })
+                    }
+                    className="text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">हिंदी नाम</Label>
+                  <Input
+                    value={editingProduct.nameHindi}
+                    onChange={(e) =>
+                      setEditingProduct({ ...editingProduct, nameHindi: e.target.value })
+                    }
+                    className="text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">कीमत (₹)</Label>
+                  <Input
+                    type="number"
+                    value={editingProduct.price}
+                    onChange={(e) =>
+                      setEditingProduct({ ...editingProduct, price: Number(e.target.value) })
+                    }
+                    className="text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">MRP (₹)</Label>
+                  <Input
+                    type="number"
+                    value={editingProduct.compareAtPrice || 0}
+                    onChange={(e) =>
+                      setEditingProduct({
+                        ...editingProduct,
+                        compareAtPrice: Number(e.target.value),
+                      })
+                    }
+                    className="text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">स्टॉक संख्या</Label>
+                  <Input
+                    type="number"
+                    value={editingProduct.stockCount}
+                    onChange={(e) =>
+                      setEditingProduct({
+                        ...editingProduct,
+                        stockCount: Number(e.target.value),
+                      })
+                    }
+                    className="text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs">पैकिंग विवरण</Label>
+                <Input
+                  value={editingProduct.packSize}
+                  onChange={(e) =>
+                    setEditingProduct({ ...editingProduct, packSize: e.target.value })
+                  }
+                  className="text-xs"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs">सेवन विधि (Dosage)</Label>
+                <Input
+                  value={editingProduct.dosage}
+                  onChange={(e) =>
+                    setEditingProduct({ ...editingProduct, dosage: e.target.value })
+                  }
+                  className="text-xs"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs">विवरण (Description)</Label>
+                <textarea
+                  rows={3}
+                  value={editingProduct.description}
+                  onChange={(e) =>
+                    setEditingProduct({ ...editingProduct, description: e.target.value })
+                  }
+                  className="w-full text-xs p-2.5 rounded-xl border bg-secondary/30"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-border">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setEditingProduct(null)}
+                  className="text-xs"
+                >
+                  रद्द करें
+                </Button>
+                <Button onClick={handleSaveProduct} size="sm" className="text-xs font-semibold">
+                  सहेजें (Save Changes)
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      <Footer />
+
+      {/* Poster Inspector Modal */}
+      <ProductPosterModal
+        product={selectedPoster}
+        onClose={() => setSelectedPoster(null)}
+      />
+    </div>
+  );
+}
