@@ -168,6 +168,21 @@ export function buildWhatsAppOrderMessage({
   return msg;
 }
 
+export function cleanWhatsAppNumber(phone: string): string {
+  const digits = (phone || "").replace(/[^0-9]/g, "");
+  return digits.length === 10 ? `91${digits}` : digits;
+}
+
+export function formatWhatsAppUrl(whatsappNumber: string, text: string): string {
+  const phone = cleanWhatsAppNumber(whatsappNumber);
+  return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+}
+
+export function formatWhatsAppWebUrl(whatsappNumber: string, text: string): string {
+  const phone = cleanWhatsAppNumber(whatsappNumber);
+  return `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`;
+}
+
 export function generateWhatsAppOrderUrl({
   customer,
   items,
@@ -204,9 +219,14 @@ export function generateWhatsAppOrderUrl({
     finalAmount,
     origin,
   });
-  const cleanPhone = whatsappNumber.replace(/[^0-9]/g, "");
-  const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
-  return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+  return formatWhatsAppUrl(whatsappNumber, message);
+}
+
+export function generateWhatsAppWebOrderUrl(
+  params: Parameters<typeof generateWhatsAppOrderUrl>[0]
+): string {
+  const message = buildWhatsAppOrderMessage(params);
+  return formatWhatsAppWebUrl(params.whatsappNumber, message);
 }
 
 interface StoreContextType {

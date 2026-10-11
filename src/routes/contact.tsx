@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { useStore } from "@/context/StoreContext";
+import { useStore, formatWhatsAppUrl } from "@/context/StoreContext";
 import {
   Phone,
   MessageCircle,
@@ -93,7 +93,10 @@ function ContactPage() {
                 <div>
                   <span className="font-bold text-foreground block">WhatsApp हेल्पलाइन</span>
                   <a
-                    href={`https://wa.me/91${settings.whatsapp}?text=السلام علیکم Hakeem Ji, I need consultation.`}
+                    href={formatWhatsAppUrl(
+                      settings.whatsapp,
+                      "السلام علیکم Hakeem Ji, I need consultation."
+                    )}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-emerald-700 dark:text-emerald-400 font-semibold hover:underline mt-0.5 block"
@@ -118,7 +121,10 @@ function ContactPage() {
 
             <div className="pt-2">
               <a
-                href={`https://wa.me/91${settings.whatsapp}?text=السلام علیکم Hakim Inayat Ji, please help with medical guidance.`}
+                href={formatWhatsAppUrl(
+                  settings.whatsapp,
+                  "السلام علیکم Hakim Inayat Ji, please help with medical guidance."
+                )}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-colors"

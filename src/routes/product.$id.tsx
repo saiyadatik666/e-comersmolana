@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useStore } from "@/context/StoreContext";
+import { useStore, formatWhatsAppUrl } from "@/context/StoreContext";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ProductPosterModal } from "@/components/product/ProductPosterModal";
@@ -10,6 +10,7 @@ import {
   ShoppingBag,
   Heart,
   MessageCircle,
+  Phone,
   ShieldCheck,
   Truck,
   RotateCcw,
@@ -250,11 +251,10 @@ function ProductDetailPage() {
 
               {/* Direct WhatsApp Ordering */}
               <a
-                href={`https://wa.me/91${settings.whatsapp}?text=السلام علیکم Hakeem Ji, I want to order ${encodeURIComponent(
-                  product.name
-                )} (Pack: ${encodeURIComponent(product.packSize)}, Price ₹${
-                  product.price
-                }). Please confirm my order.`}
+                href={formatWhatsAppUrl(
+                  settings.whatsapp,
+                  `السلام علیکم Hakeem Ji, I want to order ${product.name} (Pack: ${product.packSize}, Price ₹${product.price}). Please confirm my order.`
+                )}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition-colors"
@@ -380,9 +380,10 @@ function ProductDetailPage() {
 
               <div className="space-y-2 pt-2">
                 <a
-                  href={`https://wa.me/91${settings.whatsapp}?text=السلام علیکم Hakeem Ji, I want guidance regarding ${encodeURIComponent(
-                    product.name
-                  )}.`}
+                  href={formatWhatsAppUrl(
+                    settings.whatsapp,
+                    `السلام علیکم Hakeem Ji, I want guidance regarding ${product.name}.`
+                  )}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-md transition-colors"
@@ -391,11 +392,11 @@ function ProductDetailPage() {
                   <span>WhatsApp पर चैट करें</span>
                 </a>
                 <a
-                  href="tel:9586037331"
+                  href={`tel:${settings.phone}`}
                   className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-stone-700 text-stone-300 hover:text-white font-semibold text-xs transition-colors"
                 >
                   <Phone className="w-4 h-4" />
-                  <span>कॉल करें: +91 9586037331</span>
+                  <span>कॉल करें: +91 {settings.phone}</span>
                 </a>
               </div>
             </div>

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "@tanstack/react-router";
-import { useStore } from "@/context/StoreContext";
+import { useStore, formatWhatsAppUrl } from "@/context/StoreContext";
 import {
   Sparkles,
   Phone,
@@ -100,7 +100,17 @@ export const Footer: React.FC = () => {
               </div>
               <div className="flex items-center gap-2.5">
                 <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>WhatsApp परामर्श: +91 {settings.whatsapp}</span>
+                <a
+                  href={formatWhatsAppUrl(
+                    settings.whatsapp,
+                    "السلام علیکم Hakeem Ji, I want consultation regarding herbal products."
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-emerald-400 transition-colors"
+                >
+                  WhatsApp परामर्श: +91 {settings.whatsapp}
+                </a>
               </div>
               <div className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-emerald-400 shrink-0" />

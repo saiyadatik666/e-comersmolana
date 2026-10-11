@@ -4,7 +4,9 @@ import {
   CustomerDeliveryDetails,
   CartItem,
   generateWhatsAppOrderUrl,
+  generateWhatsAppWebOrderUrl,
   buildWhatsAppOrderMessage,
+  cleanWhatsAppNumber,
 } from "@/context/StoreContext";
 import { Product } from "@/data/products";
 import {
@@ -23,6 +25,7 @@ import {
   Mail,
   Home,
   CheckCircle2,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,6 +84,7 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
   // Submission / Review state
   const [submittedMessage, setSubmittedMessage] = useState<string>("");
   const [submittedWhatsAppUrl, setSubmittedWhatsAppUrl] = useState<string>("");
+  const [submittedWhatsAppWebUrl, setSubmittedWhatsAppWebUrl] = useState<string>("");
   const [createdOrderId, setCreatedOrderId] = useState<string>("");
   const [hasCopied, setHasCopied] = useState<boolean>(false);
 
@@ -225,18 +229,28 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
       notes: "Submitted via WhatsApp order request",
     });
 
+    const waWebUrl = generateWhatsAppWebOrderUrl({
+      customer: details,
+      items: items.map((i) => ({
+        product: i.product,
+        quantity: i.quantity,
+        packSize: i.packSize || i.product.packSize,
+      })),
+      subtotal,
+      shippingCharge: shippingFee,
+      finalAmount: finalTotal,
+      whatsappNumber: settings.whatsapp,
+      origin,
+    });
+
     setCreatedOrderId(newOrder.id);
     setSubmittedMessage(msg);
     setSubmittedWhatsAppUrl(waUrl);
+    setSubmittedWhatsAppWebUrl(waWebUrl);
     setMode("confirm-order");
 
     if (onOrderCompleted) {
       onOrderCompleted(newOrder.id);
-    }
-
-    // Attempt opening WhatsApp in new tab
-    if (typeof window !== "undefined") {
-      window.open(waUrl, "_blank", "noopener,noreferrer");
     }
   };
 
@@ -268,6 +282,20 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
     });
 
     const waUrl = generateWhatsAppOrderUrl({
+      customer: savedCustomerDetails,
+      items: items.map((i) => ({
+        product: i.product,
+        quantity: i.quantity,
+        packSize: i.packSize || i.product.packSize,
+      })),
+      subtotal,
+      shippingCharge: shippingFee,
+      finalAmount: finalTotal,
+      whatsappNumber: settings.whatsapp,
+      origin,
+    });
+
+    const waWebUrl = generateWhatsAppWebOrderUrl({
       customer: savedCustomerDetails,
       items: items.map((i) => ({
         product: i.product,
@@ -316,14 +344,23 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
     setCreatedOrderId(newOrder.id);
     setSubmittedMessage(msg);
     setSubmittedWhatsAppUrl(waUrl);
+    setSubmittedWhatsAppWebUrl(waWebUrl);
     setMode("confirm-order");
 
     if (onOrderCompleted) {
       onOrderCompleted(newOrder.id);
     }
+  };
 
-    if (typeof window !== "undefined") {
-      window.open(waUrl, "_blank", "noopener,noreferrer");
+  const handleOpenWhatsApp = (e: React.MouseEvent, targetUrl: string) => {
+    try {
+      const win = window.open(targetUrl, "_blank", "noopener,noreferrer");
+      if (!win || win.closed || typeof win.closed === "undefined") {
+        toast.warning("पॉपअप अवरुद्ध हो सकता है। कृपया नीचे दिए गए 'ऑर्डर विवरण कॉपी करें' का उपयोग करें।");
+      }
+    } catch (err) {
+      console.error("Popup blocked or window error", err);
+      toast.error("WhatsApp नहीं खुला। कृपया 'ऑर्डर विवरण कॉपी करें' का उपयोग करें।");
     }
   };
 
@@ -691,29 +728,54 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
             </p>
           </div>
 
-          {/* WhatsApp Direct Action Button */}
+          {/* WhatsApp Direct Action Buttons (Requirements 5 & 7) */}
           <div className="space-y-3 max-w-md mx-auto">
             <a
               href={submittedWhatsAppUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg transition-all"
+              onClick={(e) => handleOpenWhatsApp(e, submittedWhatsAppUrl)}
+              className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg transition-all cursor-pointer"
             >
               <MessageCircle className="w-5 h-5 fill-white" />
-              <span>WhatsApp खोलें एवं संदेश भेजें</span>
+              <span>WhatsApp पर ऑर्डर भेजें (Open WhatsApp)</span>
               <ExternalLink className="w-4 h-4 ml-1" />
             </a>
 
+            {/* Desktop WhatsApp Web Alternative */}
+            <a
+              href={submittedWhatsAppWebUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => handleOpenWhatsApp(e, submittedWhatsAppWebUrl)}
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-emerald-600/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950 font-semibold text-xs transition-colors cursor-pointer"
+            >
+              <Globe className="w-4 h-4" />
+              <span>कंप्यूटर / लैपटॉप के लिए WhatsApp Web खोलें</span>
+            </a>
+
+            {/* Copy Order Details Button */}
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleCopyMessage}
-              className="w-full rounded-xl text-xs flex items-center justify-center gap-2"
+              className="w-full rounded-xl text-xs flex items-center justify-center gap-2 border-stone-300 dark:border-stone-700 font-semibold py-2.5"
             >
               <Copy className="w-3.5 h-3.5" />
-              <span>{hasCopied ? "संदेश कॉपी हो गया!" : "संदेश टेक्स्ट कॉपी करें (Copy Message Text)"}</span>
+              <span>{hasCopied ? "✓ ऑर्डर विवरण कॉपी हो गया!" : "ऑर्डर विवरण कॉपी करें (Copy Order Details)"}</span>
             </Button>
+          </div>
+
+          {/* Helpful Error & Fallback Banner (Requirement 7) */}
+          <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-2xl p-4 text-xs text-amber-900 dark:text-amber-200 text-left space-y-1.5 max-w-xl mx-auto">
+            <div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-300">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>यदि WhatsApp सीधे नहीं खुल पाता है:</span>
+            </div>
+            <p className="text-[11px] leading-relaxed text-amber-900/90 dark:text-amber-200/90">
+              ब्राउज़र सुरक्षा या पूर्वावलोकन अवरोध के कारण यदि WhatsApp नहीं खुलता (जैसे ERR_BLOCKED_BY_RESPONSE), तो कृपया ऊपर <strong>'ऑर्डर विवरण कॉपी करें'</strong> बटन दबाएं और सीधे हकीम जी के WhatsApp नंबर <strong>+91 {cleanWhatsAppNumber(settings.whatsapp)}</strong> पर संदेश पेस्ट करके भेज दें।
+            </p>
           </div>
 
           {/* Message Preview Box */}

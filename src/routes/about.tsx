@@ -2,7 +2,7 @@ import React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { useStore } from "@/context/StoreContext";
+import { useStore, formatWhatsAppUrl } from "@/context/StoreContext";
 import {
   Sparkles,
   ShieldCheck,
@@ -111,7 +111,10 @@ function AboutPage() {
 
             <div className="pt-2 flex flex-col sm:flex-row gap-3">
               <a
-                href={`https://wa.me/91${settings.whatsapp}?text=السلام علیکم Hakeem Ji, I want to consult you.`}
+                href={formatWhatsAppUrl(
+                  settings.whatsapp,
+                  "السلام علیکم Hakeem Ji, I want to consult you."
+                )}
                 target="_blank"
                 rel="noopener noreferrer"
               >

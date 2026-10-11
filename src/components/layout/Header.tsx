@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useStore } from "@/context/StoreContext";
+import { useStore, formatWhatsAppUrl } from "@/context/StoreContext";
 import {
   ShoppingBag,
   Heart,
@@ -65,7 +65,10 @@ export const Header: React.FC = () => {
               <ShieldCheck className="w-3.5 h-3.5" /> 100% शुद्ध जड़ी-बूटी • कैश ऑन डिलीवरी उपलब्ध
             </span>
             <a
-              href={`https://wa.me/91${settings.whatsapp}?text=السلام علیکم Hakeem Ji, I want consultation regarding herbal products.`}
+              href={formatWhatsAppUrl(
+                settings.whatsapp,
+                "السلام علیکم Hakeem Ji, I want consultation regarding herbal products."
+              )}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-emerald-200 hover:text-white transition-colors"
@@ -154,7 +157,10 @@ export const Header: React.FC = () => {
         <div className="flex items-center gap-2 sm:gap-3">
           {/* WhatsApp Direct Consult Button */}
           <a
-            href={`https://wa.me/91${settings.whatsapp}?text=السلام علیکم Hakim Ji, I need guidance for a health problem.`}
+            href={formatWhatsAppUrl(
+              settings.whatsapp,
+              "السلام علیکم Hakim Ji, I need guidance for a health problem."
+            )}
             target="_blank"
             rel="noopener noreferrer"
             className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-600/10 text-emerald-800 hover:bg-emerald-600/20 border border-emerald-600/30 transition-colors"
@@ -364,7 +370,10 @@ export const Header: React.FC = () => {
           {/* Quick Consultation Call on Mobile */}
           <div className="pt-2 border-t border-border flex flex-col gap-2">
             <a
-              href={`https://wa.me/91${settings.whatsapp}?text=السلام علیکم Hakim Inayat Ji, I want consultation regarding products.`}
+              href={formatWhatsAppUrl(
+                settings.whatsapp,
+                "السلام علیکم Hakim Inayat Ji, I want consultation regarding products."
+              )}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 text-white font-semibold text-sm shadow-sm"

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Product } from "@/data/products";
-import { useStore } from "@/context/StoreContext";
+import { useStore, formatWhatsAppUrl } from "@/context/StoreContext";
 import {
   Heart,
   ShoppingBag,
@@ -106,9 +106,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
         {/* Quick WhatsApp Order Ribbon on Hover */}
         <div className="absolute bottom-2 left-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
           <a
-            href={`https://wa.me/91${settings.whatsapp}?text=السلام علیکم Hakeem Ji, I want to order ${encodeURIComponent(
-              product.name
-            )} (Price ₹${product.price}). Please guide me.`}
+            href={formatWhatsAppUrl(
+              settings.whatsapp,
+              `السلام علیکم Hakeem Ji, I want to order ${product.name} (Price ₹${product.price}). Please guide me.`
+            )}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-emerald-600/95 hover:bg-emerald-700 text-white text-xs font-semibold shadow-lg backdrop-blur-xs transition-colors"

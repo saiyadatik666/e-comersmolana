@@ -52,6 +52,9 @@ describe("Product Catalog Data Integrity", () => {
 import {
   buildWhatsAppOrderMessage,
   generateWhatsAppOrderUrl,
+  cleanWhatsAppNumber,
+  formatWhatsAppUrl,
+  formatWhatsAppWebUrl,
   CustomerDeliveryDetails,
 } from "@/context/StoreContext";
 
@@ -140,6 +143,27 @@ describe("WhatsApp Order Request Generator (PRD Section 7)", () => {
     expect(url.startsWith("https://wa.me/919586037331?text=")).toBe(true);
     expect(url).toContain(encodeURIComponent("SHIFA A HAYAT — NEW ORDER REQUEST"));
     expect(url).toContain(encodeURIComponent("Mohammad Rafiq"));
+  });
+
+  it("normalizes phone numbers with various formats (cleanWhatsAppNumber)", () => {
+    expect(cleanWhatsAppNumber("9586037331")).toBe("919586037331");
+    expect(cleanWhatsAppNumber("+91 9586037331")).toBe("919586037331");
+    expect(cleanWhatsAppNumber("+91-95860-37331")).toBe("919586037331");
+    expect(cleanWhatsAppNumber("919586037331")).toBe("919586037331");
+  });
+
+  it("formats consultation click-to-chat URL with full URL encoding", () => {
+    const text = "السلام علیکم Hakeem Ji, I want consultation regarding herbal products.";
+    const url = formatWhatsAppUrl("9586037331", text);
+    expect(url.startsWith("https://wa.me/919586037331?text=")).toBe(true);
+    expect(url).not.toContain("api.whatsapp.com");
+    expect(url).toContain(encodeURIComponent(text));
+  });
+
+  it("generates desktop WhatsApp Web fallback URL", () => {
+    const text = "Test order";
+    const webUrl = formatWhatsAppWebUrl("9586037331", text);
+    expect(webUrl.startsWith("https://web.whatsapp.com/send?phone=919586037331&text=")).toBe(true);
   });
 });
 

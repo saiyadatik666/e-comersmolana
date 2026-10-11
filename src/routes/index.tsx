@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useStore } from "@/context/StoreContext";
+import { useStore, formatWhatsAppUrl } from "@/context/StoreContext";
 import { CATEGORIES, Product } from "@/data/products";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -88,7 +88,10 @@ function IndexPage() {
                 </Link>
 
                 <a
-                  href={`https://wa.me/91${settings.whatsapp}?text=السلام علیکم Hakeem Ji, I want to consult for herbal treatment.`}
+                  href={formatWhatsAppUrl(
+                    settings.whatsapp,
+                    "السلام علیکم Hakeem Ji, I want to consult for herbal treatment."
+                  )}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full sm:w-auto"
@@ -380,7 +383,10 @@ function IndexPage() {
 
               <div className="pt-3">
                 <a
-                  href={`https://wa.me/91${settings.whatsapp}?text=السلام علیکم Hakeem Ji, I want consultation regarding my health.`}
+                  href={formatWhatsAppUrl(
+                    settings.whatsapp,
+                    "السلام علیکم Hakeem Ji, I want consultation regarding my health."
+                  )}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
