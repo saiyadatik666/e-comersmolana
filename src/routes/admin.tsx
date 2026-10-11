@@ -471,7 +471,12 @@ function AdminPage() {
                           <img
                             src={p.image}
                             alt={p.name}
-                            className="w-10 h-12 object-cover rounded-md border"
+                            onError={(e) => {
+                              if (p.posterImage && e.currentTarget.src !== p.posterImage) {
+                                e.currentTarget.src = p.posterImage;
+                              }
+                            }}
+                            className="w-10 h-12 object-contain p-0.5 bg-stone-50 dark:bg-stone-900 rounded-md border"
                           />
                         </td>
                         <td className="py-3 px-4">
@@ -563,11 +568,11 @@ function AdminPage() {
                   onClick={() => setSelectedPoster(p)}
                   className="bg-card border border-border rounded-2xl overflow-hidden p-2.5 shadow-xs hover:shadow-lg transition-all cursor-pointer group flex flex-col justify-between"
                 >
-                  <div className="aspect-4/5 rounded-xl overflow-hidden bg-secondary mb-2 relative">
+                  <div className="aspect-4/5 rounded-xl overflow-hidden bg-stone-900/5 dark:bg-stone-950 mb-2 relative flex items-center justify-center border">
                     <img
-                      src={p.image}
+                      src={p.posterImage || p.image}
                       alt={p.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      className="w-full h-full object-contain p-1.5 group-hover:scale-105 transition-transform"
                     />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs font-semibold gap-1">
                       <Eye className="w-4 h-4" />

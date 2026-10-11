@@ -98,11 +98,11 @@ function AboutPage() {
         {/* Hakim Ji Profile Card */}
         <div className="bg-stone-900 text-stone-100 rounded-3xl p-8 sm:p-12 border border-stone-800 grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
           <div className="md:col-span-5 text-center">
-            <div className="w-48 h-48 sm:w-56 sm:h-56 rounded-full overflow-hidden border-4 border-amber-400/40 mx-auto shadow-2xl">
+            <div className="w-48 h-48 sm:w-56 sm:h-56 rounded-full overflow-hidden border-4 border-amber-400/40 mx-auto shadow-2xl bg-stone-950">
               <img
-                src="/assets/molana/IMG-20261009-WA0004.jpg"
-                alt="Pehlwan Capsule"
-                className="w-full h-full object-cover"
+                src="/assets/molana/IMG-20261009-WA0023.jpg"
+                alt="हकीम इनायत अहमदी (इनायत पालनपुरी) - संस्थापक"
+                className="w-full h-full object-cover object-top"
               />
             </div>
             <p className="font-serif font-bold text-amber-300 text-lg mt-4">

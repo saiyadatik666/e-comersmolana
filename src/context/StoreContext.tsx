@@ -306,7 +306,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const saved = localStorage.getItem("shifa_products");
       if (saved) {
         try {
-          return JSON.parse(saved);
+          const parsed: Product[] = JSON.parse(saved);
+          return INITIAL_PRODUCTS.map((initP) => {
+            const savedP = parsed.find((p) => p.id === initP.id);
+            if (!savedP) return initP;
+            return {
+              ...initP,
+              ...savedP,
+              image: savedP.image && !savedP.image.startsWith("/assets/molana/") ? savedP.image : initP.image,
+              posterImage: savedP.posterImage || initP.posterImage,
+            };
+          });
         } catch (e) {
           console.error("Failed to parse saved products", e);
         }
@@ -419,7 +429,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           {
             productId: "shifa-arq-abe-hayat",
             productName: "Arq Abe Hayat Drops",
-            productImage: "/assets/molana/IMG-20261009-WA0013.jpg",
+            productImage: "/assets/products/arq-abe-hayat.jpg",
             price: 250,
             quantity: 2,
             packSize: "15ml Amber Dropper Bottle",
@@ -427,7 +437,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           {
             productId: "shifa-tanavai-tel",
             productName: "Tanavai Nabhi Tel",
-            productImage: "/assets/molana/IMG-20261009-WA0021.jpg",
+            productImage: "/assets/products/tanavai-tel.jpg",
             price: 200,
             quantity: 1,
             packSize: "30ml Dropper Bottle",
@@ -462,7 +472,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           {
             productId: "shifa-zafrani-gold",
             productName: "Capsule Zafrani Gold",
-            productImage: "/assets/molana/IMG-20261009-WA0003.jpg",
+            productImage: "/assets/products/zafrani-gold.jpg",
             price: 1450,
             quantity: 1,
             packSize: "60 Capsules",

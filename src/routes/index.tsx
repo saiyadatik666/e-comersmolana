@@ -137,13 +137,16 @@ function IndexPage() {
                   </Badge>
                 </div>
 
-                <div className="aspect-4/5 rounded-2xl overflow-hidden mb-4 border border-emerald-700/50 relative group">
+                <div className="aspect-4/5 rounded-2xl overflow-hidden mb-4 border border-emerald-700/50 relative group bg-gradient-to-b from-stone-900 via-stone-900 to-stone-950 flex items-center justify-center p-3">
                   <img
-                    src="/assets/molana/IMG-20261009-WA0003.jpg"
+                    src="/assets/products/zafrani-gold.jpg"
                     alt="Capsule Zafrani Gold (कैप्सूल ज़ाफरानी गोल्ड) - Shifa A Hayat"
                     fetchPriority="high"
                     decoding="async"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    onError={(e) => {
+                      e.currentTarget.src = "/assets/molana/IMG-20261009-WA0003.jpg";
+                    }}
+                    className="w-full h-full object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute bottom-3 left-3 right-3 bg-stone-950/80 backdrop-blur-md p-3 rounded-xl border border-stone-800">
                     <p className="text-xs font-semibold text-amber-300">कैप्सूल ज़ाफरानी गोल्ड</p>
@@ -188,11 +191,16 @@ function IndexPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
               {/* Product 1: Arq Abe Hayat ₹250 */}
               <div className="bg-card border-2 border-amber-500/40 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col xs:flex-row gap-3 sm:gap-4 items-center xs:items-start text-center xs:text-left">
-                <img
-                  src="/assets/molana/IMG-20261009-WA0013.jpg"
-                  alt="Arq Abe Hayat"
-                  className="w-20 h-28 sm:w-24 sm:h-32 object-cover rounded-xl border shrink-0"
-                />
+                <div className="w-20 h-28 sm:w-24 sm:h-32 rounded-xl border bg-stone-50 dark:bg-stone-900 p-1.5 flex items-center justify-center shrink-0">
+                  <img
+                    src="/assets/products/arq-abe-hayat.jpg"
+                    alt="Arq Abe Hayat"
+                    onError={(e) => {
+                      e.currentTarget.src = "/assets/molana/IMG-20261009-WA0013.jpg";
+                    }}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
                 <div className="space-y-1.5 flex-1 min-w-0 w-full">
                   <Badge className="bg-amber-600 text-white font-bold text-[10px]">
                     कीमत ओन्ली ₹250
@@ -216,11 +224,16 @@ function IndexPage() {
 
               {/* Product 2: Tanavai Tel ₹200 */}
               <div className="bg-card border-2 border-amber-500/40 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col xs:flex-row gap-3 sm:gap-4 items-center xs:items-start text-center xs:text-left">
-                <img
-                  src="/assets/molana/IMG-20261009-WA0021.jpg"
-                  alt="Tanavai Tel"
-                  className="w-20 h-28 sm:w-24 sm:h-32 object-cover rounded-xl border shrink-0"
-                />
+                <div className="w-20 h-28 sm:w-24 sm:h-32 rounded-xl border bg-stone-50 dark:bg-stone-900 p-1.5 flex items-center justify-center shrink-0">
+                  <img
+                    src="/assets/products/tanavai-tel.jpg"
+                    alt="Tanavai Tel"
+                    onError={(e) => {
+                      e.currentTarget.src = "/assets/molana/IMG-20261009-WA0021.jpg";
+                    }}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
                 <div className="space-y-1.5 flex-1 min-w-0 w-full">
                   <Badge className="bg-amber-600 text-white font-bold text-[10px]">
                     सिर्फ़ ₹200/-
@@ -244,11 +257,13 @@ function IndexPage() {
 
               {/* Product 3: Gas Ki Goliyan ₹199 */}
               <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col xs:flex-row gap-3 sm:gap-4 items-center xs:items-start text-center xs:text-left">
-                <img
-                  src="/assets/molana/IMG-20261009-WA0016.jpg"
-                  alt="Gas Ki Goliyan"
-                  className="w-20 h-28 sm:w-24 sm:h-32 object-cover rounded-xl border shrink-0"
-                />
+                <div className="w-20 h-28 sm:w-24 sm:h-32 rounded-xl border bg-stone-50 dark:bg-stone-900 p-1.5 flex items-center justify-center shrink-0">
+                  <img
+                    src="/assets/molana/IMG-20261009-WA0016.jpg"
+                    alt="Gas Ki Goliyan"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
                 <div className="space-y-1.5 flex-1 min-w-0 w-full">
                   <Badge className="bg-emerald-700 text-white font-semibold text-[10px]">
                     100% आयुर्वेदिक

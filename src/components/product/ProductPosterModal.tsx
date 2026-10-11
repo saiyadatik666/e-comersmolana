@@ -39,8 +39,8 @@ export const ProductPosterModal: React.FC<ProductPosterModalProps> = ({ product,
         {/* Modal Image Viewer */}
         <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-stone-950/20">
           <img
-            src={product.image}
-            alt={product.name}
+            src={product.posterImage || product.image}
+            alt={`${product.name} - मूल प्रचार पोस्टर`}
             className="max-h-[70vh] w-auto object-contain rounded-lg shadow-md"
           />
         </div>
@@ -49,7 +49,7 @@ export const ProductPosterModal: React.FC<ProductPosterModalProps> = ({ product,
         <div className="px-5 py-3 border-t border-border bg-secondary/30 flex items-center justify-between text-xs text-muted-foreground">
           <span>{product.packSize} • मूल्य: ₹{product.price}</span>
           <a
-            href={product.image}
+            href={product.posterImage || product.image}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-primary hover:underline font-medium"

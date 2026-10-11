@@ -138,7 +138,12 @@ export const Header: React.FC = () => {
                   <img
                     src={product.image}
                     alt={product.name}
-                    className="w-9 h-9 rounded object-cover border"
+                    onError={(e) => {
+                      if (product.posterImage && e.currentTarget.src !== product.posterImage) {
+                        e.currentTarget.src = product.posterImage;
+                      }
+                    }}
+                    className="w-9 h-9 rounded object-contain p-0.5 bg-stone-50 dark:bg-stone-900 border shrink-0"
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{product.name}</p>

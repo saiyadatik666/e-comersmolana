@@ -110,6 +110,10 @@ function ProductDetailPage() {
   const [showPosterModal, setShowPosterModal] = useState(false);
   const [showQuickBuy, setShowQuickBuy] = useState(false);
   const [added, setAdded] = useState(false);
+  const [activeView, setActiveView] = useState<"product" | "poster">("product");
+
+  const activeImageSrc =
+    activeView === "poster" && product.posterImage ? product.posterImage : product.image;
 
   const inWish = isInWishlist(product.id);
 
@@ -162,26 +166,31 @@ function ProductDetailPage() {
 
         {/* Product Hero Section (2-Column on Tablet & Desktop) */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 lg:gap-10">
-          {/* Left Column: High-Res Poster Image Viewer */}
-          <div className="md:col-span-5 lg:col-span-6 space-y-4">
-            <div className="relative aspect-4/5 rounded-3xl overflow-hidden bg-secondary/30 border border-border shadow-md group">
+          {/* Left Column: Studio Product Photography & Heritage Poster Gallery */}
+          <div className="md:col-span-5 lg:col-span-6 space-y-3">
+            <div className="relative aspect-4/5 rounded-3xl overflow-hidden bg-gradient-to-b from-stone-50/90 via-white to-stone-100 dark:from-stone-900/60 dark:via-stone-900/40 dark:to-stone-950 border border-border shadow-md group flex items-center justify-center p-3 sm:p-5">
               <img
-                src={product.image}
+                src={activeImageSrc}
                 alt={`${product.name} (${product.nameHindi}) - Shifa A Hayat`}
                 fetchPriority="high"
                 decoding="async"
-                className="w-full h-full object-cover object-top"
+                onError={(e) => {
+                  if (product.posterImage && e.currentTarget.src !== product.posterImage) {
+                    e.currentTarget.src = product.posterImage;
+                  }
+                }}
+                className="w-full h-full object-contain drop-shadow-sm transition-all duration-300 group-hover:scale-105"
               />
 
-              {/* Poster Zoom Trigger Button */}
+              {/* Poster Zoom / High-Res View Button */}
               <button
                 onClick={() => setShowPosterModal(true)}
-                className="absolute top-4 right-4 bg-white/95 text-stone-800 p-2.5 rounded-full shadow-lg hover:scale-105 transition-transform flex items-center gap-1.5 text-xs font-semibold"
+                className="absolute top-4 right-4 bg-white/95 text-stone-800 px-3 py-2 rounded-full shadow-lg hover:scale-105 transition-transform flex items-center gap-1.5 text-xs font-semibold backdrop-blur-xs"
                 title="मूल प्रचार पोस्टर देखें"
                 aria-label={`View full original poster for ${product.name}`}
               >
                 <Eye className="w-4 h-4 text-primary" />
-                <span>पोस्टर बड़ा करें</span>
+                <span>{activeView === "poster" ? "पोस्टर बड़ा करें" : "मूल पोस्टर देखें"}</span>
               </button>
 
               {/* Verified Pricing Ribbon */}
@@ -190,11 +199,65 @@ function ProductDetailPage() {
                   पोस्टर प्रमाणित मूल्य ₹{product.price}
                 </div>
               )}
+
+              {/* Active View Indicator Badge */}
+              <div className="absolute bottom-3 left-3 bg-stone-900/80 text-white text-[10px] sm:text-[11px] font-medium px-2.5 py-1 rounded-full backdrop-blur-xs border border-white/10">
+                {activeView === "product" ? "उत्पाद फोटोग्राफी (Studio View)" : "मूल विरासत पोस्टर (Heritage Poster)"}
+              </div>
             </div>
+
+            {/* Gallery Thumbnails (Amazon/Flipkart Style Dual-View Switcher) */}
+            {product.posterImage && product.posterImage !== product.image && (
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={() => setActiveView("product")}
+                  className={`flex items-center gap-2 p-2 rounded-xl border transition-all text-left ${
+                    activeView === "product"
+                      ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-xs"
+                      : "border-border hover:bg-secondary/40"
+                  }`}
+                >
+                  <div className="w-10 h-12 rounded-lg bg-stone-100 dark:bg-stone-900 p-1 flex items-center justify-center shrink-0 border">
+                    <img
+                      src={product.image}
+                      alt="Product studio packaging"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-foreground truncate">उत्पाद पैकेजिंग</p>
+                    <p className="text-[10px] text-muted-foreground truncate">स्टूडियो फोटोग्राफी</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveView("poster")}
+                  className={`flex items-center gap-2 p-2 rounded-xl border transition-all text-left ${
+                    activeView === "poster"
+                      ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-xs"
+                      : "border-border hover:bg-secondary/40"
+                  }`}
+                >
+                  <div className="w-10 h-12 rounded-lg bg-stone-100 dark:bg-stone-900 p-1 flex items-center justify-center shrink-0 border">
+                    <img
+                      src={product.posterImage}
+                      alt="Original heritage poster"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-foreground truncate">मूल प्रचार पोस्टर</p>
+                    <p className="text-[10px] text-muted-foreground truncate">प्रमाणित पोस्टर विवरण</p>
+                  </div>
+                </button>
+              </div>
+            )}
 
             <div className="bg-secondary/40 border border-border rounded-xl p-3 flex items-center justify-between text-xs text-muted-foreground">
               <span className="font-medium text-stone-700 dark:text-stone-300">
-                फ़ाइल नाम: {product.imageName}
+                फ़ाइल संदर्भ: {product.imageName}
               </span>
               <button
                 onClick={() => setShowPosterModal(true)}

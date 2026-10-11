@@ -110,7 +110,12 @@ function CartPage() {
                         <img
                           src={item.product.image}
                           alt={item.product.name}
-                          className="w-16 h-20 sm:w-20 sm:h-24 object-cover rounded-xl border border-border"
+                          onError={(e) => {
+                            if (item.product.posterImage && e.currentTarget.src !== item.product.posterImage) {
+                              e.currentTarget.src = item.product.posterImage;
+                            }
+                          }}
+                          className="w-16 h-20 sm:w-20 sm:h-24 object-contain p-1 bg-stone-50 dark:bg-stone-900 rounded-xl border border-border"
                         />
                       </Link>
 

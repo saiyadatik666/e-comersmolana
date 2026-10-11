@@ -113,7 +113,12 @@ function CheckoutPage() {
                         <img
                           src={item.product.image}
                           alt={item.product.name}
-                          className="w-12 h-14 object-cover rounded-lg border border-border shrink-0"
+                          onError={(e) => {
+                            if (item.product.posterImage && e.currentTarget.src !== item.product.posterImage) {
+                              e.currentTarget.src = item.product.posterImage;
+                            }
+                          }}
+                          className="w-12 h-14 object-contain p-1 bg-stone-50 dark:bg-stone-900 rounded-lg border border-border shrink-0"
                         />
                         <div className="min-w-0">
                           <p className="text-xs font-bold text-foreground truncate">

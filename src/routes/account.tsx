@@ -207,7 +207,7 @@ function AccountPage() {
                           <img
                             src={item.productImage}
                             alt={item.productName}
-                            className="w-10 h-12 object-cover rounded-md border shrink-0"
+                            className="w-10 h-12 object-contain p-0.5 bg-stone-50 dark:bg-stone-900 rounded-md border shrink-0"
                           />
                           <div>
                             <span className="font-bold text-foreground">{item.productName}</span>

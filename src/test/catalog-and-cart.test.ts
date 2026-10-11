@@ -29,7 +29,8 @@ describe("Product Catalog Data Integrity", () => {
       expect(p.price).toBeGreaterThan(0);
       expect(p.name).toBeTruthy();
       expect(p.nameHindi).toBeTruthy();
-      expect(p.image).toMatch(/^\/assets\/molana\/IMG-/);
+      expect(p.image).toMatch(/^\/assets\/(products|molana)\//);
+      expect(p.posterImage || p.image).toMatch(/^\/assets\/molana\/IMG-/);
       expect(p.benefits.length).toBeGreaterThan(0);
       expect(p.ingredients.length).toBeGreaterThan(0);
     });
@@ -114,7 +115,7 @@ describe("WhatsApp Order Request Generator (PRD Section 7)", () => {
     expect(message).toContain("Arq Abe Hayat Drops");
     expect(message).toContain("Product price: ₹250");
     expect(message).toContain("Selected quantity: 2");
-    expect(message).toContain("Product image URL: https://shifa-a-hayat.com/assets/molana/IMG-20261009-WA0013.jpg");
+    expect(message).toContain("Product image URL: https://shifa-a-hayat.com/assets/products/arq-abe-hayat.jpg");
     expect(message).toContain("Product page URL: https://shifa-a-hayat.com/product/shifa-arq-abe-hayat");
 
     expect(message).toContain("Tanavai Nabhi Tel");

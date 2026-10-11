@@ -46,15 +46,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
 
   return (
     <div className="group relative bg-card border border-border/80 rounded-2xl overflow-hidden shadow-xs hover:shadow-xl hover:border-primary/40 transition-all duration-300 flex flex-col h-full">
-      {/* Poster Image Container */}
-      <div className="relative aspect-4/5 w-full bg-secondary/40 overflow-hidden">
-        <Link to="/product/$id" params={{ id: product.id }} className="block w-full h-full">
+      {/* Product Image Container - Studio E-Commerce Presentation */}
+      <div className="relative aspect-4/5 w-full bg-gradient-to-b from-stone-50/80 via-white to-stone-100/90 dark:from-stone-900/60 dark:via-stone-900/40 dark:to-stone-950 p-2 sm:p-3 overflow-hidden flex items-center justify-center">
+        <Link to="/product/$id" params={{ id: product.id }} className="block w-full h-full flex items-center justify-center">
           <img
             src={product.image}
             alt={`${product.name} (${product.nameHindi}) - Shifa A Hayat`}
             loading="lazy"
             decoding="async"
-            className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+            onError={(e) => {
+              if (product.posterImage && e.currentTarget.src !== product.posterImage) {
+                e.currentTarget.src = product.posterImage;
+              }
+            }}
+            className="w-full h-full object-contain drop-shadow-xs group-hover:scale-105 transition-transform duration-500"
           />
         </Link>
 
