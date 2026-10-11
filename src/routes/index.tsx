@@ -140,7 +140,9 @@ function IndexPage() {
                 <div className="aspect-4/5 rounded-2xl overflow-hidden mb-4 border border-emerald-700/50 relative group">
                   <img
                     src="/assets/molana/IMG-20261009-WA0003.jpg"
-                    alt="Capsule Zafrani Gold"
+                    alt="Capsule Zafrani Gold (कैप्सूल ज़ाफरानी गोल्ड) - Shifa A Hayat"
+                    fetchPriority="high"
+                    decoding="async"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute bottom-3 left-3 right-3 bg-stone-950/80 backdrop-blur-md p-3 rounded-xl border border-stone-800">

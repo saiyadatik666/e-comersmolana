@@ -20,6 +20,12 @@ import {
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/checkout")({
+  head: () => ({
+    meta: [
+      { title: "सुरक्षित व्हाट्सएप चेकआउट (Checkout) — Shifa A Hayat" },
+      { name: "robots", content: "noindex, follow" },
+    ],
+  }),
   component: CheckoutPage,
 });
 

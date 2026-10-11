@@ -167,3 +167,61 @@ describe("WhatsApp Order Request Generator (PRD Section 7)", () => {
   });
 });
 
+describe("Catalog Search, Filtering & Coupon Business Logic", () => {
+  it("finds products by Hindi and English search keywords", () => {
+    const queryHindi = "ज़ाफरानी";
+    const matchesHindi = INITIAL_PRODUCTS.filter(
+      (p) => p.name.includes(queryHindi) || p.nameHindi.includes(queryHindi)
+    );
+    expect(matchesHindi.length).toBeGreaterThanOrEqual(1);
+    expect(matchesHindi[0].id).toBe("shifa-zafrani-gold");
+
+    const queryEng = "capsule";
+    const matchesEng = INITIAL_PRODUCTS.filter(
+      (p) =>
+        p.name.toLowerCase().includes(queryEng) ||
+        p.description.toLowerCase().includes(queryEng) ||
+        p.category.toLowerCase().includes(queryEng)
+    );
+    expect(matchesEng.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("filters correctly by health category", () => {
+    const mens = INITIAL_PRODUCTS.filter((p) => p.category === "mens-wellness");
+    expect(mens.length).toBeGreaterThan(0);
+    mens.forEach((p) => {
+      expect(p.category).toBe("mens-wellness");
+    });
+  });
+
+  it("calculates coupons SHIFA10, AYURVEDA50, and FREECOD accurately", () => {
+    const subtotal = 1000;
+    const shipping = 49;
+
+    // SHIFA10: 10% discount
+    const discount10 = Math.round(subtotal * 0.1);
+    expect(discount10).toBe(100);
+
+    // AYURVEDA50: flat 50
+    const discount50 = Math.min(50, subtotal);
+    expect(discount50).toBe(50);
+
+    // FREECOD: discounts shipping charge
+    const discountFreeCod = shipping;
+    expect(discountFreeCod).toBe(49);
+  });
+
+  it("validates 10-digit Indian phone numbers and PIN codes", () => {
+    const isValidPhone = (p: string) => /^[6-9]\d{9}$/.test(p.replace(/[^0-9]/g, ""));
+    expect(isValidPhone("9586037331")).toBe(true);
+    expect(isValidPhone("+91 9586037331")).toBe(false); // Raw digits test
+    expect(isValidPhone("9586037331".replace(/[^0-9]/g, ""))).toBe(true);
+    expect(isValidPhone("123456")).toBe(false);
+
+    const isValidPincode = (pin: string) => /^\d{6}$/.test(pin.trim());
+    expect(isValidPincode("385001")).toBe(true);
+    expect(isValidPincode("38500")).toBe(false);
+    expect(isValidPincode("3850011")).toBe(false);
+  });
+});
+

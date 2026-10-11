@@ -21,6 +21,19 @@ export const Route = createFileRoute("/policies")({
       tab: typeof search.tab === "string" ? (search.tab as any) : "shipping",
     };
   },
+  head: () => ({
+    meta: [
+      { title: "नीतियां, शिपिंग एवं रिफंड (Store Policies) — Shifa A Hayat" },
+      {
+        name: "description",
+        content:
+          "शिफा ए हयात की शिपिंग व डिलीवरी नीति, 7-दिवसीय रिटर्न व रिफंड नियम, गोपनीयता नीति एवं वैधानिक चिकित्सा डिस्क्लेमर।",
+      },
+      { property: "og:title", content: "Store Policies | Shifa A Hayat" },
+      { property: "og:url", content: "https://shifa-a-hayat.com/policies" },
+    ],
+    links: [{ rel: "canonical", href: "https://shifa-a-hayat.com/policies" }],
+  }),
   component: PoliciesPage,
 });
 
@@ -45,64 +58,64 @@ function PoliciesPage() {
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex border-b border-border mb-8 gap-2 overflow-x-auto text-xs sm:text-sm font-semibold">
+        <div className="flex border-b border-border mb-8 gap-2 overflow-x-auto scrollbar-none pb-1 text-xs sm:text-sm font-semibold">
           <button
             onClick={() => setActiveTab("shipping")}
-            className={`flex items-center gap-1.5 py-3 px-4 border-b-2 whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-1.5 py-3 px-4 border-b-2 whitespace-nowrap shrink-0 transition-colors ${
               activeTab === "shipping"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Truck className="w-4 h-4" />
+            <Truck className="w-4 h-4 shrink-0" />
             <span>शिपिंग एवं डिलीवरी नीति</span>
           </button>
 
           <button
             onClick={() => setActiveTab("refund")}
-            className={`flex items-center gap-1.5 py-3 px-4 border-b-2 whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-1.5 py-3 px-4 border-b-2 whitespace-nowrap shrink-0 transition-colors ${
               activeTab === "refund"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-4 h-4 shrink-0" />
             <span>रिटर्न एवं रिफंड नीति</span>
           </button>
 
           <button
             onClick={() => setActiveTab("privacy")}
-            className={`flex items-center gap-1.5 py-3 px-4 border-b-2 whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-1.5 py-3 px-4 border-b-2 whitespace-nowrap shrink-0 transition-colors ${
               activeTab === "privacy"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            <ShieldCheck className="w-4 h-4" />
+            <ShieldCheck className="w-4 h-4 shrink-0" />
             <span>प्राइवेसी एवं गोपनीयता</span>
           </button>
 
           <button
             onClick={() => setActiveTab("terms")}
-            className={`flex items-center gap-1.5 py-3 px-4 border-b-2 whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-1.5 py-3 px-4 border-b-2 whitespace-nowrap shrink-0 transition-colors ${
               activeTab === "terms"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            <FileText className="w-4 h-4" />
+            <FileText className="w-4 h-4 shrink-0" />
             <span>नियम एवं शर्तें (Terms)</span>
           </button>
 
           <button
             onClick={() => setActiveTab("compliance")}
-            className={`flex items-center gap-1.5 py-3 px-4 border-b-2 whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-1.5 py-3 px-4 border-b-2 whitespace-nowrap shrink-0 transition-colors ${
               activeTab === "compliance"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            <AlertTriangle className="w-4 h-4" />
+            <AlertTriangle className="w-4 h-4 shrink-0" />
             <span>चिकित्सा डिस्क्लेमर</span>
           </button>
         </div>

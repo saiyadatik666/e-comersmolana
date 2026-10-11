@@ -51,8 +51,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
         <Link to="/product/$id" params={{ id: product.id }} className="block w-full h-full">
           <img
             src={product.image}
-            alt={product.name}
+            alt={`${product.name} (${product.nameHindi}) - Shifa A Hayat`}
             loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
           />
         </Link>
@@ -84,8 +85,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
             className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-transform active:scale-95 hover:scale-105 shadow-md ${
               inWish ? "bg-red-500 text-white" : "bg-white/90 text-stone-700 hover:bg-white"
             }`}
-            title="Add to Wishlist"
-            aria-label="Wishlist"
+            title={inWish ? "विशलिस्ट से हटाएं" : "विशलिस्ट में जोड़ें"}
+            aria-label={`${inWish ? 'Remove' : 'Add'} ${product.name} to wishlist`}
           >
             <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${inWish ? "fill-white" : ""}`} />
           </button>
@@ -98,8 +99,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
                 onOpenPoster(product);
               }}
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 text-stone-700 hover:bg-white flex items-center justify-center transition-transform active:scale-95 hover:scale-105 shadow-md"
-              title="View Original Poster"
-              aria-label="View original poster"
+              title="मूल प्रचार पोस्टर देखें"
+              aria-label={`View full poster for ${product.name}`}
             >
               <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
@@ -172,6 +173,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
           <Button
             size="sm"
             onClick={handleAddToCart}
+            aria-label={added ? `${product.name} कार्ट में जुड़ गया` : `${product.name} कार्ट में जोड़ें`}
             className={`w-full xs:w-auto rounded-xl px-2.5 sm:px-3 text-[11px] sm:text-xs font-semibold h-8 sm:h-9 transition-all ${
               added
                 ? "bg-emerald-700 text-white"

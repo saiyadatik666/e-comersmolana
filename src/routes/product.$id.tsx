@@ -24,10 +24,79 @@ import {
   Info,
   Clock,
 } from "lucide-react";
+import { INITIAL_PRODUCTS } from "@/data/products";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/product/$id")({
+  head: ({ params }) => {
+    const product = INITIAL_PRODUCTS.find((p) => p.id === params.id) || INITIAL_PRODUCTS[0];
+    const origin = "https://shifa-a-hayat.com";
+    const prodUrl = `${origin}/product/${product.id}`;
+    const imgUrl = product.image.startsWith("http") ? product.image : `${origin}${product.image}`;
+    const cleanDescription = `${product.name} (${product.nameHindi}) - ${product.subtitle}. शुद्ध आयुर्वेदिक एवं यूनानी नुस्खा। मूल्य: ₹${product.price}। कैश ऑन डिलीवरी एवं ऑल इंडिया डिलीवरी उपलब्ध।`;
+
+    return {
+      meta: [
+        { title: `${product.name} (${product.nameHindi}) — Shifa A Hayat` },
+        { name: "description", content: cleanDescription },
+        { property: "og:title", content: `${product.name} (${product.nameHindi}) | ₹${product.price}` },
+        { property: "og:description", content: cleanDescription },
+        { property: "og:image", content: imgUrl },
+        { property: "og:url", content: prodUrl },
+        { property: "og:type", content: "product" },
+        { property: "product:price:amount", content: String(product.price) },
+        { property: "product:price:currency", content: "INR" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: `${product.name} (${product.nameHindi}) | ₹${product.price}` },
+        { name: "twitter:description", content: cleanDescription },
+        { name: "twitter:image", content: imgUrl },
+      ],
+      links: [
+        { rel: "canonical", href: prodUrl },
+      ],
+      scripts: [
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: product.name,
+            alternateName: product.nameHindi,
+            image: [imgUrl],
+            description: product.description,
+            sku: product.id,
+            mpn: product.imageName.replace(".jpg", ""),
+            brand: {
+              "@type": "Brand",
+              name: "Shifa A Hayat",
+            },
+            offers: {
+              "@type": "Offer",
+              url: prodUrl,
+              priceCurrency: "INR",
+              price: product.price,
+              itemCondition: "https://schema.org/NewCondition",
+              availability: product.inStock
+                ? "https://schema.org/InStock"
+                : "https://schema.org/OutOfStock",
+              seller: {
+                "@type": "Organization",
+                name: "Shifa A Hayat",
+              },
+            },
+            aggregateRating: {
+              "@type": "AggregateRating",
+              ratingValue: product.rating,
+              reviewCount: product.reviewCount,
+              bestRating: "5",
+              worstRating: "1",
+            },
+          }),
+        },
+      ],
+    };
+  },
   component: ProductDetailPage,
 });
 
@@ -98,7 +167,9 @@ function ProductDetailPage() {
             <div className="relative aspect-4/5 rounded-3xl overflow-hidden bg-secondary/30 border border-border shadow-md group">
               <img
                 src={product.image}
-                alt={product.name}
+                alt={`${product.name} (${product.nameHindi}) - Shifa A Hayat`}
+                fetchPriority="high"
+                decoding="async"
                 className="w-full h-full object-cover object-top"
               />
 
@@ -106,7 +177,8 @@ function ProductDetailPage() {
               <button
                 onClick={() => setShowPosterModal(true)}
                 className="absolute top-4 right-4 bg-white/95 text-stone-800 p-2.5 rounded-full shadow-lg hover:scale-105 transition-transform flex items-center gap-1.5 text-xs font-semibold"
-                title="View Full Poster"
+                title="मूल प्रचार पोस्टर देखें"
+                aria-label={`View full original poster for ${product.name}`}
               >
                 <Eye className="w-4 h-4 text-primary" />
                 <span>पोस्टर बड़ा करें</span>

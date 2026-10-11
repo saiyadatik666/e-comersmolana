@@ -20,6 +20,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/cart")({
+  head: () => ({
+    meta: [
+      { title: "शॉपिंग कार्ट (Shopping Cart) — Shifa A Hayat" },
+      { name: "robots", content: "noindex, follow" },
+    ],
+  }),
   component: CartPage,
 });
 
@@ -131,7 +137,7 @@ function CartPage() {
                         <button
                           onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}
                           className="w-8 h-8 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-secondary transition-colors"
-                          aria-label="Decrease quantity"
+                          aria-label={`मात्रा घटाएं: ${item.product.name} (Decrease quantity)`}
                         >
                           <Minus className="w-3.5 h-3.5" />
                         </button>
@@ -141,7 +147,7 @@ function CartPage() {
                         <button
                           onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}
                           className="w-8 h-8 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-secondary transition-colors"
-                          aria-label="Increase quantity"
+                          aria-label={`मात्रा बढ़ाएं: ${item.product.name} (Increase quantity)`}
                         >
                           <Plus className="w-3.5 h-3.5" />
                         </button>
@@ -162,7 +168,7 @@ function CartPage() {
                         onClick={() => removeFromCart(item.product.id)}
                         className="text-stone-400 hover:text-rose-600 w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
                         title="Remove from cart"
-                        aria-label="Remove item from cart"
+                        aria-label={`कार्ट से हटाएं: ${item.product.name} (Remove item)`}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

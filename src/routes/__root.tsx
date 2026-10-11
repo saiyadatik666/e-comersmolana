@@ -117,6 +117,51 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://shifa-a-hayat.com/#organization",
+              "name": "Shifa A Hayat",
+              "alternateName": "शिफा ए हयात",
+              "url": "https://shifa-a-hayat.com",
+              "telephone": "+91-9586037331",
+              "founder": {
+                "@type": "Person",
+                "name": "Hakeem Inayat Ahmadi (Inayat Palanpuri)",
+                "jobTitle": "Unani & Ayurvedic Physician",
+              },
+              "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "Station Road",
+                "addressLocality": "Palanpur",
+                "addressRegion": "Gujarat",
+                "postalCode": "385001",
+                "addressCountry": "IN",
+              },
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://shifa-a-hayat.com/#website",
+              "url": "https://shifa-a-hayat.com",
+              "name": "Shifa A Hayat",
+              "publisher": {
+                "@id": "https://shifa-a-hayat.com/#organization",
+              },
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": "https://shifa-a-hayat.com/shop?search={search_term_string}",
+                "query-input": "required name=search_term_string",
+              },
+            },
+          ],
+        }),
+      },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -131,7 +176,15 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary">
-        {children}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2.5 focus:bg-primary focus:text-primary-foreground focus:rounded-xl focus:shadow-xl focus:ring-2 focus:ring-amber-400 font-bold text-xs"
+        >
+          मुख्य सामग्री पर जाएं (Skip to main content)
+        </a>
+        <div id="main-content" tabIndex={-1}>
+          {children}
+        </div>
         <Toaster richColors position="top-right" />
         <Scripts />
       </body>

@@ -18,6 +18,19 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/contact")({
+  head: () => ({
+    meta: [
+      { title: "हकीम जी से मुफ्त परामर्श व संपर्क (Contact) — Shifa A Hayat" },
+      {
+        name: "description",
+        content:
+          "हकीम इनायत अहमदी से WhatsApp या सीधे कॉल पर मुफ्त स्वास्थ्य परामर्श प्राप्त करें। शिफा खाना आयुर्वेदिक एवं यूनानी सेंटर, पालनपुर (गुजरात)।",
+      },
+      { property: "og:title", content: "Free Health Consultation | Shifa A Hayat Contact" },
+      { property: "og:url", content: "https://shifa-a-hayat.com/contact" },
+    ],
+    links: [{ rel: "canonical", href: "https://shifa-a-hayat.com/contact" }],
+  }),
   component: ContactPage,
 });
 

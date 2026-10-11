@@ -37,6 +37,26 @@ export const Route = createFileRoute("/shop")({
       q: typeof search.q === "string" ? search.q : undefined,
     };
   },
+  head: () => ({
+    meta: [
+      { title: "आयुर्वेदिक व यूनानी औषधियां (Product Catalog) — Shifa A Hayat" },
+      {
+        name: "description",
+        content:
+          "हकीम इनायत अहमदी (पालनपुर, गुजरात) द्वारा तैयार 21 प्रामाणिक आयुर्वेदिक व यूनानी दवाओं का संपूर्ण कैटलॉग। शुद्ध जड़ी-बूटी, ऑल इंडिया डिलीवरी एवं कैश ऑन डिलीवरी।",
+      },
+      { property: "og:title", content: "Shifa A Hayat Product Catalog | Ayurvedic & Unani Store" },
+      {
+        property: "og:description",
+        content:
+          "Browse pure classical herbal medicines, tonics, pain oils, and wellness courses crafted in Palanpur, Gujarat.",
+      },
+      { property: "og:url", content: "https://shifa-a-hayat.com/shop" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: [{ rel: "canonical", href: "https://shifa-a-hayat.com/shop" }],
+  }),
   component: ShopPage,
 });
 

@@ -33,6 +33,12 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin")({
+  head: () => ({
+    meta: [
+      { title: "स्टोर व्यवस्थापक पोर्टल (Admin Portal) — Shifa A Hayat" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: AdminPage,
 });
 
@@ -51,7 +57,7 @@ function AdminPage() {
   const [activeTab, setActiveTab] = useState<"overview" | "products" | "assets" | "orders" | "settings">("overview");
   const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
 
-  // Admin PIN Authentication Gate (Section 10)
+  // Admin PIN Authentication Gate with Rate Limiting (Security Hardening)
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       return sessionStorage.getItem("shifa_admin_authenticated") === "true";
@@ -60,9 +66,23 @@ function AdminPage() {
   });
   const [pinInput, setPinInput] = useState("");
   const [showPinError, setShowPinError] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [lockoutRemaining, setLockoutRemaining] = useState(0);
+
+  useEffect(() => {
+    if (lockoutRemaining <= 0) return;
+    const timer = setInterval(() => {
+      setLockoutRemaining((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [lockoutRemaining]);
 
   const handleVerifyPin = (e: React.FormEvent) => {
     e.preventDefault();
+    if (lockoutRemaining > 0) {
+      toast.error(`अत्यधिक गलत प्रयास। कृपया ${lockoutRemaining} सेकंड प्रतीक्षा करें।`);
+      return;
+    }
     const currentPin = settings.adminPin || "9586";
     if (pinInput.trim() === currentPin) {
       setIsAuthenticated(true);
@@ -71,9 +91,17 @@ function AdminPage() {
       }
       toast.success("सुरक्षा पिन सत्यापित! एडमिन पोर्टल अनलॉक हो गया।");
       setShowPinError(false);
+      setFailedAttempts(0);
     } else {
+      const nextAttempts = failedAttempts + 1;
+      setFailedAttempts(nextAttempts);
       setShowPinError(true);
-      toast.error("गलत सुरक्षा पिन (Incorrect Store PIN).");
+      if (nextAttempts >= 5) {
+        setLockoutRemaining(30);
+        toast.error("5 बार गलत पिन दर्ज किया गया। सुरक्षा कारणों से 30 सेकंड का कूलडाउन लागू है।");
+      } else {
+        toast.error(`गलत सुरक्षा पिन। (शेष प्रयास: ${5 - nextAttempts})`);
+      }
     }
   };
 

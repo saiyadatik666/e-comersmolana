@@ -23,6 +23,12 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/account")({
+  head: () => ({
+    meta: [
+      { title: "माय अकाउंट व ऑर्डर विवरण (Account) — Shifa A Hayat" },
+      { name: "robots", content: "noindex, follow" },
+    ],
+  }),
   component: AccountPage,
 });
 

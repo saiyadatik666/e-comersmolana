@@ -16,6 +16,19 @@ import {
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/about")({
+  head: () => ({
+    meta: [
+      { title: "हकीम इनायत अहमदी का परिचय (About Us) — Shifa A Hayat" },
+      {
+        name: "description",
+        content:
+          "शिफा खाना आयुर्वेदिक एवं यूनानी सेंटर, पालनपुर (गुजरात) के संस्थापक हकीम इनायत अहमदी (इनायत पालनपुरी) का परिचय एवं शुद्ध कुदरती इलाज की विरासत।",
+      },
+      { property: "og:title", content: "About Hakeem Inayat Ahmadi | Shifa A Hayat Heritage" },
+      { property: "og:url", content: "https://shifa-a-hayat.com/about" },
+    ],
+    links: [{ rel: "canonical", href: "https://shifa-a-hayat.com/about" }],
+  }),
   component: AboutPage,
 });
 
