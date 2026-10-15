@@ -38,6 +38,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
   };
 
   const inWish = isInWishlist(product.id);
+  const isOutOfStock = !product.inStock || (product.stockCount !== undefined && product.stockCount <= 0);
 
   // Calculate discount percentage
   const discountPercent = product.compareAtPrice
@@ -65,17 +66,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
 
         {/* Badges on Image */}
         <div className="absolute top-2 left-2 flex flex-col gap-1 z-10 max-w-[85%]">
-          {product.isVerifiedPrice && (
+          {isOutOfStock ? (
+            <Badge className="bg-rose-700 hover:bg-rose-700 text-white font-bold text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 shadow-sm border border-rose-500 truncate">
+              आउट ऑफ स्टॉक
+            </Badge>
+          ) : product.isVerifiedPrice ? (
             <Badge className="bg-amber-600 hover:bg-amber-600 text-white font-bold text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 shadow-sm border border-amber-400 truncate">
               <span className="sm:hidden">₹{product.price} प्रमाणित</span>
               <span className="hidden sm:inline">पोस्टर प्रमाणित मूल्य ₹{product.price}</span>
             </Badge>
-          )}
-          {product.isBestseller && !product.isVerifiedPrice && (
+          ) : product.isBestseller ? (
             <Badge className="bg-emerald-700 hover:bg-emerald-700 text-white font-semibold text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 shadow-sm truncate">
               लोकप्रिय
             </Badge>
-          )}
+          ) : null}
           {discountPercent > 0 && (
             <span className="bg-rose-600 text-white text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full shadow-xs self-start">
               {discountPercent}% छूट
@@ -185,28 +189,40 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
           </div>
 
           <div className="flex items-center gap-1.5 w-full xs:w-auto">
-            <Button
-              size="sm"
-              onClick={handleAddToCart}
-              aria-label={added ? `${product.name} कार्ट में जुड़ गया` : `${product.name} कार्ट में जोड़ें`}
-              className={`flex-1 xs:flex-initial rounded-xl px-2.5 sm:px-3 text-[11px] sm:text-xs font-semibold h-8 sm:h-9 transition-all ${
-                added
-                  ? "bg-emerald-700 text-white"
-                  : "bg-primary text-primary-foreground hover:bg-primary/90"
-              }`}
-            >
-              {added ? (
-                <>
-                  <Check className="w-3.5 h-3.5 mr-1" />
-                  <span>जुड़ गया</span>
-                </>
-              ) : (
-                <>
-                  <ShoppingBag className="w-3.5 h-3.5 mr-1" />
-                  <span>कार्ट में जोड़ें</span>
-                </>
-              )}
-            </Button>
+            {isOutOfStock ? (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled
+                aria-label={`${product.name} वर्तमान में अनुपलब्ध है`}
+                className="flex-1 xs:flex-initial rounded-xl px-2.5 sm:px-3 text-[11px] sm:text-xs font-semibold h-8 sm:h-9 bg-secondary/70 text-muted-foreground border-border/80 cursor-not-allowed opacity-75"
+              >
+                <span>अनुपलब्ध (Out of Stock)</span>
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={handleAddToCart}
+                aria-label={added ? `${product.name} कार्ट में जुड़ गया` : `${product.name} कार्ट में जोड़ें`}
+                className={`flex-1 xs:flex-initial rounded-xl px-2.5 sm:px-3 text-[11px] sm:text-xs font-semibold h-8 sm:h-9 transition-all cursor-pointer ${
+                  added
+                    ? "bg-emerald-700 text-white"
+                    : "bg-primary text-primary-foreground hover:bg-primary/90"
+                }`}
+              >
+                {added ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 mr-1" />
+                    <span>जुड़ गया</span>
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag className="w-3.5 h-3.5 mr-1" />
+                    <span>कार्ट में जोड़ें</span>
+                  </>
+                )}
+              </Button>
+            )}
 
             <a
               href={formatWhatsAppUrl(

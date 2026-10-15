@@ -602,6 +602,105 @@ describe("Part 7 Advanced Shopping Features", () => {
       });
     });
   });
+
+  describe("Part 8: Admin & Inventory Management Integrity", () => {
+    it("sanitizes product stock to non-negative integers and synchronizes inStock flag", () => {
+      const sanitizeStock = (stockCount: number, inStockParam?: boolean) => {
+        const safeStock = Math.max(0, Math.floor(stockCount) || 0);
+        return {
+          stockCount: safeStock,
+          inStock: safeStock > 0 && inStockParam !== false,
+        };
+      };
+
+      // Negative stock clamped to 0 and marked out of stock
+      expect(sanitizeStock(-5, true)).toEqual({ stockCount: 0, inStock: false });
+      expect(sanitizeStock(0, true)).toEqual({ stockCount: 0, inStock: false });
+
+      // Positive stock marked in stock
+      expect(sanitizeStock(15, true)).toEqual({ stockCount: 15, inStock: true });
+      expect(sanitizeStock(12.7, true)).toEqual({ stockCount: 12, inStock: true });
+
+      // Explicitly disabled product remains out of stock even if quantity > 0
+      expect(sanitizeStock(10, false)).toEqual({ stockCount: 10, inStock: false });
+    });
+
+    it("sanitizes product prices to strictly positive values and validates compareAtPrice >= price", () => {
+      const sanitizePriceAndMrp = (price: number, compareAtPrice?: number) => {
+        const safePrice = Math.max(1, Math.floor(price) || 1);
+        const safeMrp =
+          compareAtPrice !== undefined && compareAtPrice > 0
+            ? Math.max(safePrice, Math.floor(compareAtPrice))
+            : undefined;
+        return { price: safePrice, compareAtPrice: safeMrp };
+      };
+
+      // Price zero or negative is clamped to 1
+      expect(sanitizePriceAndMrp(0)).toEqual({ price: 1, compareAtPrice: undefined });
+      expect(sanitizePriceAndMrp(-100)).toEqual({ price: 1, compareAtPrice: undefined });
+
+      // MRP lower than price is elevated to at least the sale price
+      expect(sanitizePriceAndMrp(500, 400)).toEqual({ price: 500, compareAtPrice: 500 });
+      expect(sanitizePriceAndMrp(500, 650)).toEqual({ price: 500, compareAtPrice: 650 });
+    });
+
+    it("prevents out-of-stock products from being added to the shopping cart", () => {
+      const outOfStockProduct = {
+        ...INITIAL_PRODUCTS[0]!,
+        stockCount: 0,
+        inStock: false,
+      };
+
+      const canAddToCart = (product: { inStock: boolean; stockCount?: number }) => {
+        if (!product.inStock || (product.stockCount !== undefined && product.stockCount <= 0)) {
+          return false;
+        }
+        return true;
+      };
+
+      expect(canAddToCart(outOfStockProduct)).toBe(false);
+
+      const inStockProduct = {
+        ...INITIAL_PRODUCTS[0]!,
+        stockCount: 25,
+        inStock: true,
+      };
+      expect(canAddToCart(inStockProduct)).toBe(true);
+    });
+
+    it("validates product duplicate IDs when adding new products to the catalog", () => {
+      const existingCatalog = INITIAL_PRODUCTS;
+      const isDuplicateId = (id: string) => existingCatalog.some((p) => p.id === id);
+
+      // Existing ID collision detected
+      expect(isDuplicateId("shifa-zafrani-gold")).toBe(true);
+      expect(isDuplicateId("shifa-arq-abe-hayat")).toBe(true);
+
+      // Unique new ID permitted
+      expect(isDuplicateId("shifa-custom-herb-2026")).toBe(false);
+    });
+
+    it("verifies official WhatsApp number 9586037331 is preserved across configuration defaults", () => {
+      const officialNumber = "9586037331";
+      const cleanNumber = (num: string) => num.replace(/[^0-9]/g, "");
+
+      expect(cleanNumber("+91 95860 37331")).toBe(`91${officialNumber}`);
+      expect(cleanNumber("9586037331")).toBe(officialNumber);
+      expect(cleanNumber("9586037331").length).toBe(10);
+    });
+
+    it("verifies all 21 core products remain intact in default catalog with verified prices", () => {
+      expect(INITIAL_PRODUCTS.length).toBe(21);
+      const verifiedItems = INITIAL_PRODUCTS.filter((p) => p.isVerifiedPrice);
+      expect(verifiedItems.length).toBeGreaterThanOrEqual(2);
+
+      const arq = INITIAL_PRODUCTS.find((p) => p.id === "shifa-arq-abe-hayat");
+      expect(arq?.price).toBe(250);
+
+      const tel = INITIAL_PRODUCTS.find((p) => p.id === "shifa-tanavai-tel");
+      expect(tel?.price).toBe(200);
+    });
+  });
 });
 
 

@@ -266,6 +266,7 @@ interface StoreContextType {
   updateProduct: (updated: Product) => void;
   addProduct: (product: Product) => void;
   deleteProduct: (id: string) => void;
+  resetProductsToDefault: () => void;
 
   // Cart
   cart: CartItem[];
@@ -629,25 +630,66 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     localStorage.setItem("shifa_settings", JSON.stringify(settings));
   }, [settings]);
 
-  // Product actions
+  // Product actions with stock & price sanitization
   const updateProduct = (updated: Product) => {
-    setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-    toast.success(`Product "${updated.name}" updated successfully`);
+    const safeStock = Math.max(0, Math.floor(updated.stockCount) || 0);
+    const sanitized: Product = {
+      ...updated,
+      price: Math.max(1, Math.floor(updated.price) || 1),
+      compareAtPrice:
+        updated.compareAtPrice !== undefined && updated.compareAtPrice > 0
+          ? Math.max(updated.price, Math.floor(updated.compareAtPrice))
+          : undefined,
+      stockCount: safeStock,
+      inStock: safeStock > 0 && updated.inStock !== false,
+    };
+    setProducts((prev) => prev.map((p) => (p.id === sanitized.id ? sanitized : p)));
+    toast.success(`उत्पाद "${sanitized.name}" सफलतापूर्वक अपडेट किया गया`);
   };
 
   const addProduct = (product: Product) => {
-    setProducts((prev) => [product, ...prev]);
-    toast.success(`Product "${product.name}" added to catalog`);
+    const safeStock = Math.max(0, Math.floor(product.stockCount) || 0);
+    const sanitized: Product = {
+      ...product,
+      price: Math.max(1, Math.floor(product.price) || 1),
+      compareAtPrice:
+        product.compareAtPrice !== undefined && product.compareAtPrice > 0
+          ? Math.max(product.price, Math.floor(product.compareAtPrice))
+          : undefined,
+      stockCount: safeStock,
+      inStock: safeStock > 0 && product.inStock !== false,
+    };
+    setProducts((prev) => [sanitized, ...prev]);
+    toast.success(`उत्पाद "${sanitized.name}" कैटलॉग में जोड़ा गया`);
   };
 
   const deleteProduct = (id: string) => {
     setProducts((prev) => prev.filter((p) => p.id !== id));
-    toast.info("Product removed from catalog");
+    toast.info("उत्पाद कैटलॉग से हटा दिया गया");
   };
 
-  // Cart actions with catalog price protection & bounded quantity
+  const resetProductsToDefault = () => {
+    setProducts(INITIAL_PRODUCTS);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("shifa_products", JSON.stringify(INITIAL_PRODUCTS));
+      } catch (e) {
+        console.warn("Unable to save reset products to localStorage", e);
+      }
+    }
+    toast.success("सभी 21 मूल आयुर्वेदिक उत्पाद पुनर्स्थापित कर दिए गए हैं (Catalog Restored)");
+  };
+
+  // Cart actions with stock checking, catalog price protection & bounded quantity
   const addToCart = (product: Product, quantity = 1, packSize?: string) => {
     const authenticProduct = INITIAL_PRODUCTS.find((p) => p.id === product.id) || product;
+    // Check active stock in store state:
+    const activeProduct = products.find((p) => p.id === product.id) || authenticProduct;
+    if (!activeProduct.inStock || (activeProduct.stockCount !== undefined && activeProduct.stockCount <= 0)) {
+      toast.error(`क्षमा करें, "${activeProduct.name}" वर्तमान में अनुपलब्ध (Out of Stock) है।`);
+      return;
+    }
+
     const safeQty = Math.max(1, Math.min(99, Math.floor(quantity) || 1));
     setCart((prev) => {
       const existing = prev.find((item) => item.product.id === authenticProduct.id);
@@ -873,6 +915,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateProduct,
         addProduct,
         deleteProduct,
+        resetProductsToDefault,
         cart,
         addToCart,
         removeFromCart,

@@ -24,6 +24,7 @@ import {
   Info,
   Clock,
   Package,
+  AlertCircle,
 } from "lucide-react";
 import { INITIAL_PRODUCTS, Product } from "@/data/products";
 import { Button } from "@/components/ui/button";
@@ -187,6 +188,7 @@ function ProductDetailPage() {
     activeView === "poster" && product.posterImage ? product.posterImage : product.image;
 
   const inWish = isInWishlist(product.id);
+  const isOutOfStock = !product.inStock || (product.stockCount !== undefined && product.stockCount <= 0);
 
   const handleAddToCart = () => {
     addToCart(product, quantity);
@@ -412,59 +414,108 @@ function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Quantity and Actions */}
-            <div className="space-y-3 pt-2">
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-semibold text-foreground">मात्रा:</span>
-                <div className="flex items-center border border-border rounded-xl bg-card overflow-hidden">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-10 h-10 flex items-center justify-center text-sm font-bold hover:bg-secondary transition-colors active:bg-secondary/80"
-                    aria-label="Decrease quantity"
-                  >
-                    -
-                  </button>
-                  <span className="px-4 py-2 text-sm font-bold min-w-10 text-center">
-                    {quantity}
-                  </span>
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="w-10 h-10 flex items-center justify-center text-sm font-bold hover:bg-secondary transition-colors active:bg-secondary/80"
-                    aria-label="Increase quantity"
-                  >
-                    +
-                  </button>
+            {/* Stock Availability Indicator */}
+            <div className="pt-1">
+              {isOutOfStock ? (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-xs font-semibold">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>यह उत्पाद वर्तमान में अनुपलब्ध (Out of Stock) है। नया स्टॉक जल्द आ रहा है।</span>
                 </div>
-              </div>
+              ) : product.stockCount !== undefined && product.stockCount <= 5 ? (
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-400 text-xs font-medium">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>केवल {product.stockCount} नग स्टॉक में उपलब्ध हैं — सीमित समय!</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400 font-medium">
+                  <Check className="w-3.5 h-3.5" />
+                  <span>स्टॉक में उपलब्ध (In Stock) • तत्काल डिस्पैच</span>
+                </div>
+              )}
+            </div>
+
+            {/* Quantity and Actions */}
+            <div className="space-y-3 pt-1">
+              {!isOutOfStock && (
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-semibold text-foreground">मात्रा:</span>
+                  <div className="flex items-center border border-border rounded-xl bg-card overflow-hidden">
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="w-10 h-10 flex items-center justify-center text-sm font-bold hover:bg-secondary transition-colors active:bg-secondary/80"
+                      aria-label="Decrease quantity"
+                    >
+                      -
+                    </button>
+                    <span className="px-4 py-2 text-sm font-bold min-w-10 text-center">
+                      {quantity}
+                    </span>
+                    <button
+                      onClick={() => setQuantity(quantity + 1)}
+                      className="w-10 h-10 flex items-center justify-center text-sm font-bold hover:bg-secondary transition-colors active:bg-secondary/80"
+                      aria-label="Increase quantity"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                <Button
-                  size="lg"
-                  onClick={handleAddToCart}
-                  className={`rounded-2xl font-bold transition-all ${
-                    added ? "bg-emerald-700 text-white" : "bg-primary text-primary-foreground"
-                  }`}
-                >
-                  {added ? (
-                    <>
-                      <Check className="w-4 h-4 mr-2" />
-                      <span>कार्ट में जुड़ गया</span>
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingBag className="w-4 h-4 mr-2" />
-                      <span>कार्ट में जोड़ें</span>
-                    </>
-                  )}
-                </Button>
+                {isOutOfStock ? (
+                  <>
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      disabled
+                      className="rounded-2xl font-bold bg-secondary/80 text-muted-foreground border-border cursor-not-allowed opacity-80"
+                    >
+                      <span>अनुपलब्ध (Out of Stock)</span>
+                    </Button>
+                    <a
+                      href={formatWhatsAppUrl(
+                        settings.whatsapp,
+                        `السلام علیکم Hakeem Ji, ${product.name} (Pack: ${product.packSize}) कब तक स्टॉक में उपलब्ध होगा? कृपया सूचित करें।`
+                      )}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition-colors"
+                    >
+                      <MessageCircle className="w-4 h-4 fill-white" />
+                      <span>स्टॉक की जानकारी लें</span>
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      size="lg"
+                      onClick={handleAddToCart}
+                      className={`rounded-2xl font-bold transition-all ${
+                        added ? "bg-emerald-700 text-white" : "bg-primary text-primary-foreground"
+                      }`}
+                    >
+                      {added ? (
+                        <>
+                          <Check className="w-4 h-4 mr-2" />
+                          <span>कार्ट में जुड़ गया</span>
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingBag className="w-4 h-4 mr-2" />
+                          <span>कार्ट में जोड़ें</span>
+                        </>
+                      )}
+                    </Button>
 
-                <Button
-                  size="lg"
-                  onClick={handleBuyNow}
-                  className="rounded-2xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold"
-                >
-                  <span>अभी खरीदें (Buy Now)</span>
-                </Button>
+                    <Button
+                      size="lg"
+                      onClick={handleBuyNow}
+                      className="rounded-2xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold"
+                    >
+                      <span>अभी खरीदें (Buy Now)</span>
+                    </Button>
+                  </>
+                )}
               </div>
 
               {/* Direct WhatsApp Ordering */}
@@ -701,22 +752,39 @@ function ProductDetailPage() {
           <span className="text-base font-bold text-primary">₹{product.price * quantity}</span>
         </div>
         <div className="flex gap-2 flex-1 justify-end">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleAddToCart}
-            className="text-xs rounded-xl px-3 h-10 border-primary/30"
-          >
-            <ShoppingBag className="w-3.5 h-3.5 mr-1" />
-            <span>{added ? "जुड़ गया" : "कार्ट"}</span>
-          </Button>
-          <Button
-            size="sm"
-            onClick={handleBuyNow}
-            className="text-xs rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold px-4 h-10 shadow-sm"
-          >
-            <span>अभी खरीदें</span>
-          </Button>
+          {isOutOfStock ? (
+            <a
+              href={formatWhatsAppUrl(
+                settings.whatsapp,
+                `السلام علیکم Hakeem Ji, ${product.name} कब तक स्टॉक में उपलब्ध होगा?`
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-10 w-full shadow-sm transition-colors"
+            >
+              <MessageCircle className="w-3.5 h-3.5 fill-white" />
+              <span>स्टॉक पूछताछ (WhatsApp)</span>
+            </a>
+          ) : (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleAddToCart}
+                className="text-xs rounded-xl px-3 h-10 border-primary/30"
+              >
+                <ShoppingBag className="w-3.5 h-3.5 mr-1" />
+                <span>{added ? "जुड़ गया" : "कार्ट"}</span>
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleBuyNow}
+                className="text-xs rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-bold px-4 h-10 shadow-sm"
+              >
+                <span>अभी खरीदें</span>
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </div>
