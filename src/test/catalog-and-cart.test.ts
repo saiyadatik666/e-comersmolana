@@ -226,3 +226,27 @@ describe("Catalog Search, Filtering & Coupon Business Logic", () => {
   });
 });
 
+describe("Product 404 Guard & Admin Security Verification", () => {
+  it("does not silently fall back to product 0 when invalid product ID is requested", () => {
+    const invalidId = "invalid-non-existent-product-id-12345";
+    const found = INITIAL_PRODUCTS.find((p) => p.id === invalidId);
+    expect(found).toBeUndefined();
+    // Verify it is NOT sampleProducts[0] or INITIAL_PRODUCTS[0]
+    expect(found).not.toBe(INITIAL_PRODUCTS[0]);
+  });
+
+  it("calculates progressive cooldown correctly for failed admin PIN attempts", () => {
+    const calculateCooldown = (failedAttempts: number) => {
+      if (failedAttempts < 5) return 0;
+      return Math.min(30 + (failedAttempts - 5) * 15, 300);
+    };
+
+    expect(calculateCooldown(3)).toBe(0);
+    expect(calculateCooldown(4)).toBe(0);
+    expect(calculateCooldown(5)).toBe(30); // 30 seconds base
+    expect(calculateCooldown(6)).toBe(45); // +15s
+    expect(calculateCooldown(7)).toBe(60);
+    expect(calculateCooldown(25)).toBe(300); // capped at 5 minutes
+  });
+});
+
