@@ -61,11 +61,13 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
   className = "",
 }) => {
   const {
+    products,
     savedCustomerDetails,
     saveCustomerDetails,
     clearSavedCustomerDetails,
     createOrder,
     settings,
+    appliedCoupon,
   } = useStore();
 
   // Mode: "review-saved" (for returning customers) | "fill-form" | "confirm-order"
@@ -165,6 +167,20 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
       return;
     }
 
+    // Inventory Reliability Check at Checkout
+    for (const item of items) {
+      const live = products.find((p) => p.id === item.product.id) || item.product;
+      const stock = live.stockCount !== undefined ? live.stockCount : live.inStock ? 50 : 0;
+      if (!live.inStock || stock <= 0) {
+        toast.error(`क्षमा करें, "${live.name}" वर्तमान में अनुपलब्ध (Out of Stock) है। कृपया इसे कार्ट से हटाएं।`);
+        return;
+      }
+      if (item.quantity > stock) {
+        toast.error(`"${live.name}" की अधिकतम उपलब्ध मात्रा ${stock} है (मांगी गई मात्रा: ${item.quantity})।`);
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
       const details: CustomerDeliveryDetails = {
@@ -184,6 +200,9 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
 
       // Prepare WhatsApp Message & URL
       const origin = typeof window !== "undefined" ? window.location.origin : "https://shifa-a-hayat.com";
+      const calculatedDiscount = Math.max(0, subtotal + shippingFee - finalTotal);
+      const activeCoupon = appliedCoupon || undefined;
+
       const msg = buildWhatsAppOrderMessage({
         customer: details,
         items: items.map((i) => ({
@@ -194,6 +213,8 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
         subtotal,
         shippingCharge: shippingFee,
         finalAmount: finalTotal,
+        discount: calculatedDiscount,
+        couponCode: activeCoupon,
         origin,
       });
 
@@ -207,6 +228,8 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
         subtotal,
         shippingCharge: shippingFee,
         finalAmount: finalTotal,
+        discount: calculatedDiscount,
+        couponCode: activeCoupon,
         whatsappNumber: settings.whatsapp,
         origin,
       });
@@ -254,6 +277,8 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
         subtotal,
         shippingCharge: shippingFee,
         finalAmount: finalTotal,
+        discount: calculatedDiscount,
+        couponCode: activeCoupon,
         whatsappNumber: settings.whatsapp,
         origin,
       });
@@ -274,6 +299,21 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
 
   const handleUseSavedAddress = () => {
     if (!savedCustomerDetails || isSubmitting) return;
+
+    // Inventory Reliability Check
+    for (const item of items) {
+      const live = products.find((p) => p.id === item.product.id) || item.product;
+      const stock = live.stockCount !== undefined ? live.stockCount : live.inStock ? 50 : 0;
+      if (!live.inStock || stock <= 0) {
+        toast.error(`क्षमा करें, "${live.name}" वर्तमान में अनुपलब्ध (Out of Stock) है। कृपया इसे कार्ट से हटाएं।`);
+        return;
+      }
+      if (item.quantity > stock) {
+        toast.error(`"${live.name}" की अधिकतम उपलब्ध मात्रा ${stock} है (मांगी गई मात्रा: ${item.quantity})।`);
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
       setFullName(savedCustomerDetails.fullName);
@@ -288,6 +328,9 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
 
     // Prepare WhatsApp Message & URL
     const origin = typeof window !== "undefined" ? window.location.origin : "https://shifa-a-hayat.com";
+    const calculatedDiscount = Math.max(0, subtotal + shippingFee - finalTotal);
+    const activeCoupon = appliedCoupon || undefined;
+
     const msg = buildWhatsAppOrderMessage({
       customer: savedCustomerDetails,
       items: items.map((i) => ({
@@ -298,6 +341,8 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
       subtotal,
       shippingCharge: shippingFee,
       finalAmount: finalTotal,
+      discount: calculatedDiscount,
+      couponCode: activeCoupon,
       origin,
     });
 
@@ -311,6 +356,8 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
       subtotal,
       shippingCharge: shippingFee,
       finalAmount: finalTotal,
+      discount: calculatedDiscount,
+      couponCode: activeCoupon,
       whatsappNumber: settings.whatsapp,
       origin,
     });
@@ -325,6 +372,8 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
       subtotal,
       shippingCharge: shippingFee,
       finalAmount: finalTotal,
+      discount: calculatedDiscount,
+      couponCode: activeCoupon,
       whatsappNumber: settings.whatsapp,
       origin,
     });
@@ -502,7 +551,11 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
               </Label>
               <Input
                 id="cust-fullName"
+                name="fullName"
+                autoComplete="name"
                 required
+                aria-invalid={!!errors.fullName}
+                aria-describedby={errors.fullName ? "cust-fullName-error" : undefined}
                 placeholder="उदा: मोहम्मद रफ़ीक (Mr. Rafiq)"
                 value={fullName}
                 onChange={(e) => {
@@ -512,7 +565,7 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
                 className={`bg-secondary/40 text-xs ${errors.fullName ? "border-rose-500 ring-rose-500" : ""}`}
               />
               {errors.fullName && (
-                <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1">
+                <p id="cust-fullName-error" role="alert" className="text-[11px] text-rose-600 font-medium flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.fullName}
                 </p>
@@ -526,9 +579,13 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
               </Label>
               <Input
                 id="cust-phone"
+                name="phone"
+                autoComplete="tel"
                 required
                 type="tel"
                 inputMode="tel"
+                aria-invalid={!!errors.phone}
+                aria-describedby={errors.phone ? "cust-phone-error" : undefined}
                 placeholder="उदा: 98250 12345"
                 value={phone}
                 onChange={(e) => {
@@ -538,7 +595,7 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
                 className={`bg-secondary/40 text-xs ${errors.phone ? "border-rose-500 ring-rose-500" : ""}`}
               />
               {errors.phone && (
-                <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1">
+                <p id="cust-phone-error" role="alert" className="text-[11px] text-rose-600 font-medium flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.phone}
                 </p>
@@ -554,7 +611,11 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
             </Label>
             <Input
               id="cust-addressLine"
+              name="addressLine"
+              autoComplete="street-address"
               required
+              aria-invalid={!!errors.addressLine}
+              aria-describedby={errors.addressLine ? "cust-addressLine-error" : undefined}
               placeholder="उदा: मकान नं. 14, मदीना मस्जिद के पास, स्टेशन रोड"
               value={addressLine}
               onChange={(e) => {
@@ -564,7 +625,7 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
               className={`bg-secondary/40 text-xs ${errors.addressLine ? "border-rose-500 ring-rose-500" : ""}`}
             />
             {errors.addressLine && (
-              <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1">
+              <p id="cust-addressLine-error" role="alert" className="text-[11px] text-rose-600 font-medium flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {errors.addressLine}
               </p>
@@ -580,7 +641,11 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
               </Label>
               <Input
                 id="cust-cityVillage"
+                name="cityVillage"
+                autoComplete="address-level2"
                 required
+                aria-invalid={!!errors.cityVillage}
+                aria-describedby={errors.cityVillage ? "cust-cityVillage-error" : undefined}
                 placeholder="उदा: पालनपुर (Palanpur)"
                 value={cityVillage}
                 onChange={(e) => {
@@ -590,7 +655,7 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
                 className={`bg-secondary/40 text-xs ${errors.cityVillage ? "border-rose-500 ring-rose-500" : ""}`}
               />
               {errors.cityVillage && (
-                <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1">
+                <p id="cust-cityVillage-error" role="alert" className="text-[11px] text-rose-600 font-medium flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.cityVillage}
                 </p>
@@ -603,7 +668,11 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
               </Label>
               <Input
                 id="cust-state"
+                name="state"
+                autoComplete="address-level1"
                 required
+                aria-invalid={!!errors.state}
+                aria-describedby={errors.state ? "cust-state-error" : undefined}
                 placeholder="उदा: Gujarat"
                 value={state}
                 onChange={(e) => {
@@ -613,7 +682,7 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
                 className={`bg-secondary/40 text-xs ${errors.state ? "border-rose-500 ring-rose-500" : ""}`}
               />
               {errors.state && (
-                <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1">
+                <p id="cust-state-error" role="alert" className="text-[11px] text-rose-600 font-medium flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.state}
                 </p>
@@ -626,9 +695,13 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
               </Label>
               <Input
                 id="cust-pincode"
+                name="pincode"
+                autoComplete="postal-code"
                 required
                 maxLength={6}
                 inputMode="numeric"
+                aria-invalid={!!errors.pincode}
+                aria-describedby={errors.pincode ? "cust-pincode-error" : undefined}
                 placeholder="उदा: 385001"
                 value={pincode}
                 onChange={(e) => {
@@ -638,7 +711,7 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
                 className={`bg-secondary/40 text-xs ${errors.pincode ? "border-rose-500 ring-rose-500" : ""}`}
               />
               {errors.pincode && (
-                <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1">
+                <p id="cust-pincode-error" role="alert" className="text-[11px] text-rose-600 font-medium flex items-center gap-1">
                   <AlertCircle className="w-3 h-3" />
                   {errors.pincode}
                 </p>
@@ -654,6 +727,8 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
               </Label>
               <Input
                 id="cust-country"
+                name="country"
+                autoComplete="country-name"
                 required
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
@@ -668,6 +743,8 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
               </Label>
               <Input
                 id="cust-landmark"
+                name="landmark"
+                autoComplete="off"
                 placeholder="उदा: नियर पानी की टंकी"
                 value={landmark}
                 onChange={(e) => setLandmark(e.target.value)}
@@ -683,6 +760,8 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
               </Label>
               <Input
                 id="cust-email"
+                name="email"
+                autoComplete="email"
                 type="email"
                 placeholder="उदा: name@example.com"
                 value={email}
@@ -748,11 +827,19 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
               WhatsApp पर ऑर्डर संदेश भेजें
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-lg mx-auto leading-relaxed">
-              ऑर्डर संदर्भ नंबर: <strong className="text-primary font-bold">{createdOrderId}</strong><br />
-              <span className="text-stone-600 dark:text-stone-300 text-xs">
-                ⚠️ ध्यान दें: WhatsApp खुलने के बाद 'Send' बटन दबाकर हकीम जी को संदेश भेजें। हकीम जी द्वारा पुष्टि के बाद ही ऑर्डर स्वीकार माना जाएगा।
-              </span>
+              ऑर्डर संदर्भ नंबर: <strong className="text-primary font-bold">{createdOrderId}</strong>
             </p>
+            <div className="mt-3 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-left text-xs space-y-1.5 text-amber-950 dark:text-amber-200 max-w-md mx-auto">
+              <span className="font-bold flex items-center gap-1.5 text-amber-900 dark:text-amber-300">
+                <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+                <span>ऑर्डर प्रक्रिया एवं पुष्टि नियम (Order Confirmation Rules):</span>
+              </span>
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                • <strong>कदम 1</strong>: 'WhatsApp पर ऑर्डर भेजें' बटन दबाकर चैट खोलें।<br />
+                • <strong>कदम 2</strong>: WhatsApp में <strong>'Send'</strong> बटन दबाकर हकीम जी को संदेश भेजें।<br />
+                • <strong>कदम 3</strong>: हकीम जी द्वारा संदेश की पुष्टि (Confirmation) के बाद ही ऑर्डर स्वीकार माना जाएगा। केवल लिंक खोलने से पार्सल बुक नहीं होता।
+              </p>
+            </div>
           </div>
 
           {/* WhatsApp Direct Action Buttons (Requirements 5 & 7) */}

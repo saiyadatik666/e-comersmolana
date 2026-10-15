@@ -19,13 +19,14 @@ interface ProductCardProps {
   onOpenPoster?: (product: Product) => void;
 }
 
-export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster }) => {
+export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, onOpenPoster }) => {
   const { addToCart, toggleWishlist, isInWishlist, settings } = useStore();
   const [added, setAdded] = useState(false);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (added || isOutOfStock) return;
     addToCart(product, 1);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
@@ -55,6 +56,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
             alt={`${product.name} (${product.nameHindi}) - Shifa A Hayat`}
             loading="lazy"
             decoding="async"
+            width={400}
+            height={500}
             onError={(e) => {
               if (product.posterImage && e.currentTarget.src !== product.posterImage) {
                 e.currentTarget.src = product.posterImage;
@@ -100,7 +103,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
         <div className="absolute top-2 right-2 flex flex-col gap-1.5 z-10">
           <button
             onClick={handleWishlist}
-            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-transform active:scale-95 hover:scale-105 shadow-md ${
+            className={`w-8.5 h-8.5 sm:w-9 sm:h-9 min-w-[34px] min-h-[34px] rounded-full flex items-center justify-center transition-transform active:scale-95 hover:scale-105 shadow-md ${
               inWish ? "bg-red-500 text-white" : "bg-white/90 text-stone-700 hover:bg-white"
             }`}
             title={inWish ? "विशलिस्ट से हटाएं" : "विशलिस्ट में जोड़ें"}
@@ -116,7 +119,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
                 e.stopPropagation();
                 onOpenPoster(product);
               }}
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/90 text-stone-700 hover:bg-white flex items-center justify-center transition-transform active:scale-95 hover:scale-105 shadow-md"
+              className="w-8.5 h-8.5 sm:w-9 sm:h-9 min-w-[34px] min-h-[34px] rounded-full bg-white/90 text-stone-700 hover:bg-white flex items-center justify-center transition-transform active:scale-95 hover:scale-105 shadow-md"
               title="मूल प्रचार पोस्टर देखें"
               aria-label={`View full poster for ${product.name}`}
             >
@@ -203,10 +206,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
               <Button
                 size="sm"
                 onClick={handleAddToCart}
+                disabled={added}
                 aria-label={added ? `${product.name} कार्ट में जुड़ गया` : `${product.name} कार्ट में जोड़ें`}
                 className={`flex-1 xs:flex-initial rounded-xl px-2.5 sm:px-3 text-[11px] sm:text-xs font-semibold h-8 sm:h-9 transition-all cursor-pointer ${
                   added
-                    ? "bg-emerald-700 text-white"
+                    ? "bg-emerald-700 text-white cursor-default"
                     : "bg-primary text-primary-foreground hover:bg-primary/90"
                 }`}
               >
@@ -231,7 +235,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
               )}
               target="_blank"
               rel="noopener noreferrer"
-              className="xs:hidden h-8 w-8 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-xs transition-colors"
+              className="xs:hidden h-9 w-9 min-w-[36px] min-h-[36px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-xs transition-colors"
               title="WhatsApp पर तुरंत ऑर्डर करें"
               aria-label={`WhatsApp order for ${product.name}`}
             >
@@ -242,4 +246,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
       </div>
     </div>
   );
-};
+});
+
+ProductCard.displayName = "ProductCard";

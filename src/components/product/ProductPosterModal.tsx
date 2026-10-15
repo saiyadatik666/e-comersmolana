@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Product } from "@/data/products";
-import { X, ZoomIn, ZoomOut, RotateCcw, ExternalLink } from "lucide-react";
+import { X, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ProductPosterModalProps {
@@ -28,13 +28,16 @@ export const ProductPosterModal: React.FC<ProductPosterModalProps> = ({ product,
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="poster-modal-title"
         className="relative max-w-3xl w-full max-h-[90vh] bg-card rounded-2xl overflow-hidden shadow-2xl flex flex-col border border-border"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-secondary/50">
           <div>
-            <h3 className="font-serif font-bold text-base text-foreground flex items-center gap-2">
+            <h3 id="poster-modal-title" className="font-serif font-bold text-base text-foreground flex items-center gap-2">
               <span>{product.name}</span>
               <span className="text-xs font-sans text-muted-foreground font-normal">
                 ({product.imageName})
@@ -42,7 +45,13 @@ export const ProductPosterModal: React.FC<ProductPosterModalProps> = ({ product,
             </h3>
             <p className="text-xs text-muted-foreground">{product.nameHindi} • मूल प्रचार पोस्टर</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="rounded-full w-9 h-9"
+            aria-label="मूल प्रचार पोस्टर बंद करें (Close poster viewer)"
+          >
             <X className="w-5 h-5" />
           </Button>
         </div>
@@ -52,6 +61,7 @@ export const ProductPosterModal: React.FC<ProductPosterModalProps> = ({ product,
           <img
             src={product.posterImage || product.image}
             alt={`${product.name} - मूल प्रचार पोस्टर`}
+            decoding="async"
             className="max-h-[70vh] w-auto object-contain rounded-lg shadow-md"
           />
         </div>

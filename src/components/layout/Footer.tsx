@@ -96,7 +96,13 @@ export const Footer: React.FC = () => {
               </div>
               <div className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>फोन / ऑर्डर: {settings.phone}</span>
+                <a
+                  href={`tel:${settings.phone}`}
+                  aria-label={`फोन कॉल करें: +91 ${settings.phone}`}
+                  className="hover:text-emerald-400 transition-colors"
+                >
+                  फोन / ऑर्डर: +91 {settings.phone}
+                </a>
               </div>
               <div className="flex items-center gap-2.5">
                 <MessageCircle className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -107,6 +113,7 @@ export const Footer: React.FC = () => {
                   )}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label={`WhatsApp पर परामर्श लें: +91 ${settings.whatsapp}`}
                   className="hover:text-emerald-400 transition-colors"
                 >
                   WhatsApp परामर्श: +91 {settings.whatsapp}
@@ -114,7 +121,13 @@ export const Footer: React.FC = () => {
               </div>
               <div className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>ईमेल: {settings.email}</span>
+                <a
+                  href={`mailto:${settings.email}`}
+                  aria-label={`ईमेल भेजें: ${settings.email}`}
+                  className="hover:text-emerald-400 transition-colors"
+                >
+                  ईमेल: {settings.email}
+                </a>
               </div>
             </div>
           </div>
@@ -228,21 +241,21 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Statutory Compliance Medical Disclaimer */}
-        <div className="mt-12 pt-6 border-t border-stone-800 text-xs text-stone-500 leading-relaxed space-y-2">
-          <p className="font-semibold text-stone-400">
+        <div className="mt-12 pt-6 border-t border-stone-800 text-xs text-stone-300 leading-relaxed space-y-2">
+          <p className="font-semibold text-stone-200">
             वैधानिक सूचना एवं चिकित्सा अस्वीकरण (Statutory Health Disclaimer):
           </p>
-          <p>
+          <p className="text-stone-300">
             Shifa A Hayat के सभी उत्पाद पारंपरिक भारतीय आयुर्वेद एवं यूनानी पद्धति के अनुसार प्राकृतिक जड़ी-बूटियों से तैयार किए जाते हैं। किसी भी हर्बल नुस्खे का प्रभाव हर व्यक्ति की शारीरिक प्रकृति (मिज़ाज/दोष) के अनुसार अलग हो सकता है। यह उत्पाद किसी गंभीर आपातकालीन चिकित्सकीय स्थिति का विकल्प नहीं हैं। उपयोग से पूर्व किसी योग्य चिकित्सक या हकीम से सलाह लेना उचित है।
           </p>
         </div>
 
         {/* Bottom Copyright */}
-        <div className="mt-6 pt-6 border-t border-stone-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-stone-500">
+        <div className="mt-6 pt-6 border-t border-stone-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-stone-400">
           <div>
             © {new Date().getFullYear()} Shifa A Hayat (शिफा ए हयात). All rights reserved.
           </div>
-          <div className="flex items-center gap-4 text-stone-400">
+          <div className="flex items-center gap-4 text-stone-300">
             <span>Palanpur, Gujarat • Cash on Delivery Available</span>
           </div>
         </div>

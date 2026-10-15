@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useStore, formatWhatsAppUrl } from "@/context/StoreContext";
 import { CATEGORIES, Product } from "@/data/products";
@@ -74,6 +74,10 @@ function ShopPage() {
   const [inStockOnly, setInStockOnly] = useState(false);
   const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
 
+  const handleOpenPoster = useCallback((p: Product) => {
+    setSelectedPoster(p);
+  }, []);
+
   useEffect(() => {
     if (searchParams.category !== undefined) {
       setSelectedCategory(searchParams.category || "all");
@@ -144,12 +148,12 @@ function ShopPage() {
     sortBy !== "featured" ||
     inStockOnly;
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setSearchQuery("");
     setSelectedCategory("all");
     setSortBy("featured");
     setInStockOnly(false);
-  };
+  }, []);
 
   const recentlyViewedProducts = useMemo(() => {
     return recentlyViewed
@@ -331,7 +335,7 @@ function ShopPage() {
               <ProductCard
                 key={product.id}
                 product={product}
-                onOpenPoster={(p) => setSelectedPoster(p)}
+                onOpenPoster={handleOpenPoster}
               />
             ))}
           </div>

@@ -489,6 +489,9 @@ function ContactAndHelpCenterPage() {
             <div className="relative flex-1">
               <Input
                 type="text"
+                name="faqQuery"
+                id="faq-search-input"
+                aria-label="अक्सर पूछे जाने वाले सवालों में खोजें (Search FAQ)"
                 placeholder="सवालों में खोजें (उदा. 'डिलीवरी', 'COD', 'साइड इफेक्ट', 'कूपन')..."
                 value={faqSearch}
                 onChange={(e) => setFaqSearch(e.target.value)}
@@ -633,6 +636,9 @@ function ContactAndHelpCenterPage() {
               className="md:col-span-5 flex flex-col sm:flex-row gap-2"
             >
               <Input
+                name="orderId"
+                id="order-lookup-input"
+                aria-label="ऑर्डर स्थिति जांचने के लिए ऑर्डर नंबर दर्ज करें (Enter Order Number)"
                 placeholder="ऑर्डर नंबर (उदा. 1728900...)"
                 value={orderLookupId}
                 onChange={(e) => setOrderLookupId(e.target.value)}

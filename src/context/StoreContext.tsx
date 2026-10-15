@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useMemo } from "react";
 import { INITIAL_PRODUCTS, Product } from "@/data/products";
 import { toast } from "sonner";
 
@@ -108,6 +108,8 @@ export function buildWhatsAppOrderMessage({
   subtotal,
   shippingCharge,
   finalAmount,
+  discount,
+  couponCode,
   origin = typeof window !== "undefined" ? window.location.origin : "https://shifa-a-hayat.com",
 }: {
   customer: CustomerDeliveryDetails;
@@ -126,6 +128,8 @@ export function buildWhatsAppOrderMessage({
   subtotal: number;
   shippingCharge: number;
   finalAmount: number;
+  discount?: number | undefined;
+  couponCode?: string | undefined;
   origin?: string | undefined;
 }): string {
   let msg = "SHIFA A HAYAT — NEW ORDER REQUEST\n\n";
@@ -162,6 +166,9 @@ export function buildWhatsAppOrderMessage({
   msg += "\nORDER SUMMARY\n";
   msg += `- Subtotal: ₹${subtotal}\n`;
   msg += `- Shipping charge: ${shippingCharge === 0 ? "₹0 (Free Delivery)" : `₹${shippingCharge}`}\n`;
+  if (discount !== undefined && discount > 0) {
+    msg += `- Coupon discount${couponCode ? ` (${couponCode})` : ""}: -₹${discount}\n`;
+  }
   msg += `- Final amount: ₹${finalAmount}\n\n`;
   msg += "Please review this order request and press Send to submit to Shifa A Hayat.";
 
@@ -189,6 +196,8 @@ export function generateWhatsAppOrderUrl({
   subtotal,
   shippingCharge,
   finalAmount,
+  discount,
+  couponCode,
   whatsappNumber,
   origin,
 }: {
@@ -208,6 +217,8 @@ export function generateWhatsAppOrderUrl({
   subtotal: number;
   shippingCharge: number;
   finalAmount: number;
+  discount?: number | undefined;
+  couponCode?: string | undefined;
   whatsappNumber: string;
   origin?: string | undefined;
 }): string {
@@ -217,6 +228,8 @@ export function generateWhatsAppOrderUrl({
     subtotal,
     shippingCharge,
     finalAmount,
+    discount,
+    couponCode,
     origin,
   });
   return formatWhatsAppUrl(whatsappNumber, message);
@@ -312,6 +325,21 @@ interface StoreContextType {
   // Store Settings
   settings: StoreSettings;
   updateSettings: (newSettings: Partial<StoreSettings>) => void;
+
+  // Backend & Security Architecture Status (Part 13)
+  backendStatus: BackendStatus;
+  refreshBackendStatus: () => Promise<void>;
+
+  // Data Backup & Recovery (Part 14 & Part 22)
+  importBackup: (backup: { products: Product[]; orders: Order[]; settings: Partial<StoreSettings> }) => void;
+}
+
+export interface BackendStatus {
+  isConfigured: boolean;
+  provider: "Supabase" | "Local Storage";
+  tablesLive: boolean;
+  migrationPending: boolean;
+  statusText: string;
 }
 
 const DEFAULT_SETTINGS: StoreSettings = {
@@ -563,7 +591,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         total: 1450,
         paymentMethod: "ONLINE_UPI",
         paymentStatus: "Paid",
-        orderStatus: "Dispatched",
+        orderStatus: "Shipped",
         trackingNumber: "DTDC-992147",
         notes: "Dispatched via DTDC Express",
       },
@@ -584,6 +612,55 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     return DEFAULT_SETTINGS;
   });
+
+  // Backend Status Tracker (Part 13 Dual Adapter)
+  const [backendStatus, setBackendStatus] = useState<BackendStatus>({
+    isConfigured: true,
+    provider: "Local Storage",
+    tablesLive: false,
+    migrationPending: true,
+    statusText: "ब्राउज़र लोकल स्टोरेज सक्रिय (PostgreSQL स्कीमा माइग्रेशन लंबित)",
+  });
+
+  const refreshBackendStatus = async () => {
+    if (typeof window === "undefined") return;
+    try {
+      const url = "https://ibahpesvwawsarbkthio.supabase.co";
+      const key = "sb_publishable_9LnBsk9E5GcRTid6QY0gGA_ffxCGUeS";
+      const res = await fetch(`${url}/rest/v1/products?select=id&limit=1`, {
+        headers: { apikey: key },
+      });
+      if (res.ok) {
+        setBackendStatus({
+          isConfigured: true,
+          provider: "Supabase",
+          tablesLive: true,
+          migrationPending: false,
+          statusText: "Supabase PostgreSQL लाइव कनेक्टेड",
+        });
+      } else {
+        setBackendStatus({
+          isConfigured: true,
+          provider: "Local Storage",
+          tablesLive: false,
+          migrationPending: true,
+          statusText: "ब्राउज़र लोकल स्टोरेज सक्रिय (PostgreSQL स्कीमा माइग्रेशन लंबित)",
+        });
+      }
+    } catch {
+      setBackendStatus({
+        isConfigured: true,
+        provider: "Local Storage",
+        tablesLive: false,
+        migrationPending: true,
+        statusText: "स्थानीय स्टोरेज सक्रिय (नेटवर्क डिस्कनेक्टेड)",
+      });
+    }
+  };
+
+  useEffect(() => {
+    refreshBackendStatus();
+  }, []);
 
   // Sync state to localStorage
   useEffect(() => {
@@ -685,23 +762,39 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const authenticProduct = INITIAL_PRODUCTS.find((p) => p.id === product.id) || product;
     // Check active stock in store state:
     const activeProduct = products.find((p) => p.id === product.id) || authenticProduct;
-    if (!activeProduct.inStock || (activeProduct.stockCount !== undefined && activeProduct.stockCount <= 0)) {
+    const availableStock =
+      activeProduct.stockCount !== undefined ? activeProduct.stockCount : activeProduct.inStock ? 50 : 0;
+
+    if (!activeProduct.inStock || availableStock <= 0) {
       toast.error(`क्षमा करें, "${activeProduct.name}" वर्तमान में अनुपलब्ध (Out of Stock) है।`);
       return;
     }
 
     const safeQty = Math.max(1, Math.min(99, Math.floor(quantity) || 1));
+    const existingInCart = cart.find((item) => item.product.id === authenticProduct.id);
+    const currentInCart = existingInCart ? existingInCart.quantity : 0;
+
+    if (currentInCart + safeQty > availableStock) {
+      toast.error(
+        `"${activeProduct.name}" की अधिकतम उपलब्ध मात्रा ${availableStock} है (कार्ट में पहले से ${currentInCart} मौजूद हैं)।`
+      );
+      return;
+    }
+
     setCart((prev) => {
       const existing = prev.find((item) => item.product.id === authenticProduct.id);
       if (existing) {
-        const newQty = Math.min(99, existing.quantity + safeQty);
+        const newQty = Math.min(availableStock, Math.min(99, existing.quantity + safeQty));
         return prev.map((item) =>
           item.product.id === authenticProduct.id ? { ...item, quantity: newQty } : item
         );
       }
-      return [...prev, { product: authenticProduct, quantity: safeQty, packSize: packSize || authenticProduct.packSize }];
+      return [
+        ...prev,
+        { product: authenticProduct, quantity: safeQty, packSize: packSize || authenticProduct.packSize },
+      ];
     });
-    toast.success(`Added ${authenticProduct.name} to cart!`);
+    toast.success(`"${authenticProduct.name}" कार्ट में जोड़ा गया!`);
   };
 
   const removeFromCart = (productId: string) => {
@@ -714,7 +807,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       removeFromCart(productId);
       return;
     }
-    const safeQty = Math.max(1, Math.min(99, Math.floor(quantity)));
+    const activeProduct = products.find((p) => p.id === productId);
+    const maxStock =
+      activeProduct && activeProduct.stockCount !== undefined ? activeProduct.stockCount : 99;
+
+    if (quantity > maxStock) {
+      toast.warning(`"${activeProduct?.name || "उत्पाद"}" का अधिकतम उपलब्ध स्टॉक ${maxStock} है।`);
+    }
+
+    const safeQty = Math.max(1, Math.min(maxStock, Math.min(99, Math.floor(quantity))));
     setCart((prev) =>
       prev.map((item) => (item.product.id === productId ? { ...item, quantity: safeQty } : item))
     );
@@ -725,17 +826,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setAppliedCoupon(null);
   };
 
-  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const cartSubtotal = cart.reduce((sum, item) => {
-    const authentic = INITIAL_PRODUCTS.find((p) => p.id === item.product.id) || item.product;
-    return sum + authentic.price * item.quantity;
-  }, 0);
+  const cartCount = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
+
+  const cartSubtotal = useMemo(() => {
+    return cart.reduce((sum, item) => {
+      const authentic = INITIAL_PRODUCTS.find((p) => p.id === item.product.id) || item.product;
+      return sum + authentic.price * item.quantity;
+    }, 0);
+  }, [cart]);
 
   // Free shipping over threshold
-  const shippingFee =
-    cartSubtotal >= settings.freeShippingThreshold || cartSubtotal === 0
+  const shippingFee = useMemo(() => {
+    return cartSubtotal >= settings.freeShippingThreshold || cartSubtotal === 0
       ? 0
       : settings.standardShippingFee;
+  }, [cartSubtotal, settings.freeShippingThreshold, settings.standardShippingFee]);
 
   // Coupon handling
   const applyCoupon = (code: string) => {
@@ -764,16 +869,20 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     toast.info("Coupon removed");
   };
 
-  let discountAmount = 0;
-  if (appliedCoupon === "SHIFA10") {
-    discountAmount = Math.round(cartSubtotal * 0.1);
-  } else if (appliedCoupon === "AYURVEDA50") {
-    discountAmount = Math.min(50, cartSubtotal);
-  } else if (appliedCoupon === "FREECOD") {
-    discountAmount = shippingFee;
-  }
+  const discountAmount = useMemo(() => {
+    if (appliedCoupon === "SHIFA10") {
+      return Math.round(cartSubtotal * 0.1);
+    } else if (appliedCoupon === "AYURVEDA50") {
+      return Math.min(50, cartSubtotal);
+    } else if (appliedCoupon === "FREECOD") {
+      return shippingFee;
+    }
+    return 0;
+  }, [appliedCoupon, cartSubtotal, shippingFee]);
 
-  const cartGrandTotal = Math.max(0, cartSubtotal + shippingFee - discountAmount);
+  const cartGrandTotal = useMemo(() => {
+    return Math.max(0, cartSubtotal + shippingFee - discountAmount);
+  }, [cartSubtotal, shippingFee, discountAmount]);
 
   // Wishlist actions
   const toggleWishlist = (productId: string) => {
@@ -877,7 +986,48 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Orders (stored in local browser storage; awaiting WhatsApp transmission & merchant confirmation)
   const createOrder = (orderData: Omit<Order, "id" | "createdAt" | "orderStatus">): Order => {
-    const computedDiscount = Math.max(0, orderData.subtotal + orderData.shippingCharge - orderData.total);
+    // Inventory Reliability Check: Ensure no out-of-stock items are ordered
+    for (const item of orderData.items) {
+      const activeProduct = products.find((p) => p.id === item.productId);
+      const availableStock =
+        activeProduct?.stockCount !== undefined ? activeProduct.stockCount : activeProduct?.inStock ? 50 : 0;
+      if (activeProduct && (!activeProduct.inStock || availableStock < item.quantity)) {
+        toast.error(
+          `"${activeProduct.name}" का पर्याप्त स्टॉक उपलब्ध नहीं है (उपलब्ध: ${availableStock}, मांगा गया: ${item.quantity})।`
+        );
+        throw new Error(`Insufficient stock for product "${activeProduct.name}"`);
+      }
+    }
+
+    // Server-grade price & discount verification
+    const verifiedItems = orderData.items.map((i) => {
+      const authentic = INITIAL_PRODUCTS.find((p) => p.id === i.productId);
+      const safePrice = authentic ? authentic.price : Math.max(1, Math.floor(i.price) || 1);
+      return {
+        ...i,
+        price: safePrice,
+        quantity: Math.max(1, Math.min(99, Math.floor(i.quantity) || 1)),
+      };
+    });
+
+    const verifiedSubtotal = verifiedItems.reduce((acc, i) => acc + i.price * i.quantity, 0);
+    const verifiedShipping =
+      verifiedSubtotal >= settings.freeShippingThreshold || verifiedSubtotal === 0
+        ? 0
+        : settings.standardShippingFee;
+
+    let verifiedDiscount = 0;
+    if (appliedCoupon === "SHIFA10") {
+      verifiedDiscount = Math.round(verifiedSubtotal * 0.1);
+    } else if (appliedCoupon === "AYURVEDA50") {
+      verifiedDiscount = Math.min(50, verifiedSubtotal);
+    } else if (appliedCoupon === "FREECOD") {
+      verifiedDiscount = verifiedShipping;
+    } else if (orderData.discount !== undefined && orderData.discount > 0) {
+      verifiedDiscount = Math.min(orderData.discount, verifiedSubtotal);
+    }
+    const verifiedTotal = Math.max(0, verifiedSubtotal + verifiedShipping - verifiedDiscount);
+
     const newOrder: Order = {
       ...orderData,
       id: `ORD-${Math.floor(10000 + Math.random() * 90000)}`,
@@ -886,9 +1036,33 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       paymentMethod: orderData.paymentMethod || "WhatsApp Direct Order",
       paymentStatus: "Pending Confirmation",
       trackingNumber: `SHIFA-${Math.floor(100000 + Math.random() * 900000)}`,
-      discount: orderData.discount !== undefined && orderData.discount > 0 ? orderData.discount : computedDiscount,
-      notes: (orderData.notes ? `${orderData.notes} • ` : "") + "Local browser order record (awaiting WhatsApp merchant confirmation)",
+      items: verifiedItems,
+      subtotal: verifiedSubtotal,
+      shippingCharge: verifiedShipping,
+      discount: verifiedDiscount,
+      total: verifiedTotal,
+      notes:
+        (orderData.notes ? `${orderData.notes} • ` : "") +
+        (backendStatus.tablesLive
+          ? "Supabase shared backend order record (awaiting WhatsApp merchant confirmation)"
+          : "Local browser order record (awaiting WhatsApp merchant confirmation; Supabase migration pending)"),
     };
+
+    // Atomically decrement local inventory for ordered items
+    setProducts((prev) =>
+      prev.map((prod) => {
+        const ordered = verifiedItems.find((item) => item.productId === prod.id);
+        if (!ordered) return prod;
+        const currentStock = prod.stockCount !== undefined ? prod.stockCount : 50;
+        const remaining = Math.max(0, currentStock - ordered.quantity);
+        return {
+          ...prod,
+          stockCount: remaining,
+          inStock: remaining > 0,
+        };
+      })
+    );
+
     setOrders((prev) => [newOrder, ...prev]);
     clearCart();
     toast.success(`ऑर्डर अनुरोध #${newOrder.id} तैयार हुआ (Order Request Generated)`);
@@ -896,9 +1070,26 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const updateOrderStatus = (orderId: string, status: Order["orderStatus"]) => {
-    setOrders((prev) =>
-      prev.map((ord) => (ord.id === orderId ? { ...ord, orderStatus: status } : ord))
-    );
+    setOrders((prev) => {
+      const existing = prev.find((ord) => ord.id === orderId);
+      // If status transitions to Cancelled from an active status, restore stock
+      if (existing && existing.orderStatus !== "Cancelled" && status === "Cancelled") {
+        setProducts((prodList) =>
+          prodList.map((prod) => {
+            const orderedItem = existing.items.find((i) => i.productId === prod.id);
+            if (!orderedItem) return prod;
+            const restoredStock = (prod.stockCount ?? 0) + orderedItem.quantity;
+            return {
+              ...prod,
+              stockCount: restoredStock,
+              inStock: restoredStock > 0,
+            };
+          })
+        );
+        toast.info(`ऑर्डर #${orderId} रद्द होने पर इन्वेंट्री पुनः बहाल की गई (Stock Restored)`);
+      }
+      return prev.map((ord) => (ord.id === orderId ? { ...ord, orderStatus: status } : ord));
+    });
     toast.success(`Order #${orderId} marked as ${status}`);
   };
 
@@ -908,47 +1099,87 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     toast.success("Store settings updated successfully");
   };
 
+  // Data Backup & Recovery (Part 14 & Part 22)
+  const importBackup = (backup: { products: Product[]; orders: Order[]; settings: Partial<StoreSettings> }) => {
+    if (backup.products && Array.isArray(backup.products) && backup.products.length > 0) {
+      setProducts(backup.products);
+    }
+    if (backup.orders && Array.isArray(backup.orders)) {
+      setOrders(backup.orders);
+    }
+    if (backup.settings && typeof backup.settings === "object") {
+      setSettings((prev) => ({
+        ...prev,
+        ...backup.settings,
+        adminPin: prev.adminPin || "9586", // Security boundary: Preserve existing admin PIN, never overwrite from imported file
+      }));
+    }
+    toast.success("डेटा बैकअप सफलतापूर्वक पुनर्स्थापित हुआ (Store State Restored)!");
+  };
+
+  const contextValue = useMemo(
+    () => ({
+      products,
+      updateProduct,
+      addProduct,
+      deleteProduct,
+      resetProductsToDefault,
+      cart,
+      addToCart,
+      removeFromCart,
+      updateCartQuantity,
+      clearCart,
+      cartCount,
+      cartSubtotal,
+      shippingFee,
+      discountAmount,
+      appliedCoupon,
+      applyCoupon,
+      removeCoupon,
+      cartGrandTotal,
+      wishlist,
+      toggleWishlist,
+      isInWishlist,
+      recentlyViewed,
+      addRecentlyViewed,
+      clearRecentlyViewed,
+      savedCustomerDetails,
+      saveCustomerDetails,
+      clearSavedCustomerDetails,
+      currentUser,
+      login,
+      logout,
+      saveAddress,
+      orders,
+      createOrder,
+      updateOrderStatus,
+      settings,
+      updateSettings,
+      backendStatus,
+      refreshBackendStatus,
+      importBackup,
+    }),
+    [
+      products,
+      cart,
+      cartCount,
+      cartSubtotal,
+      shippingFee,
+      discountAmount,
+      appliedCoupon,
+      cartGrandTotal,
+      wishlist,
+      recentlyViewed,
+      savedCustomerDetails,
+      currentUser,
+      orders,
+      settings,
+      backendStatus,
+    ]
+  );
+
   return (
-    <StoreContext.Provider
-      value={{
-        products,
-        updateProduct,
-        addProduct,
-        deleteProduct,
-        resetProductsToDefault,
-        cart,
-        addToCart,
-        removeFromCart,
-        updateCartQuantity,
-        clearCart,
-        cartCount,
-        cartSubtotal,
-        shippingFee,
-        discountAmount,
-        appliedCoupon,
-        applyCoupon,
-        removeCoupon,
-        cartGrandTotal,
-        wishlist,
-        toggleWishlist,
-        isInWishlist,
-        recentlyViewed,
-        addRecentlyViewed,
-        clearRecentlyViewed,
-        savedCustomerDetails,
-        saveCustomerDetails,
-        clearSavedCustomerDetails,
-        currentUser,
-        login,
-        logout,
-        saveAddress,
-        orders,
-        createOrder,
-        updateOrderStatus,
-        settings,
-        updateSettings,
-      }}
-    >
+    <StoreContext.Provider value={contextValue}>
       {children}
     </StoreContext.Provider>
   );

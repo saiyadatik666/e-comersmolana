@@ -18,6 +18,18 @@ export const QuickBuyModal: React.FC<QuickBuyModalProps> = ({
   onClose,
 }) => {
   const { settings } = useStore();
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const subtotal = product.price * quantity;
@@ -25,8 +37,17 @@ export const QuickBuyModal: React.FC<QuickBuyModalProps> = ({
   const finalTotal = subtotal + shippingFee;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
-      <div className="relative bg-background border border-border rounded-2xl sm:rounded-3xl max-w-2xl w-full p-4 sm:p-8 space-y-5 sm:space-y-6 max-h-[94vh] overflow-y-auto shadow-2xl">
+    <div
+      className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4 overflow-y-auto animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="quickbuy-modal-title"
+        onClick={(e) => e.stopPropagation()}
+        className="relative bg-background border border-border rounded-2xl sm:rounded-3xl max-w-2xl w-full p-4 sm:p-8 space-y-5 sm:space-y-6 max-h-[94vh] overflow-y-auto shadow-2xl"
+      >
         {/* Close button */}
         <button
           onClick={onClose}
@@ -49,7 +70,7 @@ export const QuickBuyModal: React.FC<QuickBuyModalProps> = ({
             <span className="text-[10px] font-semibold text-emerald-800 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded">
               तत्काल ऑर्डर (Instant Order)
             </span>
-            <h3 className="font-serif font-bold text-sm sm:text-base text-foreground mt-0.5 truncate">
+            <h3 id="quickbuy-modal-title" className="font-serif font-bold text-sm sm:text-base text-foreground mt-0.5 truncate">
               {product.name}
             </h3>
             <p className="text-xs text-muted-foreground truncate">

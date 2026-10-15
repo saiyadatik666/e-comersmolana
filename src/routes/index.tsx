@@ -30,6 +30,34 @@ import {
 } from "@/components/ui/accordion";
 
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Shifa A Hayat — Premium Ayurvedic & Unani Wellness | Palanpur" },
+      {
+        name: "description",
+        content:
+          "हकीम इनायत अहमदी (पालनपुर, गुजरात) के 100% शुद्ध कुदरती नुस्खे। मर्दाना ताकत, पेट समस्या, जोड़ों का दर्द व शास्त्रीय यूनानी अर्क। ऑल इंडिया डिलीवरी एवं कैश ऑन डिलीवरी उपलब्ध।",
+      },
+      { property: "og:title", content: "Shifa A Hayat — Premium Ayurvedic & Unani Wellness | Palanpur" },
+      {
+        property: "og:description",
+        content:
+          "हकीम इनायत अहमदी (पालनपुर, गुजरात) के 100% शुद्ध कुदरती नुस्खे। मर्दाना ताकत, पेट समस्या, जोड़ों का दर्द व शास्त्रीय यूनानी अर्क। ऑल इंडिया डिलीवरी एवं कैश ऑन डिलीवरी उपलब्ध।",
+      },
+      { property: "og:url", content: "https://shifa-a-hayat.com/" },
+      { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://shifa-a-hayat.com/assets/products/zafrani-gold.jpg" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Shifa A Hayat — Premium Ayurvedic & Unani Wellness | Palanpur" },
+      {
+        name: "twitter:description",
+        content:
+          "हकीम इनायत अहमदी (पालनपुर, गुजरात) के 100% शुद्ध कुदरती नुस्खे। ऑल इंडिया डिलीवरी एवं कैश ऑन डिलीवरी उपलब्ध।",
+      },
+      { name: "twitter:image", content: "https://shifa-a-hayat.com/assets/products/zafrani-gold.jpg" },
+    ],
+    links: [{ rel: "canonical", href: "https://shifa-a-hayat.com/" }],
+  }),
   component: IndexPage,
 });
 
@@ -143,6 +171,8 @@ function IndexPage() {
                     alt="Capsule Zafrani Gold (कैप्सूल ज़ाफरानी गोल्ड) - Shifa A Hayat"
                     fetchPriority="high"
                     decoding="async"
+                    width={400}
+                    height={500}
                     onError={(e) => {
                       e.currentTarget.src = "/assets/molana/IMG-20261009-WA0003.jpg";
                     }}
@@ -195,6 +225,10 @@ function IndexPage() {
                   <img
                     src="/assets/products/arq-abe-hayat.jpg"
                     alt="Arq Abe Hayat"
+                    loading="lazy"
+                    decoding="async"
+                    width={96}
+                    height={128}
                     onError={(e) => {
                       e.currentTarget.src = "/assets/molana/IMG-20261009-WA0013.jpg";
                     }}
@@ -228,6 +262,10 @@ function IndexPage() {
                   <img
                     src="/assets/products/tanavai-tel.jpg"
                     alt="Tanavai Tel"
+                    loading="lazy"
+                    decoding="async"
+                    width={96}
+                    height={128}
                     onError={(e) => {
                       e.currentTarget.src = "/assets/molana/IMG-20261009-WA0021.jpg";
                     }}
@@ -261,6 +299,10 @@ function IndexPage() {
                   <img
                     src="/assets/molana/IMG-20261009-WA0016.jpg"
                     alt="Gas Ki Goliyan"
+                    loading="lazy"
+                    decoding="async"
+                    width={96}
+                    height={128}
                     className="w-full h-full object-contain"
                   />
                 </div>
@@ -361,10 +403,18 @@ function IndexPage() {
             ))}
           </div>
 
-          <div className="mt-10 text-center">
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            {activeCategory !== "all" && (
+              <Link to="/shop" search={{ category: activeCategory }}>
+                <Button size="lg" className="rounded-full px-8 font-semibold bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm">
+                  <span>"{CATEGORIES.find((c) => c.id === activeCategory)?.hindi}" के सभी उत्पाद देखें</span>
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Link>
+            )}
             <Link to="/shop">
-              <Button size="lg" variant="outline" className="rounded-full px-8 font-semibold">
-                <span>सभी 21 उत्पाद देखें</span>
+              <Button size="lg" variant={activeCategory === "all" ? "default" : "outline"} className="rounded-full px-8 font-semibold">
+                <span>सभी 21 उत्पाद देखें (Shop All)</span>
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </Link>
@@ -379,6 +429,10 @@ function IndexPage() {
                 <img
                   src="/assets/molana/IMG-20261009-WA0023.jpg"
                   alt="Shabab Avar Powder - Inayat Palanpuri"
+                  loading="lazy"
+                  decoding="async"
+                  width={480}
+                  height={460}
                   className="rounded-2xl w-full object-cover max-h-[460px]"
                 />
                 <div className="absolute bottom-5 left-5 right-5 bg-stone-900/95 backdrop-blur-md p-4 rounded-xl border border-stone-700 text-center">

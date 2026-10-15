@@ -70,38 +70,71 @@ export const Route = createFileRoute("/product/$id")({
           type: "application/ld+json",
           children: JSON.stringify({
             "@context": "https://schema.org",
-            "@type": "Product",
-            name: product.name,
-            alternateName: product.nameHindi,
-            image: [imgUrl],
-            description: product.description,
-            sku: product.id,
-            mpn: product.imageName.replace(".jpg", ""),
-            brand: {
-              "@type": "Brand",
-              name: "Shifa A Hayat",
-            },
-            offers: {
-              "@type": "Offer",
-              url: prodUrl,
-              priceCurrency: "INR",
-              price: product.price,
-              itemCondition: "https://schema.org/NewCondition",
-              availability: product.inStock
-                ? "https://schema.org/InStock"
-                : "https://schema.org/OutOfStock",
-              seller: {
-                "@type": "Organization",
-                name: "Shifa A Hayat",
+            "@graph": [
+              {
+                "@type": "Product",
+                name: product.name,
+                alternateName: product.nameHindi,
+                image: [imgUrl],
+                description: product.description,
+                sku: product.id,
+                mpn: product.imageName.replace(".jpg", ""),
+                brand: {
+                  "@type": "Brand",
+                  name: "Shifa A Hayat",
+                },
+                offers: {
+                  "@type": "Offer",
+                  url: prodUrl,
+                  priceCurrency: "INR",
+                  price: product.price,
+                  itemCondition: "https://schema.org/NewCondition",
+                  availability: product.inStock
+                    ? "https://schema.org/InStock"
+                    : "https://schema.org/OutOfStock",
+                  seller: {
+                    "@type": "Organization",
+                    name: "Shifa A Hayat",
+                  },
+                },
+                aggregateRating: {
+                  "@type": "AggregateRating",
+                  ratingValue: product.rating,
+                  reviewCount: product.reviewCount,
+                  bestRating: "5",
+                  worstRating: "1",
+                },
               },
-            },
-            aggregateRating: {
-              "@type": "AggregateRating",
-              ratingValue: product.rating,
-              reviewCount: product.reviewCount,
-              bestRating: "5",
-              worstRating: "1",
-            },
+              {
+                "@type": "BreadcrumbList",
+                itemListElement: [
+                  {
+                    "@type": "ListItem",
+                    position: 1,
+                    name: "होम",
+                    item: origin,
+                  },
+                  {
+                    "@type": "ListItem",
+                    position: 2,
+                    name: "दुकान (Shop)",
+                    item: `${origin}/shop`,
+                  },
+                  {
+                    "@type": "ListItem",
+                    position: 3,
+                    name: product.categoryHindi || product.category,
+                    item: `${origin}/shop?category=${product.category}`,
+                  },
+                  {
+                    "@type": "ListItem",
+                    position: 4,
+                    name: product.name,
+                    item: prodUrl,
+                  },
+                ],
+              },
+            ],
           }),
         },
       ],
@@ -191,6 +224,7 @@ function ProductDetailPage() {
   const isOutOfStock = !product.inStock || (product.stockCount !== undefined && product.stockCount <= 0);
 
   const handleAddToCart = () => {
+    if (added || isOutOfStock) return;
     addToCart(product, quantity);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
@@ -215,7 +249,7 @@ function ProductDetailPage() {
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 pb-28 sm:pb-12">
         {/* Breadcrumb Navigation */}
-        <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
           <Link to="/" className="hover:text-primary transition-colors">
             होम
           </Link>
@@ -247,6 +281,8 @@ function ProductDetailPage() {
                 alt={`${product.name} (${product.nameHindi}) - Shifa A Hayat`}
                 fetchPriority="high"
                 decoding="async"
+                width={500}
+                height={625}
                 onError={(e) => {
                   if (product.posterImage && e.currentTarget.src !== product.posterImage) {
                     e.currentTarget.src = product.posterImage;
@@ -295,6 +331,10 @@ function ProductDetailPage() {
                     <img
                       src={product.image}
                       alt="Product studio packaging"
+                      loading="lazy"
+                      decoding="async"
+                      width={40}
+                      height={48}
                       className="w-full h-full object-contain"
                     />
                   </div>
@@ -317,6 +357,10 @@ function ProductDetailPage() {
                     <img
                       src={product.posterImage}
                       alt="Original heritage poster"
+                      loading="lazy"
+                      decoding="async"
+                      width={40}
+                      height={48}
                       className="w-full h-full object-contain"
                     />
                   </div>
@@ -441,9 +485,11 @@ function ProductDetailPage() {
                   <span className="text-xs font-semibold text-foreground">मात्रा:</span>
                   <div className="flex items-center border border-border rounded-xl bg-card overflow-hidden">
                     <button
+                      type="button"
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="w-10 h-10 flex items-center justify-center text-sm font-bold hover:bg-secondary transition-colors active:bg-secondary/80"
-                      aria-label="Decrease quantity"
+                      disabled={quantity <= 1}
+                      className="w-10 h-10 flex items-center justify-center text-sm font-bold hover:bg-secondary transition-colors active:bg-secondary/80 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      aria-label="मात्रा घटाएं (Decrease quantity)"
                     >
                       -
                     </button>
@@ -451,13 +497,23 @@ function ProductDetailPage() {
                       {quantity}
                     </span>
                     <button
-                      onClick={() => setQuantity(quantity + 1)}
-                      className="w-10 h-10 flex items-center justify-center text-sm font-bold hover:bg-secondary transition-colors active:bg-secondary/80"
-                      aria-label="Increase quantity"
+                      type="button"
+                      onClick={() => {
+                        const maxStock = product.stockCount !== undefined ? Math.max(1, product.stockCount) : 99;
+                        setQuantity(Math.min(maxStock, quantity + 1));
+                      }}
+                      disabled={quantity >= (product.stockCount !== undefined ? Math.max(1, product.stockCount) : 99)}
+                      className="w-10 h-10 flex items-center justify-center text-sm font-bold hover:bg-secondary transition-colors active:bg-secondary/80 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      aria-label="मात्रा बढ़ाएं (Increase quantity)"
                     >
                       +
                     </button>
                   </div>
+                  {product.stockCount !== undefined && product.stockCount < 10 && (
+                    <span className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">
+                      (अधिकतम {product.stockCount} उपलब्ध)
+                    </span>
+                  )}
                 </div>
               )}
 
@@ -490,8 +546,9 @@ function ProductDetailPage() {
                     <Button
                       size="lg"
                       onClick={handleAddToCart}
+                      disabled={added}
                       className={`rounded-2xl font-bold transition-all ${
-                        added ? "bg-emerald-700 text-white" : "bg-primary text-primary-foreground"
+                        added ? "bg-emerald-700 text-white cursor-default" : "bg-primary text-primary-foreground"
                       }`}
                     >
                       {added ? (
@@ -558,6 +615,35 @@ function ProductDetailPage() {
                 <p className="text-[11px] font-semibold text-foreground">गोपनीय पैकिंग</p>
                 <p className="text-[10px] text-muted-foreground">प्राइवेट पार्सल</p>
               </div>
+            </div>
+
+            {/* Verified Policy Links */}
+            <div className="flex flex-wrap items-center justify-between text-[11px] text-muted-foreground px-1 gap-2">
+              <Link
+                to="/policies"
+                search={{ tab: "shipping" }}
+                className="hover:text-primary transition-colors flex items-center gap-1 font-medium"
+              >
+                <Truck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>शिपिंग नीति (₹499 पर फ्री)</span>
+              </Link>
+              <span>•</span>
+              <Link
+                to="/policies"
+                search={{ tab: "refund" }}
+                className="hover:text-primary transition-colors flex items-center gap-1 font-medium"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-emerald-600" />
+                <span>7-दिन रिटर्न नीति</span>
+              </Link>
+              <span>•</span>
+              <Link
+                to="/contact"
+                className="hover:text-primary transition-colors flex items-center gap-1 font-medium"
+              >
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                <span>हेल्पलाइन +91 {settings.phone}</span>
+              </Link>
             </div>
 
             {/* Dosage & How To Use */}
@@ -770,11 +856,23 @@ function ProductDetailPage() {
               <Button
                 size="sm"
                 variant="outline"
+                disabled={added}
                 onClick={handleAddToCart}
-                className="text-xs rounded-xl px-3 h-10 border-primary/30"
+                className={`text-xs rounded-xl px-3 h-10 border-primary/30 transition-all ${
+                  added ? "bg-emerald-700 text-white cursor-default" : ""
+                }`}
               >
-                <ShoppingBag className="w-3.5 h-3.5 mr-1" />
-                <span>{added ? "जुड़ गया" : "कार्ट"}</span>
+                {added ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 mr-1 text-white" />
+                    <span>जुड़ गया</span>
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag className="w-3.5 h-3.5 mr-1" />
+                    <span>कार्ट</span>
+                  </>
+                )}
               </Button>
               <Button
                 size="sm"

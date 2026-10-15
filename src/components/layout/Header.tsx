@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useStore, formatWhatsAppUrl } from "@/context/StoreContext";
 import {
@@ -25,6 +25,18 @@ export const Header: React.FC = () => {
   const [searchFocused, setSearchFocused] = useState(false);
   const navigate = useNavigate();
 
+  // Escape key listener for mobile drawer dismissal (WCAG 2.1 Keyboard Navigation)
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileMenuOpen]);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -34,16 +46,18 @@ export const Header: React.FC = () => {
     }
   };
 
-  const filteredSuggestions = searchQuery.trim()
-    ? products
-        .filter(
-          (p) =>
-            p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            p.nameHindi.includes(searchQuery) ||
-            p.category.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-        .slice(0, 5)
-    : [];
+  const filteredSuggestions = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase().trim();
+    return products
+      .filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.nameHindi.includes(searchQuery) ||
+          p.category.toLowerCase().includes(q)
+      )
+      .slice(0, 5);
+  }, [searchQuery, products]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur-md shadow-xs transition-all">
@@ -220,7 +234,9 @@ export const Header: React.FC = () => {
             size="icon"
             className="lg:hidden text-foreground w-10 h-10 flex items-center justify-center rounded-xl"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-label={mobileMenuOpen ? "नेविगेशन मेन्यू बंद करें (Close menu)" : "नेविगेशन मेन्यू खोलें (Open menu)"}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-navigation-drawer"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </Button>
@@ -232,6 +248,10 @@ export const Header: React.FC = () => {
         <form onSubmit={handleSearchSubmit} className="relative">
           <Input
             type="text"
+            name="q"
+            id="mobile-search-input"
+            autoComplete="off"
+            aria-label="उत्पाद खोजें (Search products)"
             placeholder="उत्पाद खोजें (ज़ाफरानी गोल्ड, तेल, दर्द...)"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -327,7 +347,13 @@ export const Header: React.FC = () => {
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden="true"
           />
-          <div className="relative bg-background border border-border rounded-t-3xl sm:rounded-3xl max-w-lg w-full mx-auto max-h-[85vh] overflow-y-auto px-4 pt-4 pb-8 space-y-4 shadow-2xl animate-in slide-in-from-bottom duration-300">
+          <div
+            id="mobile-navigation-drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-nav-title"
+            className="relative bg-background border border-border rounded-t-3xl sm:rounded-3xl max-w-lg w-full mx-auto max-h-[85vh] overflow-y-auto px-4 pt-4 pb-8 space-y-4 shadow-2xl animate-in slide-in-from-bottom duration-300"
+          >
             {/* Drawer Header */}
             <div className="flex items-center justify-between border-b border-border pb-3">
               <div className="flex items-center gap-2">
@@ -335,7 +361,7 @@ export const Header: React.FC = () => {
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-serif font-bold text-sm text-foreground">Shifa A Hayat</h3>
+                  <h3 id="mobile-nav-title" className="font-serif font-bold text-sm text-foreground">Shifa A Hayat</h3>
                   <p className="text-[10px] text-muted-foreground">नेविगेशन एवं श्रेणियां</p>
                 </div>
               </div>

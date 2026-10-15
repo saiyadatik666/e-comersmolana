@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useStore } from "@/context/StoreContext";
 import { Header } from "@/components/layout/Header";
@@ -15,6 +15,7 @@ import {
   Plus,
   Minus,
   MessageCircle,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/cart")({
 
 function CartPage() {
   const {
+    products,
     cart,
     removeFromCart,
     updateCartQuantity,
@@ -48,6 +50,16 @@ function CartPage() {
   const [couponInput, setCouponInput] = useState("");
   const [couponError, setCouponError] = useState("");
   const navigate = useNavigate();
+
+  // Out of stock detection in cart
+  const outOfStockCartItems = useMemo(() => {
+    return cart.filter((item) => {
+      const live = products.find((p) => p.id === item.product.id);
+      return !live || !live.inStock || (live.stockCount !== undefined && live.stockCount <= 0);
+    });
+  }, [cart, products]);
+
+  const hasOutOfStock = outOfStockCartItems.length > 0;
 
   const handleApplyCoupon = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,9 +127,33 @@ function CartPage() {
                 </div>
               </div>
 
+              {/* Out of Stock Notice Banner */}
+              {hasOutOfStock && (
+                <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-900 dark:text-rose-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>आपकी कार्ट में अनुपलब्ध उत्पाद मौजूद हैं। चेकआउट करने से पहले कृपया उन्हें हटाएं।</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      outOfStockCartItems.forEach((it: (typeof cart)[0]) => removeFromCart(it.product.id));
+                    }}
+                    className="text-xs font-bold text-rose-700 dark:text-rose-300 underline shrink-0 hover:text-rose-900 cursor-pointer"
+                  >
+                    अनुपलब्ध सामान हटाएं (Remove Out-of-Stock)
+                  </button>
+                </div>
+              )}
+
               {/* Items Card List */}
               <div className="bg-card border border-border rounded-3xl divide-y divide-border overflow-hidden shadow-xs">
-                {cart.map((item) => (
+                {cart.map((item) => {
+                  const live = products.find((p) => p.id === item.product.id) || item.product;
+                  const stock = live.stockCount !== undefined ? live.stockCount : live.inStock ? 50 : 0;
+                  const isItemOutOfStock = !live.inStock || stock <= 0;
+                  const isOverStock = !isItemOutOfStock && item.quantity > stock;
+
+                  return (
                   <div key={item.product.id} className="p-3.5 sm:p-6 flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center justify-between">
                     <div className="flex gap-3 sm:gap-4 items-center flex-1 min-w-0">
                       <Link to="/product/$id" params={{ id: item.product.id }} className="shrink-0">
@@ -134,9 +170,21 @@ function CartPage() {
                       </Link>
 
                       <div className="space-y-1 min-w-0 flex-1">
-                        <span className="text-[10px] font-medium text-emerald-800 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded">
-                          {item.product.categoryHindi}
-                        </span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[10px] font-medium text-emerald-800 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded">
+                            {item.product.categoryHindi}
+                          </span>
+                          {isItemOutOfStock && (
+                            <span className="text-[10px] bg-rose-500/15 text-rose-700 dark:text-rose-400 border border-rose-500/30 px-2 py-0.5 rounded font-bold">
+                              स्टॉक समाप्त (Out of Stock)
+                            </span>
+                          )}
+                          {isOverStock && (
+                            <span className="text-[10px] bg-amber-500/15 text-amber-800 dark:text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded font-medium">
+                              केवल {stock} उपलब्ध
+                            </span>
+                          )}
+                        </div>
                         <Link to="/product/$id" params={{ id: item.product.id }} className="block hover:text-primary transition-colors">
                           <h3 className="font-serif font-bold text-sm sm:text-base text-foreground truncate">
                             {item.product.name}
@@ -156,7 +204,7 @@ function CartPage() {
                         <button
                           type="button"
                           onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}
-                          className="w-8 h-8 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-secondary transition-colors cursor-pointer"
+                          className="w-9 h-9 sm:w-9 sm:h-9 min-w-[36px] min-h-[36px] flex items-center justify-center hover:bg-secondary transition-colors cursor-pointer"
                           aria-label={`मात्रा घटाएं: ${item.product.name} (Decrease quantity)`}
                           title={item.quantity === 1 ? "हटाएं (Remove)" : "मात्रा घटाएं"}
                         >
@@ -173,7 +221,7 @@ function CartPage() {
                           type="button"
                           onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}
                           disabled={item.quantity >= 99}
-                          className="w-8 h-8 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                          className="w-9 h-9 sm:w-9 sm:h-9 min-w-[36px] min-h-[36px] flex items-center justify-center hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                           aria-label={`मात्रा बढ़ाएं: ${item.product.name} (Increase quantity)`}
                           title={item.quantity >= 99 ? "अधिकतम सीमा 99" : "मात्रा बढ़ाएं"}
                         >
@@ -194,7 +242,7 @@ function CartPage() {
                       {/* Remove Button */}
                       <button
                         onClick={() => removeFromCart(item.product.id)}
-                        className="text-stone-400 hover:text-rose-600 w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+                        className="text-stone-400 hover:text-rose-600 w-9 h-9 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg transition-colors cursor-pointer"
                         title="Remove from cart"
                         aria-label={`कार्ट से हटाएं: ${item.product.name} (Remove item)`}
                       >
@@ -202,7 +250,8 @@ function CartPage() {
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="flex items-center justify-between pt-2">
@@ -282,6 +331,12 @@ function CartPage() {
                     <form onSubmit={handleApplyCoupon} className="flex gap-2">
                       <Input
                         type="text"
+                        name="couponCode"
+                        id="cart-coupon-input"
+                        autoComplete="off"
+                        aria-label="कूपन कोड दर्ज करें (Enter coupon code)"
+                        aria-invalid={!!couponError}
+                        aria-describedby={couponError ? "cart-coupon-error" : undefined}
                         placeholder="कूपन कोड (उदा: SHIFA10)"
                         value={couponInput}
                         onChange={(e) => {
@@ -296,7 +351,7 @@ function CartPage() {
                     </form>
 
                     {couponError && (
-                      <p className="text-[11px] text-rose-600 mt-1 font-medium">
+                      <p id="cart-coupon-error" role="alert" className="text-[11px] text-rose-600 mt-1 font-medium">
                         {couponError}
                       </p>
                     )}
@@ -334,16 +389,19 @@ function CartPage() {
               <div className="space-y-2.5 pt-2">
                 <Button
                   size="lg"
+                  disabled={hasOutOfStock}
                   onClick={() => navigate({ to: "/checkout" })}
-                  className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md text-sm flex items-center justify-center gap-2"
+                  className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <MessageCircle className="w-5 h-5 fill-white" />
-                  <span>WhatsApp पर ऑर्डर भेजें (Proceed to Order)</span>
+                  <span>{hasOutOfStock ? "अनुपलब्ध उत्पाद हटाएं (Remove Out-of-Stock)" : "WhatsApp पर ऑर्डर भेजें (Proceed to Order)"}</span>
                   <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
 
                 <p className="text-[11px] text-center text-muted-foreground">
-                  डिलीवरी विवरण दर्ज करें और हकीम जी को WhatsApp पर सीधा ऑर्डर भेजें।
+                  {hasOutOfStock
+                    ? "कृपया चेकआउट करने से पहले आउट-ऑफ-स्टॉक उत्पाद हटाएं।"
+                    : "डिलीवरी विवरण दर्ज करें और हकीम जी को WhatsApp पर सीधा ऑर्डर भेजें।"}
                 </p>
               </div>
             </div>

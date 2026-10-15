@@ -31,12 +31,21 @@ import {
   Tag,
   Activity,
   Database,
+  Download,
+  Upload,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import {
+  createBackupPayload,
+  downloadBackupJson,
+  validateBackupPayload,
+  downloadOrdersCsv,
+} from "@/lib/backup";
 import {
   computeTopOrderedProducts,
   computeOrderStatusDistribution,
@@ -89,6 +98,9 @@ function AdminPage() {
     updateOrderStatus,
     settings,
     updateSettings,
+    backendStatus,
+    refreshBackendStatus,
+    importBackup,
   } = useStore();
 
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
@@ -237,6 +249,51 @@ function AdminPage() {
   // =========================================================================
   const [settingsForm, setSettingsForm] = useState(settings);
   const [settingsErrors, setSettingsErrors] = useState<SettingsFormErrors>({});
+
+  // Backup & Recovery Import State (Part 14)
+  const [importFileError, setImportFileError] = useState<string | null>(null);
+
+  const handleBackupFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportFileError(null);
+
+    // Limit maximum backup file upload size to 10MB to prevent DoS or memory issues
+    if (file.size > 10 * 1024 * 1024) {
+      const err = "फ़ाइल का आकार 10MB से अधिक नहीं होना चाहिए (File exceeds 10MB limit)";
+      setImportFileError(err);
+      toast.error(err);
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const rawJson = JSON.parse(event.target?.result as string);
+        const validation = validateBackupPayload(rawJson);
+        if (!validation.isValid || !validation.payload) {
+          const err = validation.error || "अमान्य बैकअप फ़ाइल";
+          setImportFileError(err);
+          toast.error(err);
+          return;
+        }
+        if (
+          window.confirm(
+            `क्या आप यह बैकअप लोड करना चाहते हैं? इसमें ${validation.payload.products.length} उत्पाद और ${validation.payload.orders.length} ऑर्डर्स शामिल हैं।\n\nनोट: उत्पाद व ऑर्डर डेटा पुनर्स्थापित होगा, लेकिन सुरक्षा कारणों से वर्तमान एडमिन पिन अपरिवर्तित रहेगा।`
+          )
+        ) {
+          importBackup(validation.payload);
+        }
+      } catch {
+        const parseErr = "JSON पार्स करने में विफल। कृपया मान्य बैकअप फ़ाइल चुनें।";
+        setImportFileError(parseErr);
+        toast.error(parseErr);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
 
   // Sync settingsForm if store settings change
   useEffect(() => {
@@ -498,6 +555,7 @@ function AdminPage() {
                 type="password"
                 required
                 autoFocus
+                autoComplete="current-password"
                 placeholder="पिन दर्ज करें..."
                 value={pinInput}
                 disabled={lockoutRemaining > 0}
@@ -561,9 +619,17 @@ function AdminPage() {
               <Badge className="bg-emerald-700 text-white font-bold text-[10px]">
                 Authorized Session
               </Badge>
-              <Badge variant="outline" className="text-[10px] text-muted-foreground border-border">
-                localStorage Mode
-              </Badge>
+              {backendStatus.tablesLive ? (
+                <Badge className="bg-emerald-600 text-white font-bold text-[10px] flex items-center gap-1">
+                  <Database className="w-3 h-3" />
+                  <span>Supabase Live</span>
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/50 flex items-center gap-1">
+                  <Database className="w-3 h-3" />
+                  <span>Dual Adapter (Local Storage)</span>
+                </Badge>
+              )}
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               उत्पाद संपादन, लाइव स्टॉक नियंत्रण, विरासत पोस्टर एवं ऑर्डर प्रबंधन।
@@ -571,6 +637,20 @@ function AdminPage() {
           </div>
 
           <div className="flex items-center gap-2.5 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                refreshBackendStatus();
+                toast.info("बैकएंड स्थिति जांची जा रही है...");
+              }}
+              className="rounded-xl text-xs text-stone-700 dark:text-stone-300 border-border"
+              title="Supabase बैकएंड कनेक्शन व स्कीमा स्थिति पुनः जांचें"
+            >
+              <Database className="w-3.5 h-3.5 mr-1" />
+              <span>डेटाबेस स्थिति जांचें</span>
+            </Button>
+
             <Button
               variant="outline"
               size="sm"
@@ -601,17 +681,22 @@ function AdminPage() {
         </div>
 
         {/* STORAGE & SECURITY ARCHITECTURE NOTICE BANNER */}
-        <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 space-y-2">
-          <div className="flex items-center gap-2 text-xs font-bold text-amber-900 dark:text-amber-300">
-            <Info className="w-4 h-4 shrink-0 text-amber-600" />
-            <span>तकनीकी वास्तुकला सूचना (Architecture Notice)</span>
+        <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2 text-xs font-bold text-amber-900 dark:text-amber-300">
+              <Info className="w-4 h-4 shrink-0 text-amber-600" />
+              <span>तकनीकी वास्तुकला एवं बैकएंड स्थिति (Backend & Security Architecture)</span>
+            </div>
+            <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-400">
+              {backendStatus.statusText}
+            </span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-muted-foreground leading-relaxed">
             <p>
-              • <strong>इन्वेंट्री व डेटा स्टोरेज</strong>: उत्पाद, स्टॉक संख्या और सेटिंग्स इस डिवाइस के <code>localStorage</code> में सुरक्षित हैं। यह स्वचालित रूप से अन्य डिवाइसों से सिंक नहीं होता।
+              • <strong>इन्वेंट्री व डेटा स्टोरेज</strong>: वर्तमान में डुअल-एडेप्टर मोड सक्रिय है। स्थानीय <code>localStorage</code> से डेटा सुरक्षित लोड होता है। PostgreSQL स्कीमा फ़ाइल <code>supabase/migrations/20261015000000_secure_backend_schema.sql</code> तैयार है।
             </p>
             <p>
-              • <strong>ऑर्डर व सुरक्षा स्थिति</strong>: ऑर्डर रिकॉर्ड्स चेकआउट फॉर्म सबमिट करने पर स्थानीय रूप से दर्ज होते हैं। व्हाट्सएप चैट प्रत्यक्ष ग्राहक वार्तालाप हैं, स्वचालित गेटवे नहीं।
+              • <strong>प्रमाणीकरण सुरक्षा (Security Note)</strong>: वर्तमान पिन <code>9586</code> एक क्लाइंट-साइड सुरक्षा गेट है। उत्पादन बैकएंड सक्रिय होने पर इसे सर्वर-वेरिफाइड सेशन कुकीज़ व आरबीएसी (RBAC) से बदला जाएगा।
             </p>
           </div>
         </div>
@@ -1686,22 +1771,39 @@ function AdminPage() {
                 </p>
               </div>
 
-              {/* Status Filter */}
-              <div className="flex items-center gap-2">
-                <Filter className="w-3.5 h-3.5 text-muted-foreground" />
-                <select
-                  value={orderStatusFilter}
-                  onChange={(e) => setOrderStatusFilter(e.target.value)}
-                  className="bg-secondary/60 border border-border rounded-xl text-xs py-1.5 px-3 font-semibold text-foreground focus:outline-none"
+              {/* Actions & Status Filter */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    downloadOrdersCsv(orders);
+                    toast.success("ऑर्डर्स CSV डाउनलोड हो गई (Orders Exported)!");
+                  }}
+                  className="rounded-xl text-xs gap-1.5 h-8"
+                  title="सभी ऑर्डर्स को CSV स्प्रेडशीट में एक्सपोर्ट करें"
                 >
-                  <option value="all">सभी स्थितियां ({orders.length})</option>
-                  <option value="Pending Confirmation">Pending Confirmation</option>
-                  <option value="Confirmed">Confirmed</option>
-                  <option value="Processing">Processing</option>
-                  <option value="Shipped">Shipped</option>
-                  <option value="Delivered">Delivered</option>
-                  <option value="Cancelled">Cancelled</option>
-                </select>
+                  <FileText className="w-3.5 h-3.5 text-blue-600" />
+                  <span>CSV एक्सपोर्ट</span>
+                </Button>
+
+                <div className="flex items-center gap-1.5 bg-secondary/60 border border-border rounded-xl px-2.5 py-1">
+                  <Filter className="w-3.5 h-3.5 text-muted-foreground" />
+                  <select
+                    value={orderStatusFilter}
+                    onChange={(e) => setOrderStatusFilter(e.target.value)}
+                    className="bg-transparent text-xs font-semibold text-foreground focus:outline-none"
+                  >
+                    <option value="all">सभी स्थितियां ({orders.length})</option>
+                    <option value="Pending Confirmation">Pending Confirmation</option>
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -1956,7 +2058,8 @@ function AdminPage() {
                 एडमिन सुरक्षा पिन (Admin Security PIN) *
               </Label>
               <Input
-                type="text"
+                type="password"
+                autoComplete="new-password"
                 value={settingsForm.adminPin || "9586"}
                 onChange={(e) =>
                   setSettingsForm({ ...settingsForm, adminPin: e.target.value })
@@ -1966,7 +2069,7 @@ function AdminPage() {
                 }`}
               />
               <p className="text-[10px] text-muted-foreground">
-                एडमिन पोर्टल अनलॉक करने के लिए आवश्यक गुप्त 4-अंकीय पिन (डिफ़ॉल्ट: 9586)
+                एडमिन पोर्टल अनलॉक करने के लिए आवश्यक 4-अंकीय पिन (डिफ़ॉल्ट: 9586)। नोट: यह केवल इस डिवाइस के स्थानीय गेट को सुरक्षित करता है।
               </p>
               {settingsErrors.adminPin && (
                 <p className="text-[10px] text-rose-600 font-medium">{settingsErrors.adminPin}</p>
@@ -1977,6 +2080,96 @@ function AdminPage() {
               <Save className="w-4 h-4 mr-1.5" />
               <span>सेटिंग्स सुरक्षित करें (Save Settings)</span>
             </Button>
+
+            {/* DATA BACKUP & RECOVERY SECTION (Part 14) */}
+            <div className="pt-6 border-t border-border space-y-4">
+              <div className="flex items-center gap-2">
+                <Database className="w-4 h-4 text-primary" />
+                <h4 className="font-serif text-sm font-bold text-foreground">
+                  डेटा बैकअप, एक्सपोर्ट एवं पुनर्स्थापना (Data Backup & Recovery)
+                </h4>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                ब्राउज़र लोकल स्टोरेज डिवाइस-विशिष्ट होता है। कैश साफ़ होने से बचाने या अन्य डिवाइस पर डेटा ले जाने के लिए बैकअप JSON या ऑर्डर्स CSV डाउनलोड करें।
+              </p>
+              <div className="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 rounded-xl p-2.5 text-[11px] text-emerald-800 dark:text-emerald-300">
+                <strong>डेटा सुरक्षा एवं गोपनीयता गारंटी:</strong> बैकअप फ़ाइलों में कोई भी पासवर्ड, एडमिन पिन, या गुप्त टोकन कभी भी एक्सपोर्ट नहीं होता है। किसी भी बैकअप को लोड करने पर आपका स्थानीय एडमिन पिन हमेशा सुरक्षित और अपरिवर्तित रहता है।
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                {/* Export Full JSON Backup */}
+                <div className="p-3 rounded-2xl border border-border bg-card/60 space-y-2">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                    <Download className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>पूर्ण स्टोर बैकअप (JSON)</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    सभी 21 उत्पाद, इन्वेंट्री संख्या, ऑर्डर्स और वर्तमान सेटिंग्स।
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const payload = createBackupPayload(products, orders, settings);
+                      downloadBackupJson(payload);
+                      toast.success("स्टोर बैकअप JSON फ़ाइल डाउनलोड हो गई!");
+                    }}
+                    className="w-full text-xs rounded-xl"
+                  >
+                    <Download className="w-3.5 h-3.5 mr-1" />
+                    <span>JSON डाउनलोड</span>
+                  </Button>
+                </div>
+
+                {/* Export Orders CSV */}
+                <div className="p-3 rounded-2xl border border-border bg-card/60 space-y-2">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                    <FileText className="w-3.5 h-3.5 text-blue-600" />
+                    <span>ऑर्डर्स स्प्रेडशीट (CSV)</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    एक्सेल व गूगल शीट्स हेतु {orders.length} ग्राहक ऑर्डर्स का ब्योरा।
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      downloadOrdersCsv(orders);
+                      toast.success("ऑर्डर्स CSV डाउनलोड हो गई!");
+                    }}
+                    className="w-full text-xs rounded-xl"
+                  >
+                    <FileText className="w-3.5 h-3.5 mr-1" />
+                    <span>CSV एक्सपोर्ट</span>
+                  </Button>
+                </div>
+
+                {/* Restore From JSON */}
+                <div className="p-3 rounded-2xl border border-border bg-card/60 space-y-2">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                    <Upload className="w-3.5 h-3.5 text-amber-600" />
+                    <span>बैकअप से पुनर्स्थापित करें</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    पूर्व में डाउनलोड की गई Shifa A Hayat JSON बैकअप फ़ाइल चुनें।
+                  </p>
+                  <label className="block">
+                    <span className="sr-only">Choose backup file</span>
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={handleBackupFileSelect}
+                      className="block w-full text-[11px] text-muted-foreground file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[11px] file:font-semibold file:bg-primary file:text-primary-foreground hover:file:opacity-90 cursor-pointer"
+                    />
+                  </label>
+                  {importFileError && (
+                    <p className="text-[10px] text-rose-600 font-medium">{importFileError}</p>
+                  )}
+                </div>
+              </div>
+            </div>
           </form>
         )}
 
