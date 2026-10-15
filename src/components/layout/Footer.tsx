@@ -181,7 +181,7 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <Link to="/contact" className="hover:text-emerald-400 transition-colors">
-                  मुफ्त परामर्श फॉर्म
+                  सहायता केंद्र व FAQ (Help Center)
                 </Link>
               </li>
               <li>

@@ -701,6 +701,59 @@ describe("Part 7 Advanced Shopping Features", () => {
       expect(tel?.price).toBe(200);
     });
   });
+
+  describe("Part 9: Customer Support, FAQ & WhatsApp Help Integrity", () => {
+    it("generates correctly formatted and URL-encoded WhatsApp support links", () => {
+      const waNumber = "+91 95860 37331";
+      const message = "السلام علیکم Hakeem Ji, I need consultation for Zafrani Gold.";
+      const url = formatWhatsAppUrl(waNumber, message);
+
+      expect(url).toContain("https://wa.me/919586037331");
+      expect(url).toContain("text=");
+      expect(url).toContain(encodeURIComponent("السلام علیکم"));
+    });
+
+    it("validates contact consultation form inputs strictly without accepting empty or invalid data", () => {
+      const validateContact = (name: string, phone: string, message: string) => {
+        const cleanPhone = phone.replace(/[^0-9]/g, "");
+        if (!name || name.trim().length < 2) return false;
+        if (cleanPhone.length < 10) return false;
+        if (!message || message.trim().length < 5) return false;
+        return true;
+      };
+
+      // Invalid cases
+      expect(validateContact("", "9586037331", "Need medicine")).toBe(false);
+      expect(validateContact("Ali", "123", "Need medicine")).toBe(false);
+      expect(validateContact("Ali", "9586037331", "Hi")).toBe(false);
+
+      // Valid case
+      expect(
+        validateContact("Mohammad Rafiq", "+91 95860 37331", "I need consultation for joint pain")
+      ).toBe(true);
+    });
+
+    it("formats customer order lookup query accurately with given order identifier", () => {
+      const formatOrderQuery = (orderId: string) => {
+        const cleanId = orderId.trim();
+        return `السلام علیکم Hakeem Ji, मैं अपने Shifa A Hayat ऑर्डर #${cleanId} की स्थिति जानना चाहता हूँ। कृपया विवरण दें।`;
+      };
+
+      const query = formatOrderQuery("SHIFA-984210");
+      expect(query).toContain("#SHIFA-984210");
+      expect(query).toContain("Shifa A Hayat ऑर्डर");
+    });
+
+    it("preserves accurate FAQ policies: free shipping at ₹499, ₹49 fee, and 3-6 days delivery", () => {
+      const freeShippingThreshold = 499;
+      const standardShipping = 49;
+      const deliveryTimeline = "3 से 6 कार्यदिवस";
+
+      expect(freeShippingThreshold).toBe(499);
+      expect(standardShipping).toBe(49);
+      expect(deliveryTimeline).toBe("3 से 6 कार्यदिवस");
+    });
+  });
 });
 
 

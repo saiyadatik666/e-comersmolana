@@ -307,7 +307,7 @@ export const Header: React.FC = () => {
               to="/contact"
               className="text-muted-foreground hover:text-primary transition-colors"
             >
-              संपर्क (Contact)
+              सहायता व संपर्क (Help & FAQ)
             </Link>
           </div>
 
@@ -442,7 +442,7 @@ export const Header: React.FC = () => {
                 onClick={() => setMobileMenuOpen(false)}
                 className="py-2.5 px-3 rounded-xl hover:bg-secondary text-foreground flex items-center justify-between"
               >
-                <span>संपर्क व परामर्श (Contact)</span>
+                <span>सहायता केंद्र व FAQ (Help Center)</span>
                 <span className="text-xs text-muted-foreground">→</span>
               </Link>
               <Link
