@@ -288,6 +288,37 @@ function IndexPage() {
           </div>
         </section>
 
+        {/* TOP BESTSELLERS SHOWCASE */}
+        {bestsellers.length > 0 && (
+          <section className="py-10 sm:py-14 px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto border-b border-border/60">
+            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-3 mb-6 sm:mb-8">
+              <div>
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-1">
+                  <Award className="w-4 h-4 text-amber-600" />
+                  <span>सर्वाधिक लोकप्रिय नुस्खे (Customer Favorites)</span>
+                </div>
+                <h2 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
+                  ग्राहकों द्वारा सबसे ज्यादा मंगाए गए उत्पाद
+                </h2>
+              </div>
+              <Link to="/shop" className="text-xs sm:text-sm font-semibold text-primary hover:underline flex items-center gap-1">
+                <span>सभी बेस्टसेलर देखें</span>
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+              {bestsellers.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onOpenPoster={(p) => setSelectedPoster(p)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* POPULAR CATEGORIES */}
         <section className="py-10 sm:py-14 px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-6 sm:mb-10">

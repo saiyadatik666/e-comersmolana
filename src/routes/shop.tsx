@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useStore } from "@/context/StoreContext";
 import { CATEGORIES, Product } from "@/data/products";
@@ -71,6 +71,15 @@ function ShopPage() {
   const [sortBy, setSortBy] = useState<"featured" | "price-asc" | "price-desc" | "rating">("featured");
   const [inStockOnly, setInStockOnly] = useState(false);
   const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
+
+  useEffect(() => {
+    if (searchParams.category !== undefined) {
+      setSelectedCategory(searchParams.category || "all");
+    }
+    if (searchParams.q !== undefined) {
+      setSearchQuery(searchParams.q || "");
+    }
+  }, [searchParams.category, searchParams.q]);
 
   // Filter & Sort Logic
   const filteredProducts = useMemo(() => {

@@ -254,7 +254,7 @@ function ProductDetailPage() {
             </div>
 
             {/* Gallery Thumbnails (Amazon/Flipkart Style Dual-View Switcher) */}
-            {product.posterImage && product.posterImage !== product.image && (
+            {product.posterImage && product.posterImage !== product.image ? (
               <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <button
                   type="button"
@@ -299,6 +299,16 @@ function ProductDetailPage() {
                     <p className="text-[10px] text-muted-foreground truncate">प्रमाणित पोस्टर विवरण</p>
                   </div>
                 </button>
+              </div>
+            ) : (
+              <div className="p-3 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 text-xs text-amber-900 dark:text-amber-300 flex items-start gap-2.5">
+                <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-foreground">मूल अभिलेखीय पोस्टर से प्रामाणिक प्रस्तुति</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                    यह उत्पाद हकीम इनायत अहमदी के मूल प्रचार पोस्टर ({product.imageName}) के अनुसार प्रस्तुत किया गया है। नुस्खे व सामग्री की प्रामाणिकता पोस्टर पर मुद्रित है।
+                  </p>
+                </div>
               </div>
             )}
 

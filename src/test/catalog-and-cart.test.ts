@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
 import { INITIAL_PRODUCTS, CATEGORIES } from "@/data/products";
 
 describe("Product Catalog Data Integrity", () => {
@@ -33,6 +35,25 @@ describe("Product Catalog Data Integrity", () => {
       expect(p.posterImage || p.image).toMatch(/^\/assets\/molana\/IMG-/);
       expect(p.benefits.length).toBeGreaterThan(0);
       expect(p.ingredients.length).toBeGreaterThan(0);
+    });
+  });
+
+  it("verifies that all primary and poster images for all 21 products exist on disk", () => {
+    const publicDir = path.resolve(process.cwd(), "public");
+    INITIAL_PRODUCTS.forEach((p) => {
+      const primaryImagePath = path.join(publicDir, p.image.replace(/^\//, ""));
+      expect(
+        fs.existsSync(primaryImagePath),
+        `Primary image for ${p.name} (${p.image}) does not exist on disk`
+      ).toBe(true);
+
+      if (p.posterImage) {
+        const posterPath = path.join(publicDir, p.posterImage.replace(/^\//, ""));
+        expect(
+          fs.existsSync(posterPath),
+          `Poster image for ${p.name} (${p.posterImage}) does not exist on disk`
+        ).toBe(true);
+      }
     });
   });
 

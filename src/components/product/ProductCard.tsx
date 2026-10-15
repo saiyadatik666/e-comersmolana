@@ -81,6 +81,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
               {discountPercent}% छूट
             </span>
           )}
+          {product.image.startsWith("/assets/products/") ? (
+            <span className="bg-stone-900/75 text-emerald-300 text-[8px] sm:text-[9px] font-medium px-1.5 py-0.5 rounded shadow-xs self-start backdrop-blur-xs border border-emerald-500/30">
+              स्टूडियो पैकेजिंग
+            </span>
+          ) : (
+            <span className="bg-stone-900/75 text-amber-300 text-[8px] sm:text-[9px] font-medium px-1.5 py-0.5 rounded shadow-xs self-start backdrop-blur-xs border border-amber-500/30">
+              विरासत पोस्टर
+            </span>
+          )}
         </div>
 
         {/* Wishlist & Zoom Actions */}
@@ -175,28 +184,44 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
             </span>
           </div>
 
-          <Button
-            size="sm"
-            onClick={handleAddToCart}
-            aria-label={added ? `${product.name} कार्ट में जुड़ गया` : `${product.name} कार्ट में जोड़ें`}
-            className={`w-full xs:w-auto rounded-xl px-2.5 sm:px-3 text-[11px] sm:text-xs font-semibold h-8 sm:h-9 transition-all ${
-              added
-                ? "bg-emerald-700 text-white"
-                : "bg-primary text-primary-foreground hover:bg-primary/90"
-            }`}
-          >
-            {added ? (
-              <>
-                <Check className="w-3.5 h-3.5 mr-1" />
-                <span>जुड़ गया</span>
-              </>
-            ) : (
-              <>
-                <ShoppingBag className="w-3.5 h-3.5 mr-1" />
-                <span>कार्ट में जोड़ें</span>
-              </>
-            )}
-          </Button>
+          <div className="flex items-center gap-1.5 w-full xs:w-auto">
+            <Button
+              size="sm"
+              onClick={handleAddToCart}
+              aria-label={added ? `${product.name} कार्ट में जुड़ गया` : `${product.name} कार्ट में जोड़ें`}
+              className={`flex-1 xs:flex-initial rounded-xl px-2.5 sm:px-3 text-[11px] sm:text-xs font-semibold h-8 sm:h-9 transition-all ${
+                added
+                  ? "bg-emerald-700 text-white"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90"
+              }`}
+            >
+              {added ? (
+                <>
+                  <Check className="w-3.5 h-3.5 mr-1" />
+                  <span>जुड़ गया</span>
+                </>
+              ) : (
+                <>
+                  <ShoppingBag className="w-3.5 h-3.5 mr-1" />
+                  <span>कार्ट में जोड़ें</span>
+                </>
+              )}
+            </Button>
+
+            <a
+              href={formatWhatsAppUrl(
+                settings.whatsapp,
+                `السلام علیکم Hakeem Ji, I want to order ${product.name} (Price ₹${product.price}). Please guide me.`
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="xs:hidden h-8 w-8 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-xs transition-colors"
+              title="WhatsApp पर तुरंत ऑर्डर करें"
+              aria-label={`WhatsApp order for ${product.name}`}
+            >
+              <MessageCircle className="w-4 h-4 fill-white" />
+            </a>
+          </div>
         </div>
       </div>
     </div>
