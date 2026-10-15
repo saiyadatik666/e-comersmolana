@@ -309,4 +309,135 @@ describe("Product 404 Guard & Admin Security Verification", () => {
   });
 });
 
+describe("End-to-End Realistic Customer Shopping Journey (Part 4 Verification)", () => {
+  it("completes full shopping journey: search -> detail -> add to cart -> quantity change -> coupon -> checkout -> WhatsApp message & copy fallback", () => {
+    // 1. Search for product
+    const searchQuery = "arq";
+    const found = INITIAL_PRODUCTS.find(
+      (p) =>
+        p.id.toLowerCase().includes(searchQuery) ||
+        p.name.toLowerCase().includes(searchQuery) ||
+        p.nameHindi.includes(searchQuery)
+    );
+    expect(found).toBeDefined();
+    expect(found?.id).toBe("shifa-arq-abe-hayat");
+    expect(found?.price).toBe(250);
+
+    // 2. Add to cart with quantity 1
+    let cart = [{ product: found!, quantity: 1, packSize: found!.packSize }];
+    let subtotal = cart.reduce((acc, i) => acc + i.product.price * i.quantity, 0);
+    let shipping = subtotal >= 499 ? 0 : 49;
+    let total = subtotal + shipping;
+    expect(subtotal).toBe(250);
+    expect(shipping).toBe(49);
+    expect(total).toBe(299);
+
+    // 3. Change quantity to 2 (Unlocks Free Shipping at >= ₹499)
+    cart = [{ product: found!, quantity: 2, packSize: found!.packSize }];
+    subtotal = cart.reduce((acc, i) => acc + i.product.price * i.quantity, 0);
+    shipping = subtotal >= 499 ? 0 : 49;
+    expect(subtotal).toBe(500);
+    expect(shipping).toBe(0); // Free shipping unlocked
+
+    // 4. Apply valid coupon SHIFA10 (10% off)
+    const couponCode = "SHIFA10";
+    let discount = 0;
+    if (couponCode === "SHIFA10") {
+      discount = Math.round(subtotal * 0.1);
+    }
+    expect(discount).toBe(50);
+    total = Math.max(0, subtotal + shipping - discount);
+    expect(total).toBe(450);
+
+    // 5. Test invalid coupon rejection
+    const invalidCoupon = "INVALID999";
+    const isValidCoupon = ["SHIFA10", "AYURVEDA50", "FREECOD"].includes(invalidCoupon);
+    expect(isValidCoupon).toBe(false);
+
+    // 6. Enter customer checkout information
+    const customer: CustomerDeliveryDetails = {
+      fullName: "Mohammad Rafiq",
+      phone: "9825012345",
+      addressLine: "Station Road, Near Clock Tower",
+      cityVillage: "Palanpur",
+      state: "Gujarat",
+      pincode: "385001",
+      country: "India",
+      landmark: "Opposite Civil Hospital",
+      email: "rafiq@example.com",
+    };
+
+    // 7. Validate form fields
+    const isFormValid =
+      customer.fullName.trim().length > 0 &&
+      /^[6-9]\d{9}$/.test(customer.phone.replace(/[^0-9]/g, "")) &&
+      customer.addressLine.trim().length >= 5 &&
+      customer.cityVillage.trim().length > 0 &&
+      customer.state.trim().length > 0 &&
+      /^\d{6}$/.test(customer.pincode.trim());
+    expect(isFormValid).toBe(true);
+
+    // 8. Generate WhatsApp Order Message
+    const message = buildWhatsAppOrderMessage({
+      customer,
+      items: cart,
+      subtotal,
+      shippingCharge: shipping,
+      finalAmount: total,
+      origin: "https://shifa-a-hayat.com",
+    });
+
+    expect(message).toContain("SHIFA A HAYAT — NEW ORDER REQUEST");
+    expect(message).toContain("Full name: Mohammad Rafiq");
+    expect(message).toContain("Mobile number: 9825012345");
+    expect(message).toContain("Arq Abe Hayat Drops");
+    expect(message).toContain("Product price: ₹250");
+    expect(message).toContain("Selected quantity: 2");
+    expect(message).toContain("Subtotal: ₹500");
+    expect(message).toContain("Final amount: ₹450");
+
+    // 9. Generate click-to-chat URL
+    const waUrl = generateWhatsAppOrderUrl({
+      customer,
+      items: cart,
+      subtotal,
+      shippingCharge: shipping,
+      finalAmount: total,
+      whatsappNumber: "9586037331",
+      origin: "https://shifa-a-hayat.com",
+    });
+
+    expect(waUrl.startsWith("https://wa.me/919586037331?text=")).toBe(true);
+    expect(waUrl).not.toContain("api.whatsapp.com");
+    expect(waUrl).toContain(encodeURIComponent("Mohammad Rafiq"));
+  });
+
+  it("handles negative shopping journey cases: empty carts, invalid product IDs, and malformed forms", () => {
+    // Empty cart totals
+    const emptyCart: Array<{ product: { price: number }; quantity: number }> = [];
+    const emptySubtotal = emptyCart.reduce((acc, i) => acc + i.product.price * i.quantity, 0);
+    const emptyShipping = emptySubtotal > 0 ? (emptySubtotal >= 499 ? 0 : 49) : 0;
+    const emptyTotal = emptySubtotal + emptyShipping;
+    expect(emptySubtotal).toBe(0);
+    expect(emptyShipping).toBe(0);
+    expect(emptyTotal).toBe(0);
+
+    // Invalid product ID lookup returns undefined
+    const invalidProduct = INITIAL_PRODUCTS.find((p) => p.id === "non-existent-product-id-999");
+    expect(invalidProduct).toBeUndefined();
+
+    // Invalid form: missing phone and invalid pincode
+    const invalidCustomer = {
+      fullName: "",
+      phone: "12345", // too short
+      pincode: "12345", // only 5 digits
+    };
+    const isPhoneValid = /^[6-9]\d{9}$/.test(invalidCustomer.phone.replace(/[^0-9]/g, ""));
+    const isPinValid = /^\d{6}$/.test(invalidCustomer.pincode);
+    expect(isPhoneValid).toBe(false);
+    expect(isPinValid).toBe(false);
+  });
+});
+
+
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -50,6 +50,12 @@ function PoliciesPage() {
   const [activeTab, setActiveTab] = useState<
     "shipping" | "refund" | "privacy" | "terms" | "compliance"
   >(searchParams.tab || "shipping");
+
+  useEffect(() => {
+    if (searchParams.tab) {
+      setActiveTab(searchParams.tab);
+    }
+  }, [searchParams.tab]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
