@@ -229,6 +229,37 @@ export function generateWhatsAppWebOrderUrl(
   return formatWhatsAppWebUrl(params.whatsappNumber, message);
 }
 
+export function sanitizeRecentlyViewedIds(
+  rawIds: unknown,
+  validProducts: Product[] = INITIAL_PRODUCTS
+): string[] {
+  if (!Array.isArray(rawIds)) return [];
+  const validSet = new Set(validProducts.map((p) => p.id));
+  const seen = new Set<string>();
+  const sanitized: string[] = [];
+  for (const id of rawIds) {
+    if (typeof id === "string" && validSet.has(id) && !seen.has(id)) {
+      seen.add(id);
+      sanitized.push(id);
+      if (sanitized.length >= 6) break;
+    }
+  }
+  return sanitized;
+}
+
+export function pushRecentlyViewedId(
+  existingIds: string[],
+  newId: string,
+  maxItems = 6,
+  validProducts: Product[] = INITIAL_PRODUCTS
+): string[] {
+  if (!newId || typeof newId !== "string") return existingIds;
+  const isValid = validProducts.some((p) => p.id === newId);
+  if (!isValid) return existingIds;
+  const filtered = existingIds.filter((id) => id !== newId);
+  return [newId, ...filtered].slice(0, maxItems);
+}
+
 interface StoreContextType {
   // Products
   products: Product[];
@@ -255,6 +286,11 @@ interface StoreContextType {
   wishlist: string[];
   toggleWishlist: (productId: string) => void;
   isInWishlist: (productId: string) => boolean;
+
+  // Recently Viewed Products (Section 2)
+  recentlyViewed: string[];
+  addRecentlyViewed: (productId: string) => void;
+  clearRecentlyViewed: () => void;
 
   // Customer Delivery Details & Consent
   savedCustomerDetails: CustomerDeliveryDetails | null;
@@ -369,16 +405,37 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return null;
   });
 
-  // Wishlist
+  // Wishlist: validate IDs against catalog data
   const [wishlist, setWishlist] = useState<string[]>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("shifa_wishlist");
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {
-          console.error(e);
+      try {
+        const saved = localStorage.getItem("shifa_wishlist");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            return parsed.filter(
+              (id): id is string =>
+                typeof id === "string" && INITIAL_PRODUCTS.some((p) => p.id === id)
+            );
+          }
         }
+      } catch (e) {
+        console.error("Failed to parse wishlist", e);
+      }
+    }
+    return [];
+  });
+
+  // Recently Viewed: store only valid product IDs, capped at 6, safe fallback
+  const [recentlyViewed, setRecentlyViewed] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("shifa_recently_viewed");
+        if (saved) {
+          return sanitizeRecentlyViewedIds(JSON.parse(saved), INITIAL_PRODUCTS);
+        }
+      } catch (e) {
+        console.error("Failed to parse recently viewed products", e);
       }
     }
     return [];
@@ -549,6 +606,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [wishlist]);
 
   useEffect(() => {
+    try {
+      localStorage.setItem("shifa_recently_viewed", JSON.stringify(recentlyViewed));
+    } catch (e) {
+      console.warn("Unable to persist recently viewed products to localStorage", e);
+    }
+  }, [recentlyViewed]);
+
+  useEffect(() => {
     if (currentUser) {
       localStorage.setItem("shifa_user", JSON.stringify(currentUser));
     } else {
@@ -684,6 +749,22 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const isInWishlist = (productId: string) => wishlist.includes(productId);
 
+  // Recently Viewed actions (Section 2)
+  const addRecentlyViewed = (productId: string) => {
+    setRecentlyViewed((prev) => pushRecentlyViewedId(prev, productId, 6, INITIAL_PRODUCTS));
+  };
+
+  const clearRecentlyViewed = () => {
+    setRecentlyViewed([]);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("shifa_recently_viewed");
+      } catch (e) {
+        console.warn("Unable to remove recently viewed from localStorage", e);
+      }
+    }
+  };
+
   // Auth actions
   // Saved Customer Details & Consent (Section 6)
   const [savedCustomerDetails, setSavedCustomerDetails] = useState<CustomerDeliveryDetails | null>(() => {
@@ -808,6 +889,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         wishlist,
         toggleWishlist,
         isInWishlist,
+        recentlyViewed,
+        addRecentlyViewed,
+        clearRecentlyViewed,
         savedCustomerDetails,
         saveCustomerDetails,
         clearSavedCustomerDetails,

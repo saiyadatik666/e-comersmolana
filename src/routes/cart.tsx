@@ -46,13 +46,27 @@ function CartPage() {
   } = useStore();
 
   const [couponInput, setCouponInput] = useState("");
+  const [couponError, setCouponError] = useState("");
   const navigate = useNavigate();
 
   const handleApplyCoupon = (e: React.FormEvent) => {
     e.preventDefault();
     if (couponInput.trim()) {
       const ok = applyCoupon(couponInput.trim());
-      if (ok) setCouponInput("");
+      if (ok) {
+        setCouponInput("");
+        setCouponError("");
+      } else {
+        setCouponError("अमान्य कूपन कोड। कृपया SHIFA10 या AYURVEDA50 का उपयोग करें।");
+      }
+    }
+  };
+
+  const handleQuickCoupon = (code: string) => {
+    const ok = applyCoupon(code);
+    if (ok) {
+      setCouponInput("");
+      setCouponError("");
     }
   };
 
@@ -140,19 +154,28 @@ function CartPage() {
                       {/* Quantity Controller */}
                       <div className="flex items-center border border-border rounded-xl bg-secondary/30 overflow-hidden">
                         <button
+                          type="button"
                           onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}
-                          className="w-8 h-8 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-secondary transition-colors"
+                          className="w-8 h-8 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-secondary transition-colors cursor-pointer"
                           aria-label={`मात्रा घटाएं: ${item.product.name} (Decrease quantity)`}
+                          title={item.quantity === 1 ? "हटाएं (Remove)" : "मात्रा घटाएं"}
                         >
-                          <Minus className="w-3.5 h-3.5" />
+                          {item.quantity === 1 ? (
+                            <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                          ) : (
+                            <Minus className="w-3.5 h-3.5" />
+                          )}
                         </button>
                         <span className="px-2.5 text-xs font-bold min-w-7 text-center">
                           {item.quantity}
                         </span>
                         <button
+                          type="button"
                           onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}
-                          className="w-8 h-8 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-secondary transition-colors"
+                          disabled={item.quantity >= 99}
+                          className="w-8 h-8 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-secondary transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                           aria-label={`मात्रा बढ़ाएं: ${item.product.name} (Increase quantity)`}
+                          title={item.quantity >= 99 ? "अधिकतम सीमा 99" : "मात्रा बढ़ाएं"}
                         >
                           <Plus className="w-3.5 h-3.5" />
                         </button>
@@ -237,38 +260,67 @@ function CartPage() {
               </div>
 
               {/* Coupon Code Section */}
-              <div className="pt-2 border-t border-border">
+              <div className="pt-2 border-t border-border space-y-2">
                 {appliedCoupon ? (
                   <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 rounded-xl p-2.5 text-xs">
                     <div className="flex items-center gap-1.5 text-emerald-900 dark:text-emerald-200 font-semibold">
                       <Tag className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>कूपन '{appliedCoupon}' लागू है!</span>
+                      <span>कूपन '{appliedCoupon}' लागू है! ({discountAmount > 0 ? `₹${discountAmount} बचत` : "मुफ्त डिलीवरी"})</span>
                     </div>
                     <button
+                      type="button"
                       onClick={removeCoupon}
-                      className="text-stone-500 hover:text-rose-600 transition-colors"
+                      className="text-stone-500 hover:text-rose-600 transition-colors cursor-pointer"
                       title="Remove Coupon"
+                      aria-label="कूपन हटाएं (Remove coupon)"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ) : (
-                  <form onSubmit={handleApplyCoupon} className="flex gap-2">
-                    <Input
-                      type="text"
-                      placeholder="कूपन कोड (उदा: SHIFA10)"
-                      value={couponInput}
-                      onChange={(e) => setCouponInput(e.target.value)}
-                      className="text-xs bg-secondary/50 rounded-xl uppercase"
-                    />
-                    <Button type="submit" size="sm" variant="outline" className="text-xs rounded-xl shrink-0">
-                      लागू करें
-                    </Button>
-                  </form>
+                  <div>
+                    <form onSubmit={handleApplyCoupon} className="flex gap-2">
+                      <Input
+                        type="text"
+                        placeholder="कूपन कोड (उदा: SHIFA10)"
+                        value={couponInput}
+                        onChange={(e) => {
+                          setCouponInput(e.target.value);
+                          if (couponError) setCouponError("");
+                        }}
+                        className={`text-xs bg-secondary/50 rounded-xl uppercase ${couponError ? "border-rose-500" : ""}`}
+                      />
+                      <Button type="submit" size="sm" variant="outline" className="text-xs rounded-xl shrink-0 cursor-pointer">
+                        लागू करें
+                      </Button>
+                    </form>
+
+                    {couponError && (
+                      <p className="text-[11px] text-rose-600 mt-1 font-medium">
+                        {couponError}
+                      </p>
+                    )}
+
+                    {/* Quick Available Coupon Chips */}
+                    <div className="pt-2 flex flex-wrap items-center gap-1.5">
+                      <span className="text-[10px] text-muted-foreground">उपलब्ध कूपन:</span>
+                      <button
+                        type="button"
+                        onClick={() => handleQuickCoupon("SHIFA10")}
+                        className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300/60 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 transition-colors cursor-pointer"
+                      >
+                        SHIFA10 (10% छूट)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleQuickCoupon("AYURVEDA50")}
+                        className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300/60 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 transition-colors cursor-pointer"
+                      >
+                        AYURVEDA50 (₹50 छूट)
+                      </button>
+                    </div>
+                  </div>
                 )}
-                <p className="text-[10px] text-muted-foreground mt-1.5">
-                  10% छूट के लिए कूपन कोड <strong className="text-primary">SHIFA10</strong> का उपयोग करें।
-                </p>
               </div>
 
               {/* Checkout Actions */}

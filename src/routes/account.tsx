@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useStore, Address } from "@/context/StoreContext";
 import { Header } from "@/components/layout/Header";
@@ -16,13 +16,25 @@ import {
   Plus,
   SlidersHorizontal,
   LogOut,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 
+export interface AccountSearch {
+  tab?: "orders" | "wishlist" | "addresses" | undefined;
+}
+
 export const Route = createFileRoute("/account")({
+  validateSearch: (search: Record<string, unknown>): AccountSearch => {
+    const tab = search["tab"];
+    if (tab === "wishlist" || tab === "orders" || tab === "addresses") {
+      return { tab };
+    }
+    return {};
+  },
   head: () => ({
     meta: [
       { title: "माय अकाउंट व ऑर्डर विवरण (Account) — Shifa A Hayat" },
@@ -33,6 +45,7 @@ export const Route = createFileRoute("/account")({
 });
 
 function AccountPage() {
+  const searchParams = Route.useSearch();
   const {
     currentUser,
     orders,
@@ -43,7 +56,15 @@ function AccountPage() {
     login,
   } = useStore();
 
-  const [activeTab, setActiveTab] = useState<"orders" | "wishlist" | "addresses">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "wishlist" | "addresses">(
+    searchParams.tab || "orders"
+  );
+
+  useEffect(() => {
+    if (searchParams.tab) {
+      setActiveTab(searchParams.tab);
+    }
+  }, [searchParams.tab]);
   const [showAddAddress, setShowAddAddress] = useState(false);
 
   // New Address Form State
@@ -253,7 +274,18 @@ function AccountPage() {
 
         {/* Tab 2: Wishlist */}
         {activeTab === "wishlist" && (
-          <div>
+          <div className="space-y-6">
+            {/* Storage Notice (Section 3) */}
+            <div className="bg-amber-50/70 dark:bg-amber-950/30 border border-amber-300/60 dark:border-amber-800/60 rounded-2xl p-4 flex items-start gap-3 text-xs text-amber-900 dark:text-amber-200">
+              <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div className="leading-relaxed">
+                <strong className="font-semibold block text-amber-950 dark:text-amber-100">
+                  स्थानीय डिवाइस स्टोरेज सूचना (Device Storage Notice):
+                </strong>
+                आपकी विशलिस्ट इस डिवाइस के ब्राउज़र स्टोरेज में सुरक्षित है। केंद्रीय सर्वर खाते के बिना यह अन्य फोन या कंप्यूटर पर स्वतः सिंक (synchronize) नहीं होगी।
+              </div>
+            </div>
+
             {wishlistProducts.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
                 {wishlistProducts.map((p) => (
@@ -261,14 +293,23 @@ function AccountPage() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-16 bg-card border rounded-3xl p-8 max-w-md mx-auto">
-                <Heart className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground mb-4">आपकी विशलिस्ट खाली है।</p>
-                <Link to="/shop">
-                  <Button size="sm" className="rounded-full">
-                    उत्पाद खोजें
-                  </Button>
-                </Link>
+              <div className="text-center py-16 bg-card border border-border rounded-3xl p-8 max-w-md mx-auto space-y-4">
+                <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto text-muted-foreground border border-border">
+                  <Heart className="w-8 h-8 text-rose-500/70" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-lg font-bold text-foreground">आपकी विशलिस्ट खाली है</h3>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    दुकान में किसी भी उत्पाद के दिल (Heart) आइकन पर क्लिक करके उसे बाद के लिए यहां सहेज सकते हैं।
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <Link to="/shop">
+                    <Button size="sm" className="rounded-full text-xs px-6">
+                      उत्पाद खोजें (Explore Store)
+                    </Button>
+                  </Link>
+                </div>
               </div>
             )}
           </div>

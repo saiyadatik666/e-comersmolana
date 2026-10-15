@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useStore, formatWhatsAppUrl } from "@/context/StoreContext";
 import { Header } from "@/components/layout/Header";
@@ -25,7 +25,7 @@ import {
   Clock,
   Package,
 } from "lucide-react";
-import { INITIAL_PRODUCTS } from "@/data/products";
+import { INITIAL_PRODUCTS, Product } from "@/data/products";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -111,7 +111,16 @@ export const Route = createFileRoute("/product/$id")({
 
 function ProductDetailPage() {
   const { id } = Route.useParams();
-  const { products, addToCart, toggleWishlist, isInWishlist, settings } = useStore();
+  const {
+    products,
+    addToCart,
+    toggleWishlist,
+    isInWishlist,
+    settings,
+    recentlyViewed,
+    addRecentlyViewed,
+    clearRecentlyViewed,
+  } = useStore();
   const navigate = useNavigate();
 
   const product = products.find((p) => p.id === id);
@@ -121,6 +130,21 @@ function ProductDetailPage() {
   const [showQuickBuy, setShowQuickBuy] = useState(false);
   const [added, setAdded] = useState(false);
   const [activeView, setActiveView] = useState<"product" | "poster">("product");
+
+  useEffect(() => {
+    if (product?.id) {
+      addRecentlyViewed(product.id);
+    }
+  }, [product?.id, addRecentlyViewed]);
+
+  const recentlyViewedProducts = useMemo(() => {
+    if (!product) return [];
+    return recentlyViewed
+      .filter((vId) => vId !== product.id)
+      .map((vId) => products.find((p) => p.id === vId))
+      .filter((p): p is Product => p !== undefined)
+      .slice(0, 4);
+  }, [recentlyViewed, product, products]);
 
   // If product is not found, show dedicated Product Not Found view
   if (!product) {
@@ -546,6 +570,19 @@ function ProductDetailPage() {
                 </div>
               </div>
 
+              {/* Dosage & How to Use (Supported by verified catalog data) */}
+              {product.dosage && (
+                <div className="pt-4 border-t border-border/80">
+                  <h3 className="font-serif text-lg font-bold text-foreground mb-2 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-emerald-600" />
+                    <span>सेवन विधि एवं प्रयोग (Dosage & Instructions)</span>
+                  </h3>
+                  <div className="p-3.5 rounded-2xl bg-secondary/60 border border-border text-xs sm:text-sm text-foreground font-medium leading-relaxed">
+                    {product.dosage}
+                  </div>
+                </div>
+              )}
+
               {/* Precautions */}
               {product.precautions && (
                 <div className="pt-4 border-t border-border/80 text-xs text-muted-foreground flex items-start gap-2">
@@ -605,6 +642,35 @@ function ProductDetailPage() {
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
               {relatedProducts.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Recently Viewed Products Section (Section 2) */}
+        {recentlyViewedProducts.length > 0 && (
+          <div className="mt-16 border-t border-border pt-12">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="font-serif text-2xl font-bold text-foreground">
+                  हाल ही में देखे गए उत्पाद (Recently Viewed)
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  आपके इस डिवाइस पर हाल ही में ब्राउज़ किए गए उत्पाद
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={clearRecentlyViewed}
+                className="text-xs text-muted-foreground hover:text-rose-600 transition-colors font-medium border border-border px-3 py-1.5 rounded-full hover:bg-secondary cursor-pointer"
+                aria-label="इतिहास साफ़ करें (Clear recently viewed history)"
+              >
+                इतिहास साफ़ करें (Clear)
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
+              {recentlyViewedProducts.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
             </div>

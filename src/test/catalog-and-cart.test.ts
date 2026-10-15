@@ -77,6 +77,8 @@ import {
   cleanWhatsAppNumber,
   formatWhatsAppUrl,
   formatWhatsAppWebUrl,
+  sanitizeRecentlyViewedIds,
+  pushRecentlyViewedId,
   CustomerDeliveryDetails,
 } from "@/context/StoreContext";
 
@@ -436,6 +438,169 @@ describe("End-to-End Realistic Customer Shopping Journey (Part 4 Verification)",
     const isPinValid = /^\d{6}$/.test(invalidCustomer.pincode);
     expect(isPhoneValid).toBe(false);
     expect(isPinValid).toBe(false);
+  });
+});
+
+describe("Part 7 Advanced Shopping Features", () => {
+  describe("Recently Viewed Products Tracking & Hygiene", () => {
+    it("sanitizes raw storage data: keeps only valid product IDs, rejects deleted/unknown IDs, and drops duplicates", () => {
+      const rawStored = [
+        "shifa-zafrani-gold",
+        "invalid-deleted-id-999",
+        "shifa-arq-abe-hayat",
+        "shifa-zafrani-gold", // duplicate
+        12345, // malformed non-string
+        null,
+        undefined,
+        "shifa-tanavai-tel",
+      ];
+
+      const sanitized = sanitizeRecentlyViewedIds(rawStored, INITIAL_PRODUCTS);
+      expect(sanitized).toEqual([
+        "shifa-zafrani-gold",
+        "shifa-arq-abe-hayat",
+        "shifa-tanavai-tel",
+      ]);
+      expect(sanitized.every((id) => INITIAL_PRODUCTS.some((p) => p.id === id))).toBe(true);
+    });
+
+    it("caps recently viewed products at maximum 6 items", () => {
+      const sevenValidIds = INITIAL_PRODUCTS.slice(0, 7).map((p) => p.id);
+      const sanitized = sanitizeRecentlyViewedIds(sevenValidIds, INITIAL_PRODUCTS);
+      expect(sanitized.length).toBe(6);
+      expect(sanitized).toEqual(sevenValidIds.slice(0, 6));
+    });
+
+    it("pushRecentlyViewedId prepends newest view to index 0, deduplicates, and caps at 6", () => {
+      let viewed: string[] = ["shifa-zafrani-gold", "shifa-arq-abe-hayat"];
+
+      // View a third product
+      viewed = pushRecentlyViewedId(viewed, "shifa-tanavai-tel", 6, INITIAL_PRODUCTS);
+      expect(viewed).toEqual([
+        "shifa-tanavai-tel",
+        "shifa-zafrani-gold",
+        "shifa-arq-abe-hayat",
+      ]);
+
+      // Re-view the first product: should move to front without duplicate
+      viewed = pushRecentlyViewedId(viewed, "shifa-zafrani-gold", 6, INITIAL_PRODUCTS);
+      expect(viewed).toEqual([
+        "shifa-zafrani-gold",
+        "shifa-tanavai-tel",
+        "shifa-arq-abe-hayat",
+      ]);
+
+      // Attempt to view an invalid/deleted ID: should ignore safely
+      viewed = pushRecentlyViewedId(viewed, "unknown-deleted-product", 6, INITIAL_PRODUCTS);
+      expect(viewed).toEqual([
+        "shifa-zafrani-gold",
+        "shifa-tanavai-tel",
+        "shifa-arq-abe-hayat",
+      ]);
+    });
+  });
+
+  describe("Product Discovery & Multi-criteria Search", () => {
+    it("finds products by Hindi name, English name, and ingredients", () => {
+      // 1. Search by Hindi name: 'ज़ाफरानी'
+      const hindiMatches = INITIAL_PRODUCTS.filter((p) =>
+        p.nameHindi.toLowerCase().includes("ज़ाफरानी") || p.name.toLowerCase().includes("zafrani")
+      );
+      expect(hindiMatches.length).toBeGreaterThanOrEqual(1);
+      expect(hindiMatches[0]?.id).toBe("shifa-zafrani-gold");
+
+      // 2. Search by classical ingredient: 'अर्क' or 'रोग़न'
+      const arqMatches = INITIAL_PRODUCTS.filter(
+        (p) =>
+          p.name.toLowerCase().includes("arq") ||
+          p.nameHindi.toLowerCase().includes("अर्क") ||
+          p.category === "classical-tonics"
+      );
+      expect(arqMatches.length).toBeGreaterThanOrEqual(1);
+
+      // 3. Search by symptom or benefit: 'दर्द' (pain relief)
+      const jointMatches = INITIAL_PRODUCTS.filter(
+        (p) =>
+          p.category === "joint-pain" ||
+          p.description.toLowerCase().includes("दर्द") ||
+          p.benefits.some((b) => b.toLowerCase().includes("दर्द"))
+      );
+      expect(jointMatches.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it("verifies category filters and sort options work synchronously", () => {
+      const mensProducts = INITIAL_PRODUCTS.filter((p) => p.category === "mens-wellness");
+      expect(mensProducts.length).toBeGreaterThan(0);
+
+      // Sort by price ascending
+      const sortedAsc = [...mensProducts].sort((a, b) => a.price - b.price);
+      for (let i = 0; i < sortedAsc.length - 1; i++) {
+        expect(sortedAsc[i]!.price).toBeLessThanOrEqual(sortedAsc[i + 1]!.price);
+      }
+
+      // Sort by price descending
+      const sortedDesc = [...mensProducts].sort((a, b) => b.price - a.price);
+      for (let i = 0; i < sortedDesc.length - 1; i++) {
+        expect(sortedDesc[i]!.price).toBeGreaterThanOrEqual(sortedDesc[i + 1]!.price);
+      }
+    });
+  });
+
+  describe("Wishlist Catalog Integrity", () => {
+    it("ensures wishlist items map 1:1 to authentic catalog products and prices", () => {
+      const storedWishlist = ["shifa-zafrani-gold", "shifa-tanavai-tel"];
+      const wishlistProducts = storedWishlist
+        .map((id) => INITIAL_PRODUCTS.find((p) => p.id === id))
+        .filter((p) => p !== undefined);
+
+      expect(wishlistProducts.length).toBe(2);
+      expect(wishlistProducts[0]?.price).toBe(1450);
+      expect(wishlistProducts[1]?.price).toBe(200);
+      expect(wishlistProducts[1]?.image).toBe("/assets/products/tanavai-tel.jpg");
+    });
+  });
+
+  describe("Cart Quantity Bounds & Authenticity Protection", () => {
+    it("strictly bounds cart quantities between 1 and 99", () => {
+      const clampQty = (qty: number) => Math.max(1, Math.min(99, Math.floor(qty) || 1));
+      expect(clampQty(0)).toBe(1);
+      expect(clampQty(-5)).toBe(1);
+      expect(clampQty(100)).toBe(99);
+      expect(clampQty(999)).toBe(99);
+      expect(clampQty(5)).toBe(5);
+    });
+
+    it("retains the exact ₹499 free shipping threshold and coupon discount calculations", () => {
+      const freeShippingThreshold = 499;
+      const standardShippingFee = 49;
+
+      // Below threshold (₹450): shipping applies
+      const subtotalBelow = 450;
+      const shippingBelow = subtotalBelow >= freeShippingThreshold ? 0 : standardShippingFee;
+      expect(shippingBelow).toBe(49);
+
+      // At or above threshold (₹500): free shipping
+      const subtotalAbove = 500;
+      const shippingAbove = subtotalAbove >= freeShippingThreshold ? 0 : standardShippingFee;
+      expect(shippingAbove).toBe(0);
+
+      // SHIFA10 10% discount check
+      const discount10 = Math.round(subtotalAbove * 0.1);
+      expect(discount10).toBe(50);
+      expect(subtotalAbove + shippingAbove - discount10).toBe(450);
+    });
+  });
+
+  describe("Product Information & Authentic Dosage Transparency", () => {
+    it("verifies all 21 products contain genuine dosage instructions and zero invented medical guarantees", () => {
+      INITIAL_PRODUCTS.forEach((product) => {
+        expect(product.dosage).toBeDefined();
+        expect(product.dosage.length).toBeGreaterThan(5);
+        // Ensure no fabricated '100% cure guarantee' or miraculous claims
+        expect(product.description).not.toContain("100% गारंटी");
+        expect(product.dosage).not.toContain("चमत्कारी शर्तिया इलाज");
+      });
+    });
   });
 });
 

@@ -175,13 +175,14 @@ export const Header: React.FC = () => {
           {/* Wishlist Link */}
           <Link
             to="/account"
+            search={{ tab: "wishlist" }}
             className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-secondary text-foreground relative transition-colors"
-            title="Wishlist"
-            aria-label="Wishlist"
+            title="विशलिस्ट (Wishlist)"
+            aria-label={`विशलिस्ट: ${wishlist.length} सहेजे गए उत्पाद (Wishlist with ${wishlist.length} items)`}
           >
             <Heart className="w-5 h-5 text-muted-foreground hover:text-red-500 transition-colors" />
             {wishlist.length > 0 && (
-              <span className="absolute 1 -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center shadow-xs">
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center shadow-xs">
                 {wishlist.length}
               </span>
             )}
@@ -410,6 +411,15 @@ export const Header: React.FC = () => {
               >
                 <span>शॉपिंग कार्ट ({cartCount} सामग्री)</span>
                 <span className="text-xs text-primary font-bold">₹{cartGrandTotal}</span>
+              </Link>
+              <Link
+                to="/account"
+                search={{ tab: "wishlist" }}
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2.5 px-3 rounded-xl hover:bg-secondary text-foreground flex items-center justify-between"
+              >
+                <span>विशलिस्ट ({wishlist.length} सहेजे गए)</span>
+                <span className="text-xs text-rose-500 font-semibold">{wishlist.length}</span>
               </Link>
               <Link
                 to="/account"

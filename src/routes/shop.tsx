@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useStore } from "@/context/StoreContext";
+import { useStore, formatWhatsAppUrl } from "@/context/StoreContext";
 import { CATEGORIES, Product } from "@/data/products";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -14,6 +14,8 @@ import {
   Filter,
   CheckCircle,
   Sparkles,
+  RotateCcw,
+  MessageCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -63,7 +65,7 @@ export const Route = createFileRoute("/shop")({
 });
 
 function ShopPage() {
-  const { products } = useStore();
+  const { products, settings, recentlyViewed, clearRecentlyViewed } = useStore();
   const searchParams = Route.useSearch();
 
   const [searchQuery, setSearchQuery] = useState(searchParams.q || "");
@@ -81,7 +83,7 @@ function ShopPage() {
     }
   }, [searchParams.category, searchParams.q]);
 
-  // Filter & Sort Logic
+  // Comprehensive Multi-criteria Search & Sort Logic
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       // Category filter
@@ -94,13 +96,33 @@ function ShopPage() {
       }
       // Search query
       if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
+        const query = searchQuery.toLowerCase().trim();
         const matchesName = product.name.toLowerCase().includes(query);
-        const matchesHindi = product.nameHindi.includes(query);
+        const matchesHindi = product.nameHindi.toLowerCase().includes(query);
         const matchesDesc = product.description.toLowerCase().includes(query);
         const matchesSub = product.subtitle.toLowerCase().includes(query);
         const matchesCategory = product.category.toLowerCase().includes(query);
-        if (!matchesName && !matchesHindi && !matchesDesc && !matchesSub && !matchesCategory) {
+        const matchesCategoryHindi = product.categoryHindi.toLowerCase().includes(query);
+        const matchesIngredients = product.ingredients?.some((ing) => ing.toLowerCase().includes(query));
+        const matchesBenefits = product.benefits?.some((b) => b.toLowerCase().includes(query));
+        const matchesDosage = product.dosage?.toLowerCase().includes(query);
+        const matchedTaxonomy = CATEGORIES.find(
+          (c) => c.id !== "all" && (c.name.toLowerCase().includes(query) || c.hindi.toLowerCase().includes(query))
+        );
+        const matchesMappedCategory = matchedTaxonomy ? product.category === matchedTaxonomy.id : false;
+
+        if (
+          !matchesName &&
+          !matchesHindi &&
+          !matchesDesc &&
+          !matchesSub &&
+          !matchesCategory &&
+          !matchesCategoryHindi &&
+          !matchesIngredients &&
+          !matchesBenefits &&
+          !matchesDosage &&
+          !matchesMappedCategory
+        ) {
           return false;
         }
       }
@@ -116,12 +138,25 @@ function ShopPage() {
     });
   }, [products, selectedCategory, searchQuery, inStockOnly, sortBy]);
 
+  const hasActiveFilters =
+    searchQuery.trim() !== "" ||
+    selectedCategory !== "all" ||
+    sortBy !== "featured" ||
+    inStockOnly;
+
   const resetFilters = () => {
     setSearchQuery("");
     setSelectedCategory("all");
     setSortBy("featured");
     setInStockOnly(false);
   };
+
+  const recentlyViewedProducts = useMemo(() => {
+    return recentlyViewed
+      .map((vId) => products.find((p) => p.id === vId))
+      .filter((p): p is Product => p !== undefined)
+      .slice(0, 4);
+  }, [recentlyViewed, products]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -225,6 +260,68 @@ function ShopPage() {
               </button>
             ))}
           </div>
+
+          {/* Active Filter Indicators & Quick Clear (Section 1) */}
+          {hasActiveFilters && (
+            <div className="pt-3 border-t border-border/60 flex flex-wrap items-center gap-2 text-xs">
+              <span className="text-muted-foreground font-medium flex items-center gap-1">
+                <Filter className="w-3.5 h-3.5 text-primary" />
+                <span>सक्रिय फ़िल्टर:</span>
+              </span>
+
+              {searchQuery.trim() && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium">
+                  खोज: "{searchQuery}"
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="hover:text-foreground ml-0.5 cursor-pointer"
+                    aria-label="खोज साफ़ करें"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+
+              {selectedCategory !== "all" && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 font-medium">
+                  {CATEGORIES.find((c) => c.id === selectedCategory)?.hindi || selectedCategory}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategory("all")}
+                    className="hover:text-foreground ml-0.5 cursor-pointer"
+                    aria-label="श्रेणी फ़िल्टर हटाएं"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+
+              {sortBy !== "featured" && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-foreground border border-border font-medium">
+                  क्रम: {sortBy === "price-asc" ? "कम से ज्यादा" : sortBy === "price-desc" ? "ज्यादा से कम" : "रेटिंग"}
+                  <button
+                    type="button"
+                    onClick={() => setSortBy("featured")}
+                    className="hover:text-foreground ml-0.5 cursor-pointer"
+                    aria-label="क्रमबद्धता रीसेट करें"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={resetFilters}
+                className="h-7 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 px-2 py-0 ml-auto cursor-pointer"
+              >
+                <RotateCcw className="w-3 h-3 mr-1" />
+                <span>सभी रीसेट करें (Reset All)</span>
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Product Grid (2-column on mobile, 3-column on tablet, 4-column on desktop) */}
@@ -239,19 +336,72 @@ function ShopPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-16 bg-card border border-dashed rounded-3xl p-8 max-w-md mx-auto">
-            <div className="w-14 h-14 rounded-full bg-secondary text-muted-foreground flex items-center justify-center mx-auto mb-4">
-              <Search className="w-6 h-6" />
+          <div className="text-center py-16 bg-card border border-dashed rounded-3xl p-6 sm:p-10 max-w-lg mx-auto space-y-4">
+            <div className="w-16 h-16 rounded-full bg-secondary text-muted-foreground flex items-center justify-center mx-auto mb-2 border border-border">
+              <Search className="w-7 h-7 text-primary/70" />
             </div>
-            <h3 className="font-serif text-lg font-bold text-foreground">
+            <h3 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
               कोई उत्पाद नहीं मिला
             </h3>
-            <p className="text-xs text-muted-foreground mt-1 mb-6">
-              आपके खोजे गए शब्द या फिल्टर के लिए कोई उत्पाद उपलब्ध नहीं है।
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
+              {searchQuery.trim()
+                ? `"${searchQuery}" के लिए कोई उत्पाद मेल नहीं खाता। कृपया स्पेलिंग जांचें या सामान्य शब्द खोजें।`
+                : "चयनित श्रेणी या फ़िल्टर के अनुसार कोई उत्पाद नहीं मिला।"}
             </p>
-            <Button onClick={resetFilters} variant="outline" className="rounded-full text-xs">
-              फिल्टर हटाएं (Reset Filters)
-            </Button>
+
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Button
+                onClick={resetFilters}
+                className="w-full sm:w-auto rounded-full text-xs font-semibold px-6 cursor-pointer"
+              >
+                सभी फ़िल्टर हटाएं (Show All 21 Products)
+              </Button>
+              <a
+                href={formatWhatsAppUrl(
+                  settings.whatsapp,
+                  `السلام علیکم Hakeem Ji, I am looking for medicines for: ${searchQuery || "health consultation"}`
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 py-2 px-5 rounded-full border border-emerald-600/40 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>हकीम जी से सलाह लें</span>
+              </a>
+            </div>
+          </div>
+        )}
+
+        {/* Recently Viewed Products Section on Shop Page (Section 2) */}
+        {recentlyViewedProducts.length > 0 && (
+          <div className="mt-16 sm:mt-20 border-t border-border pt-10">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
+                  हाल ही में देखे गए उत्पाद (Recently Viewed)
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  आपके द्वारा इस डिवाइस पर हाल ही में देखे गए उत्पाद
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={clearRecentlyViewed}
+                className="text-xs text-muted-foreground hover:text-rose-600 transition-colors font-medium border border-border px-3 py-1.5 rounded-full hover:bg-secondary cursor-pointer"
+                aria-label="हाल ही में देखे गए इतिहास को साफ़ करें"
+              >
+                इतिहास साफ़ करें (Clear)
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+              {recentlyViewedProducts.map((p) => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  onOpenPoster={(posterProd) => setSelectedPoster(posterProd)}
+                />
+              ))}
+            </div>
           </div>
         )}
       </main>
