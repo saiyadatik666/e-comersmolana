@@ -45,7 +45,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onOpenPoster 
     : 0;
 
   return (
-    <div className="group relative bg-card border border-border/80 rounded-2xl overflow-hidden shadow-xs hover:shadow-xl hover:border-primary/40 transition-all duration-300 flex flex-col h-full">
+    <div className="group relative bg-card border border-border/80 rounded-2xl overflow-hidden shadow-xs hover:shadow-xl hover:border-primary/40 focus-within:ring-2 focus-within:ring-primary/60 transition-all duration-300 flex flex-col h-full">
       {/* Product Image Container - Studio E-Commerce Presentation */}
       <div className="relative aspect-4/5 w-full bg-gradient-to-b from-stone-50/80 via-white to-stone-100/90 dark:from-stone-900/60 dark:via-stone-900/40 dark:to-stone-950 p-2 sm:p-3 overflow-hidden flex items-center justify-center">
         <Link to="/product/$id" params={{ id: product.id }} className="block w-full h-full flex items-center justify-center">

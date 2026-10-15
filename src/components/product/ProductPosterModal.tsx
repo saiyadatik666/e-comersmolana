@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Product } from "@/data/products";
 import { X, ZoomIn, ZoomOut, RotateCcw, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,17 @@ interface ProductPosterModalProps {
 }
 
 export const ProductPosterModal: React.FC<ProductPosterModalProps> = ({ product, onClose }) => {
+  useEffect(() => {
+    if (!product) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [product, onClose]);
+
   if (!product) return null;
 
   return (
