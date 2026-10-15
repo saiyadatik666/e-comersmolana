@@ -32,6 +32,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
+interface CustomerFormErrors {
+  fullName?: string | undefined;
+  phone?: string | undefined;
+  addressLine?: string | undefined;
+  cityVillage?: string | undefined;
+  state?: string | undefined;
+  pincode?: string | undefined;
+  country?: string | undefined;
+  email?: string | undefined;
+}
+
 interface CustomerDetailsFormProps {
   items: CartItem[] | { product: Product; quantity: number; packSize?: string }[];
   subtotal: number;
@@ -79,7 +90,7 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
   const [consentToSave, setConsentToSave] = useState(!!savedCustomerDetails);
 
   // Form validation errors
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<CustomerFormErrors>({});
 
   // Submission / Review state
   const [submittedMessage, setSubmittedMessage] = useState<string>("");
@@ -106,7 +117,7 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
 
   // Validate form fields
   const validateForm = (): boolean => {
-    const errs: Record<string, string> = {};
+    const errs: CustomerFormErrors = {};
 
     if (!fullName.trim()) {
       errs.fullName = "कृपया अपना पूरा नाम लिखें (Full Name is required)";

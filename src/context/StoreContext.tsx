@@ -10,27 +10,27 @@ export interface CustomerDeliveryDetails {
   state: string;
   pincode: string;
   country: string; // Defaults to India, editable
-  landmark?: string;
-  email?: string;
+  landmark?: string | undefined;
+  email?: string | undefined;
 }
 
 export interface CartItem {
   product: Product;
   quantity: number;
-  packSize?: string;
+  packSize?: string | undefined;
 }
 
 export interface Address {
   id: string;
   fullName: string;
   phone: string;
-  alternatePhone?: string;
+  alternatePhone?: string | undefined;
   addressLine: string;
-  landmark?: string;
+  landmark?: string | undefined;
   city: string;
   state: string;
   pincode: string;
-  isDefault?: boolean;
+  isDefault?: boolean | undefined;
 }
 
 export interface OrderItem {
@@ -55,9 +55,9 @@ export interface Order {
   createdAt: string;
   customerName: string;
   customerPhone: string;
-  customerEmail?: string;
+  customerEmail?: string | undefined;
   shippingAddress: Address;
-  customerDeliveryDetails?: CustomerDeliveryDetails;
+  customerDeliveryDetails?: CustomerDeliveryDetails | undefined;
   items: OrderItem[];
   subtotal: number;
   shippingCharge: number;
@@ -66,8 +66,8 @@ export interface Order {
   paymentMethod: "WhatsApp Direct Order" | "COD" | "ONLINE_UPI";
   paymentStatus: "Pending Confirmation" | "Pending" | "Paid" | "Failed";
   orderStatus: OrderStatus;
-  trackingNumber?: string;
-  notes?: string;
+  trackingNumber?: string | undefined;
+  notes?: string | undefined;
 }
 
 export interface User {
@@ -121,12 +121,12 @@ export function buildWhatsAppOrderMessage({
       packSize: string;
     };
     quantity: number;
-    packSize?: string;
+    packSize?: string | undefined;
   }>;
   subtotal: number;
   shippingCharge: number;
   finalAmount: number;
-  origin?: string;
+  origin?: string | undefined;
 }): string {
   let msg = "SHIFA A HAYAT — NEW ORDER REQUEST\n\n";
   msg += "CUSTOMER DETAILS\n";
@@ -203,13 +203,13 @@ export function generateWhatsAppOrderUrl({
       packSize: string;
     };
     quantity: number;
-    packSize?: string;
+    packSize?: string | undefined;
   }>;
   subtotal: number;
   shippingCharge: number;
   finalAmount: number;
   whatsappNumber: string;
-  origin?: string;
+  origin?: string | undefined;
 }): string {
   const message = buildWhatsAppOrderMessage({
     customer,

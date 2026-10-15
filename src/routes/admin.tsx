@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useStore, Order } from "@/context/StoreContext";
+import { useStore, Order, OrderStatus } from "@/context/StoreContext";
 import { Product, CATEGORIES } from "@/data/products";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -57,7 +57,24 @@ function AdminPage() {
   const [activeTab, setActiveTab] = useState<"overview" | "products" | "assets" | "orders" | "settings">("overview");
   const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
 
-  // Admin PIN Authentication Gate with Rate Limiting (Security Hardening)
+  // =========================================================================
+  // SECURITY ARCHITECTURE NOTICE — CLIENT-SIDE PIN GATEWAY
+  // =========================================================================
+  // NOTE: In this static / client-side SPA deployment without a dedicated
+  // backend server or database, the admin PIN check and sessionStorage lockout
+  // are operational front-of-house barriers intended to deter casual tampering,
+  // accidental edits, and local unauthorized staff browsing.
+  //
+  // CRITICAL SECURITY DISTINCTION:
+  // Client-side storage (sessionStorage / localStorage) CANNOT provide true,
+  // tamper-proof security against a determined adversary with browser DevTools.
+  // Genuine, production-grade admin security requires:
+  // 1. Server-side authentication (e.g. HttpOnly session cookies or signed JWTs).
+  // 2. Server-side Role-Based Access Control (RBAC) middleware verifying every mutation.
+  // 3. Centralized rate limiting on the server / API gateway to prevent brute-force attacks.
+  // Secrets and private business data must never be committed to client-side bundles.
+  // =========================================================================
+
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       return sessionStorage.getItem("shifa_admin_authenticated") === "true";
@@ -66,13 +83,40 @@ function AdminPage() {
   });
   const [pinInput, setPinInput] = useState("");
   const [showPinError, setShowPinError] = useState(false);
-  const [failedAttempts, setFailedAttempts] = useState(0);
-  const [lockoutRemaining, setLockoutRemaining] = useState(0);
+
+  // Persistent failed attempts state (retained across refresh within browser session)
+  const [failedAttempts, setFailedAttempts] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("shifa_admin_failed_attempts");
+      return saved ? parseInt(saved, 10) || 0 : 0;
+    }
+    return 0;
+  });
+
+  // Persistent lockout remaining calculation based on stored timestamp
+  const [lockoutRemaining, setLockoutRemaining] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const lockoutUntil = sessionStorage.getItem("shifa_admin_lockout_until");
+      if (lockoutUntil) {
+        const diff = Math.ceil((parseInt(lockoutUntil, 10) - Date.now()) / 1000);
+        return diff > 0 ? diff : 0;
+      }
+    }
+    return 0;
+  });
 
   useEffect(() => {
     if (lockoutRemaining <= 0) return;
     const timer = setInterval(() => {
-      setLockoutRemaining((prev) => (prev > 0 ? prev - 1 : 0));
+      setLockoutRemaining((prev) => {
+        if (prev <= 1) {
+          if (typeof window !== "undefined") {
+            sessionStorage.removeItem("shifa_admin_lockout_until");
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
     }, 1000);
     return () => clearInterval(timer);
   }, [lockoutRemaining]);
@@ -86,19 +130,32 @@ function AdminPage() {
     const currentPin = settings.adminPin || "9586";
     if (pinInput.trim() === currentPin) {
       setIsAuthenticated(true);
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("shifa_admin_authenticated", "true");
-      }
-      toast.success("सुरक्षा पिन सत्यापित! एडमिन पोर्टल अनलॉक हो गया।");
       setShowPinError(false);
       setFailedAttempts(0);
+      setLockoutRemaining(0);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("shifa_admin_authenticated", "true");
+        sessionStorage.removeItem("shifa_admin_failed_attempts");
+        sessionStorage.removeItem("shifa_admin_lockout_until");
+      }
+      toast.success("सुरक्षा पिन सत्यापित! एडमिन पोर्टल अनलॉक हो गया।");
     } else {
       const nextAttempts = failedAttempts + 1;
       setFailedAttempts(nextAttempts);
       setShowPinError(true);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("shifa_admin_failed_attempts", String(nextAttempts));
+      }
+
       if (nextAttempts >= 5) {
-        setLockoutRemaining(30);
-        toast.error("5 बार गलत पिन दर्ज किया गया। सुरक्षा कारणों से 30 सेकंड का कूलडाउन लागू है।");
+        // Cooldown: 30 seconds base + 15 seconds for each extra failed attempt up to 300s
+        const cooldownSeconds = Math.min(30 + (nextAttempts - 5) * 15, 300);
+        const until = Date.now() + cooldownSeconds * 1000;
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("shifa_admin_lockout_until", String(until));
+        }
+        setLockoutRemaining(cooldownSeconds);
+        toast.error(`अत्यधिक गलत प्रयास (${nextAttempts} बार)। सुरक्षा कारणों से ${cooldownSeconds} सेकंड का कूलडाउन लागू है।`);
       } else {
         toast.error(`गलत सुरक्षा पिन। (शेष प्रयास: ${5 - nextAttempts})`);
       }
@@ -644,7 +701,7 @@ function AdminPage() {
                         <td className="py-3 px-4">
                           <select
                             value={ord.orderStatus}
-                            onChange={(e) => updateOrderStatus(ord.id, e.target.value as any)}
+                            onChange={(e) => updateOrderStatus(ord.id, e.target.value as OrderStatus)}
                             className="bg-secondary border border-border rounded-lg text-xs py-1 px-2 font-semibold"
                           >
                             <option value="Pending Confirmation">Pending Confirmation</option>

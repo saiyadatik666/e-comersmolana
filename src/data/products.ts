@@ -7,24 +7,24 @@ export interface Product {
   category: string;
   categoryHindi: string;
   price: number;
-  compareAtPrice?: number;
+  compareAtPrice?: number | undefined;
   rating: number;
   reviewCount: number;
   image: string;
-  posterImage?: string;
+  posterImage?: string | undefined;
   imageName: string;
   packSize: string;
   inStock: boolean;
   stockCount: number;
-  isBestseller?: boolean;
-  isNew?: boolean;
+  isBestseller?: boolean | undefined;
+  isNew?: boolean | undefined;
   isVerifiedPrice: boolean;
   status: "published" | "draft";
   dosage: string;
   description: string;
   benefits: string[];
   ingredients: string[];
-  precautions?: string;
+  precautions?: string | undefined;
 }
 
 export const CATEGORIES = [

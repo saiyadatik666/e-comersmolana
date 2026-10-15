@@ -133,7 +133,7 @@ describe("WhatsApp Order Request Generator (PRD Section 7)", () => {
   it("generates valid click-to-chat URL with proper phone and URL-encoding", () => {
     const url = generateWhatsAppOrderUrl({
       customer: mockCustomer,
-      items: [sampleProducts[0]],
+      items: [sampleProducts[0]!],
       subtotal: 500,
       shippingCharge: 0,
       finalAmount: 500,
@@ -175,7 +175,7 @@ describe("Catalog Search, Filtering & Coupon Business Logic", () => {
       (p) => p.name.includes(queryHindi) || p.nameHindi.includes(queryHindi)
     );
     expect(matchesHindi.length).toBeGreaterThanOrEqual(1);
-    expect(matchesHindi[0].id).toBe("shifa-zafrani-gold");
+    expect(matchesHindi[0]?.id).toBe("shifa-zafrani-gold");
 
     const queryEng = "capsule";
     const matchesEng = INITIAL_PRODUCTS.filter(

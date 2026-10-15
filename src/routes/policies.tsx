@@ -11,14 +11,22 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
+type PolicyTab = "shipping" | "refund" | "privacy" | "terms" | "compliance";
+
 interface PolicySearch {
-  tab?: "shipping" | "refund" | "privacy" | "terms" | "compliance";
+  tab?: PolicyTab | undefined;
 }
 
 export const Route = createFileRoute("/policies")({
   validateSearch: (search: Record<string, unknown>): PolicySearch => {
+    const validTabs: PolicyTab[] = ["shipping", "refund", "privacy", "terms", "compliance"];
+    const candidate = search["tab"];
+    const tab: PolicyTab =
+      typeof candidate === "string" && validTabs.includes(candidate as PolicyTab)
+        ? (candidate as PolicyTab)
+        : "shipping";
     return {
-      tab: typeof search.tab === "string" ? (search.tab as any) : "shipping",
+      tab,
     };
   },
   head: () => ({

@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
 export const Header: React.FC = () => {
-  const { cartCount, wishlist, settings, currentUser, products } = useStore();
+  const { cartCount, cartGrandTotal, wishlist, settings, currentUser, products } = useStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
@@ -28,7 +28,7 @@ export const Header: React.FC = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate({ to: "/shop", search: { q: searchQuery.trim() } as any });
+      navigate({ to: "/shop", search: { q: searchQuery.trim() } });
       setSearchFocused(false);
       setMobileMenuOpen(false);
     }
@@ -270,28 +270,28 @@ export const Header: React.FC = () => {
             </Link>
             <Link
               to="/shop"
-              search={{ category: "mens-wellness" } as any}
+              search={{ category: "mens-wellness" }}
               className="text-muted-foreground hover:text-primary transition-colors"
             >
               मर्दाना कमजोरी व ताकत
             </Link>
             <Link
               to="/shop"
-              search={{ category: "digestive-care" } as any}
+              search={{ category: "digestive-care" }}
               className="text-muted-foreground hover:text-primary transition-colors"
             >
               पेट, गैस व कब्ज
             </Link>
             <Link
               to="/shop"
-              search={{ category: "joint-pain" } as any}
+              search={{ category: "joint-pain" }}
               className="text-muted-foreground hover:text-primary transition-colors"
             >
               कमर व जोड़ों का दर्द
             </Link>
             <Link
               to="/shop"
-              search={{ category: "classical-tonics" } as any}
+              search={{ category: "classical-tonics" }}
               className="text-muted-foreground hover:text-primary transition-colors"
             >
               शास्त्रीय अर्क व माजून
@@ -369,7 +369,7 @@ export const Header: React.FC = () => {
               </Link>
               <Link
                 to="/shop"
-                search={{ category: "mens-wellness" } as any}
+                search={{ category: "mens-wellness" }}
                 onClick={() => setMobileMenuOpen(false)}
                 className="py-2.5 px-3 rounded-xl hover:bg-secondary text-stone-700 dark:text-stone-300 flex items-center justify-between text-xs"
               >
@@ -378,7 +378,7 @@ export const Header: React.FC = () => {
               </Link>
               <Link
                 to="/shop"
-                search={{ category: "digestive-care" } as any}
+                search={{ category: "digestive-care" }}
                 onClick={() => setMobileMenuOpen(false)}
                 className="py-2.5 px-3 rounded-xl hover:bg-secondary text-stone-700 dark:text-stone-300 flex items-center justify-between text-xs"
               >
@@ -387,7 +387,7 @@ export const Header: React.FC = () => {
               </Link>
               <Link
                 to="/shop"
-                search={{ category: "joint-pain" } as any}
+                search={{ category: "joint-pain" }}
                 onClick={() => setMobileMenuOpen(false)}
                 className="py-2.5 px-3 rounded-xl hover:bg-secondary text-stone-700 dark:text-stone-300 flex items-center justify-between text-xs"
               >
@@ -396,7 +396,7 @@ export const Header: React.FC = () => {
               </Link>
               <Link
                 to="/shop"
-                search={{ category: "classical-tonics" } as any}
+                search={{ category: "classical-tonics" }}
                 onClick={() => setMobileMenuOpen(false)}
                 className="py-2.5 px-3 rounded-xl hover:bg-secondary text-stone-700 dark:text-stone-300 flex items-center justify-between text-xs"
               >
@@ -409,7 +409,7 @@ export const Header: React.FC = () => {
                 className="py-2.5 px-3 rounded-xl hover:bg-secondary text-foreground flex items-center justify-between"
               >
                 <span>शॉपिंग कार्ट ({cartCount} सामग्री)</span>
-                <span className="text-xs text-primary font-bold">₹{useStore.getState().cartGrandTotal}</span>
+                <span className="text-xs text-primary font-bold">₹{cartGrandTotal}</span>
               </Link>
               <Link
                 to="/account"

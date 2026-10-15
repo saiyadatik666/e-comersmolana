@@ -25,16 +25,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface ShopSearch {
-  category?: string;
-  q?: string;
+export interface ShopSearch {
+  category?: string | undefined;
+  q?: string | undefined;
 }
 
 export const Route = createFileRoute("/shop")({
   validateSearch: (search: Record<string, unknown>): ShopSearch => {
+    const category = typeof search["category"] === "string" ? search["category"] : undefined;
+    const q = typeof search["q"] === "string" ? search["q"] : undefined;
     return {
-      category: typeof search.category === "string" ? search.category : undefined,
-      q: typeof search.q === "string" ? search.q : undefined,
+      category,
+      q,
     };
   },
   head: () => ({
@@ -179,7 +181,12 @@ function ShopPage() {
 
             {/* Sort Select */}
             <div className="sm:col-span-6 md:col-span-3">
-              <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
+              <Select
+                value={sortBy}
+                onValueChange={(val: "featured" | "price-asc" | "price-desc" | "rating") =>
+                  setSortBy(val)
+                }
+              >
                 <SelectTrigger className="w-full bg-secondary/40 rounded-xl text-xs sm:text-sm">
                   <SelectValue placeholder="क्रमबद्ध करें" />
                 </SelectTrigger>

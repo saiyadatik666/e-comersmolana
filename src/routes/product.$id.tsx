@@ -23,6 +23,7 @@ import {
   Leaf,
   Info,
   Clock,
+  Package,
 } from "lucide-react";
 import { INITIAL_PRODUCTS } from "@/data/products";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,15 @@ import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/product/$id")({
   head: ({ params }) => {
-    const product = INITIAL_PRODUCTS.find((p) => p.id === params.id) || INITIAL_PRODUCTS[0];
+    const product = INITIAL_PRODUCTS.find((p) => p.id === params.id);
+    if (!product) {
+      return {
+        meta: [
+          { title: "उत्पाद नहीं मिला (Product Not Found) — Shifa A Hayat" },
+          { name: "robots", content: "noindex, follow" },
+        ],
+      };
+    }
     const origin = "https://shifa-a-hayat.com";
     const prodUrl = `${origin}/product/${product.id}`;
     const imgUrl = product.image.startsWith("http") ? product.image : `${origin}${product.image}`;
@@ -105,12 +114,50 @@ function ProductDetailPage() {
   const { products, addToCart, toggleWishlist, isInWishlist, settings } = useStore();
   const navigate = useNavigate();
 
-  const product = products.find((p) => p.id === id) || products[0];
+  const product = products.find((p) => p.id === id);
+
   const [quantity, setQuantity] = useState(1);
   const [showPosterModal, setShowPosterModal] = useState(false);
   const [showQuickBuy, setShowQuickBuy] = useState(false);
   const [added, setAdded] = useState(false);
   const [activeView, setActiveView] = useState<"product" | "poster">("product");
+
+  // If product is not found, show dedicated Product Not Found view
+  if (!product) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Header />
+        <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-16 sm:py-24 flex flex-col items-center justify-center text-center">
+          <div className="w-20 h-20 rounded-full bg-secondary text-primary flex items-center justify-center mb-6 shadow-xs border border-border">
+            <Package className="w-10 h-10 text-muted-foreground" />
+          </div>
+          <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-400/30 font-semibold mb-3">
+            त्रुटि (Product Not Found)
+          </Badge>
+          <h1 className="font-serif text-3xl sm:text-4xl font-bold text-foreground mb-3">
+            उत्पाद नहीं मिला
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground max-w-lg mb-8 leading-relaxed">
+            जिस उत्पाद को आप खोज रहे हैं वह कैटलॉग में उपलब्ध नहीं है या उसका लिंक बदल गया है। कृपया हमारी दुकान में अन्य प्रमाणित यूनानी व आयुर्वेदिक नुस्खे देखें।
+          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <Link to="/shop">
+              <Button size="lg" className="rounded-full px-7 font-semibold">
+                <span>दुकान देखें (Browse Store)</span>
+                <ChevronRight className="w-4 h-4 ml-1.5" />
+              </Button>
+            </Link>
+            <Link to="/">
+              <Button size="lg" variant="outline" className="rounded-full px-7 font-semibold">
+                मुखपृष्ठ पर लौटें (Go Home)
+              </Button>
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   const activeImageSrc =
     activeView === "poster" && product.posterImage ? product.posterImage : product.image;
@@ -153,7 +200,7 @@ function ProductDetailPage() {
           <ChevronRight className="w-3.5 h-3.5" />
           <Link
             to="/shop"
-            search={{ category: product.category } as any}
+            search={{ category: product.category }}
             className="hover:text-primary transition-colors"
           >
             {product.categoryHindi}

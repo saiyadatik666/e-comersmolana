@@ -126,32 +126,32 @@ export const Footer: React.FC = () => {
             </h4>
             <ul className="space-y-2.5 text-sm text-stone-400">
               <li>
-                <Link to="/shop" search={{ category: "mens-wellness" } as any} className="hover:text-emerald-400 transition-colors">
+                <Link to="/shop" search={{ category: "mens-wellness" }} className="hover:text-emerald-400 transition-colors">
                   पुरुष स्वास्थ्य व ताकत
                 </Link>
               </li>
               <li>
-                <Link to="/shop" search={{ category: "digestive-care" } as any} className="hover:text-emerald-400 transition-colors">
+                <Link to="/shop" search={{ category: "digestive-care" }} className="hover:text-emerald-400 transition-colors">
                   गैस, कब्ज व उदर रोग
                 </Link>
               </li>
               <li>
-                <Link to="/shop" search={{ category: "joint-pain" } as any} className="hover:text-emerald-400 transition-colors">
+                <Link to="/shop" search={{ category: "joint-pain" }} className="hover:text-emerald-400 transition-colors">
                   कमर व जोड़ों का दर्द
                 </Link>
               </li>
               <li>
-                <Link to="/shop" search={{ category: "classical-tonics" } as any} className="hover:text-emerald-400 transition-colors">
+                <Link to="/shop" search={{ category: "classical-tonics" }} className="hover:text-emerald-400 transition-colors">
                   आबे हयात व अर्क-ए-अंबर
                 </Link>
               </li>
               <li>
-                <Link to="/shop" search={{ category: "skin-hair" } as any} className="hover:text-emerald-400 transition-colors">
+                <Link to="/shop" search={{ category: "skin-hair" }} className="hover:text-emerald-400 transition-colors">
                   हेअर ऑयल व हूर क्रीम
                 </Link>
               </li>
               <li>
-                <Link to="/shop" search={{ category: "womens-health" } as any} className="hover:text-emerald-400 transition-colors">
+                <Link to="/shop" search={{ category: "womens-health" }} className="hover:text-emerald-400 transition-colors">
                   स्त्री रोग व लिकोरिया
                 </Link>
               </li>
@@ -199,27 +199,27 @@ export const Footer: React.FC = () => {
             </h4>
             <ul className="space-y-2.5 text-sm text-stone-400">
               <li>
-                <Link to="/policies" search={{ tab: "shipping" } as any} className="hover:text-emerald-400 transition-colors">
+                <Link to="/policies" search={{ tab: "shipping" }} className="hover:text-emerald-400 transition-colors">
                   शिपिंग व डिलीवरी नीति
                 </Link>
               </li>
               <li>
-                <Link to="/policies" search={{ tab: "refund" } as any} className="hover:text-emerald-400 transition-colors">
+                <Link to="/policies" search={{ tab: "refund" }} className="hover:text-emerald-400 transition-colors">
                   रिटर्न एवं रिफंड नीति
                 </Link>
               </li>
               <li>
-                <Link to="/policies" search={{ tab: "privacy" } as any} className="hover:text-emerald-400 transition-colors">
+                <Link to="/policies" search={{ tab: "privacy" }} className="hover:text-emerald-400 transition-colors">
                   प्राइवेसी पॉलिसी
                 </Link>
               </li>
               <li>
-                <Link to="/policies" search={{ tab: "terms" } as any} className="hover:text-emerald-400 transition-colors">
+                <Link to="/policies" search={{ tab: "terms" }} className="hover:text-emerald-400 transition-colors">
                   नियम व शर्तें (Terms)
                 </Link>
               </li>
               <li>
-                <Link to="/policies" search={{ tab: "compliance" } as any} className="hover:text-emerald-400 transition-colors">
+                <Link to="/policies" search={{ tab: "compliance" }} className="hover:text-emerald-400 transition-colors">
                   वैधानिक चिकित्सा डिस्क्लेमर
                 </Link>
               </li>
