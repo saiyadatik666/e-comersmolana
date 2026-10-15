@@ -325,15 +325,36 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return INITIAL_PRODUCTS;
   });
 
-  // Cart
+  // Cart: Reconcile and validate against authentic catalog data
   const [cart, setCart] = useState<CartItem[]>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("shifa_cart");
       if (saved) {
         try {
-          return JSON.parse(saved);
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            interface StoredCartItemRaw {
+              product?: { id?: string | undefined } | undefined;
+              quantity?: number | string | undefined;
+              packSize?: string | undefined;
+            }
+            return (parsed as StoredCartItemRaw[])
+              .map((item: StoredCartItemRaw): CartItem | null => {
+                const prodId = item?.product?.id;
+                if (!prodId || typeof prodId !== "string") return null;
+                const authenticProduct = INITIAL_PRODUCTS.find((p) => p.id === prodId);
+                if (!authenticProduct) return null;
+                const safeQty = Math.max(1, Math.min(99, parseInt(String(item.quantity), 10) || 1));
+                return {
+                  product: authenticProduct,
+                  quantity: safeQty,
+                  packSize: item.packSize || authenticProduct.packSize,
+                };
+              })
+              .filter((item): item is CartItem => item !== null);
+          }
         } catch (e) {
-          console.error(e);
+          console.error("Failed to parse cart", e);
         }
       }
     }
@@ -559,18 +580,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     toast.info("Product removed from catalog");
   };
 
-  // Cart actions
+  // Cart actions with catalog price protection & bounded quantity
   const addToCart = (product: Product, quantity = 1, packSize?: string) => {
+    const authenticProduct = INITIAL_PRODUCTS.find((p) => p.id === product.id) || product;
+    const safeQty = Math.max(1, Math.min(99, Math.floor(quantity) || 1));
     setCart((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
+      const existing = prev.find((item) => item.product.id === authenticProduct.id);
       if (existing) {
+        const newQty = Math.min(99, existing.quantity + safeQty);
         return prev.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
+          item.product.id === authenticProduct.id ? { ...item, quantity: newQty } : item
         );
       }
-      return [...prev, { product, quantity, packSize: packSize || product.packSize }];
+      return [...prev, { product: authenticProduct, quantity: safeQty, packSize: packSize || authenticProduct.packSize }];
     });
-    toast.success(`Added ${product.name} to cart!`);
+    toast.success(`Added ${authenticProduct.name} to cart!`);
   };
 
   const removeFromCart = (productId: string) => {
@@ -583,8 +607,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       removeFromCart(productId);
       return;
     }
+    const safeQty = Math.max(1, Math.min(99, Math.floor(quantity)));
     setCart((prev) =>
-      prev.map((item) => (item.product.id === productId ? { ...item, quantity } : item))
+      prev.map((item) => (item.product.id === productId ? { ...item, quantity: safeQty } : item))
     );
   };
 
@@ -594,7 +619,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const cartSubtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+  const cartSubtotal = cart.reduce((sum, item) => {
+    const authentic = INITIAL_PRODUCTS.find((p) => p.id === item.product.id) || item.product;
+    return sum + authentic.price * item.quantity;
+  }, 0);
 
   // Free shipping over threshold
   const shippingFee =
@@ -724,8 +752,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     toast.success("Address saved to your profile");
   };
 
-  // Orders
+  // Orders (stored in local browser storage; awaiting WhatsApp transmission & merchant confirmation)
   const createOrder = (orderData: Omit<Order, "id" | "createdAt" | "orderStatus">): Order => {
+    const computedDiscount = Math.max(0, orderData.subtotal + orderData.shippingCharge - orderData.total);
     const newOrder: Order = {
       ...orderData,
       id: `ORD-${Math.floor(10000 + Math.random() * 90000)}`,
@@ -734,6 +763,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       paymentMethod: orderData.paymentMethod || "WhatsApp Direct Order",
       paymentStatus: "Pending Confirmation",
       trackingNumber: `SHIFA-${Math.floor(100000 + Math.random() * 900000)}`,
+      discount: orderData.discount !== undefined && orderData.discount > 0 ? orderData.discount : computedDiscount,
+      notes: (orderData.notes ? `${orderData.notes} • ` : "") + "Local browser order record (awaiting WhatsApp merchant confirmation)",
     };
     setOrders((prev) => [newOrder, ...prev]);
     clearCart();

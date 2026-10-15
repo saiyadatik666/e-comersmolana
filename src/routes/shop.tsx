@@ -33,7 +33,7 @@ export interface ShopSearch {
 export const Route = createFileRoute("/shop")({
   validateSearch: (search: Record<string, unknown>): ShopSearch => {
     const category = typeof search["category"] === "string" ? search["category"] : undefined;
-    const q = typeof search["q"] === "string" ? search["q"] : undefined;
+    const q = typeof search["q"] === "string" ? search["q"] : (typeof search["search"] === "string" ? search["search"] : undefined);
     return {
       category,
       q,

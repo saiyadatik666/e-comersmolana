@@ -154,7 +154,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
               },
               "potentialAction": {
                 "@type": "SearchAction",
-                "target": "https://shifa-a-hayat.com/shop?search={search_term_string}",
+                "target": "https://shifa-a-hayat.com/shop?q={search_term_string}",
                 "query-input": "required name=search_term_string",
               },
             },

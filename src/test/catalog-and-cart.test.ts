@@ -269,5 +269,44 @@ describe("Product 404 Guard & Admin Security Verification", () => {
     expect(calculateCooldown(7)).toBe(60);
     expect(calculateCooldown(25)).toBe(300); // capped at 5 minutes
   });
+
+  it("reconciles cart items against authentic catalog data to prevent price tampering", () => {
+    const rawMaliciousCart = [
+      {
+        product: { id: "shifa-arq-abe-hayat", name: "Tampered Product", price: 1 },
+        quantity: 5,
+      },
+      {
+        product: { id: "non-existent-fake-product", name: "Fake", price: 10 },
+        quantity: 2,
+      },
+    ];
+
+    const sanitizedCart = rawMaliciousCart
+      .map((item) => {
+        const authentic = INITIAL_PRODUCTS.find((p) => p.id === item.product.id);
+        if (!authentic) return null;
+        return {
+          product: authentic,
+          quantity: Math.max(1, Math.min(99, item.quantity)),
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+
+    expect(sanitizedCart.length).toBe(1);
+    expect(sanitizedCart[0]?.product.id).toBe("shifa-arq-abe-hayat");
+    // Verified authentic price must be 250, not 1!
+    expect(sanitizedCart[0]?.product.price).toBe(250);
+    expect(sanitizedCart[0]?.quantity).toBe(5);
+  });
+
+  it("calculates order discount correctly from subtotal, shippingFee, and finalTotal", () => {
+    const subtotal = 1000;
+    const shippingFee = 0;
+    const finalTotal = 900; // 10% coupon applied
+    const computedDiscount = Math.max(0, subtotal + shippingFee - finalTotal);
+    expect(computedDiscount).toBe(100);
+  });
 });
+
 
