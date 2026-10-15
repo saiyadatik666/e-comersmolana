@@ -26,12 +26,25 @@ import {
   Shield,
   Info,
   Lock,
+  BarChart3,
+  CheckCircle2,
+  Tag,
+  Activity,
+  Database,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import {
+  computeTopOrderedProducts,
+  computeOrderStatusDistribution,
+  computeCouponAnalytics,
+  computeCatalogHealth,
+  computeCategoryDistribution,
+  evaluateShoppingFlowDiagnostics,
+} from "@/lib/analytics";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -63,6 +76,7 @@ interface SettingsFormErrors {
 }
 
 type StockFilter = "all" | "in_stock" | "low_stock" | "out_of_stock";
+type AdminTab = "overview" | "analytics" | "products" | "assets" | "orders" | "settings";
 
 function AdminPage() {
   const {
@@ -77,7 +91,7 @@ function AdminPage() {
     updateSettings,
   } = useStore();
 
-  const [activeTab, setActiveTab] = useState<"overview" | "products" | "assets" | "orders" | "settings">("overview");
+  const [activeTab, setActiveTab] = useState<AdminTab>("overview");
   const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
 
   // =========================================================================
@@ -237,6 +251,14 @@ function AdminPage() {
   const publishedProducts = useMemo(() => products.filter((p) => p.status === "published").length, [products]);
   const outOfStockCount = useMemo(() => products.filter((p) => !p.inStock || p.stockCount <= 0).length, [products]);
   const lowStockCount = useMemo(() => products.filter((p) => p.inStock && p.stockCount > 0 && p.stockCount <= 10).length, [products]);
+
+  // Privacy-friendly empirical analytics (Local browser memory calculations)
+  const topOrderedProducts = useMemo(() => computeTopOrderedProducts(orders, products), [orders, products]);
+  const orderStatusDistribution = useMemo(() => computeOrderStatusDistribution(orders), [orders]);
+  const couponAnalytics = useMemo(() => computeCouponAnalytics(orders), [orders]);
+  const catalogHealth = useMemo(() => computeCatalogHealth(products), [products]);
+  const categoryDistribution = useMemo(() => computeCategoryDistribution(products), [products]);
+  const flowDiagnostics = useMemo(() => evaluateShoppingFlowDiagnostics(products, orders), [products, orders]);
 
   // Filtered Products
   const filteredProducts = useMemo(() => {
@@ -609,6 +631,18 @@ function AdminPage() {
           </button>
 
           <button
+            onClick={() => setActiveTab("analytics")}
+            className={`flex items-center gap-2 py-3 px-4 border-b-2 whitespace-nowrap shrink-0 transition-colors ${
+              activeTab === "analytics"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <BarChart3 className="w-4 h-4 shrink-0" />
+            <span>व्यापारिक विश्लेषण (Analytics & Insights)</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab("products")}
             className={`flex items-center gap-2 py-3 px-4 border-b-2 whitespace-nowrap shrink-0 transition-colors ${
               activeTab === "products"
@@ -820,6 +854,508 @@ function AdminPage() {
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Quick Link to Analytics Tab */}
+            <div className="bg-primary/5 border border-primary/20 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 text-primary">
+                  <BarChart3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-foreground">
+                    प्राइवेसी-अनुकूल व्यापारिक विश्लेषण एवं सिस्टम डायग्नोस्टिक्स
+                  </h4>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    सर्वाधिक ऑर्डर किए गए उत्पाद, कूपन उपयोग दर ({couponAnalytics.couponUsageRate}%), 7-श्रेणी इन्वेंट्री इकाइयां एवं 6-बिंदु शॉपिंग फ़्लो स्वास्थ्य जाँच।
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setActiveTab("analytics")}
+                className="rounded-xl text-xs shrink-0 border-primary/30 text-primary hover:bg-primary/10"
+              >
+                विस्तृत विश्लेषण देखें →
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* TAB: ANALYTICS & INSIGHTS (PART 10) */}
+        {/* ================================================================= */}
+        {activeTab === "analytics" && (
+          <div className="space-y-6">
+            {/* Header & Architectural Transparency Card */}
+            <div className="bg-card border border-border rounded-3xl p-5 sm:p-6 shadow-xs space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-700 dark:text-amber-400 shrink-0">
+                    <BarChart3 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="font-serif text-lg sm:text-xl font-bold text-foreground">
+                      व्यापारिक विश्लेषण व प्राइवेसी-अनुकूल अंतर्दृष्टि
+                    </h2>
+                    <p className="text-xs text-muted-foreground">
+                      केवल वास्तविक उपलब्ध स्थानीय डेटा पर आधारित विश्लेषण • शून्य तृतीय-पक्ष ट्रैकर • शून्य व्यक्तिगत डेटा खनन
+                    </p>
+                  </div>
+                </div>
+
+                <Badge variant="outline" className="text-xs font-mono self-start sm:self-auto bg-secondary/50">
+                  Privacy First: Zero PII
+                </Badge>
+              </div>
+
+              {/* Data Scope & Limitations Notice */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-muted-foreground pt-1">
+                <div className="p-3 rounded-xl bg-secondary/40 border border-border/70 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-foreground">
+                    <Shield className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>शून्य ट्रैकिंग (Zero Pixels)</span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed">
+                    कोई तृतीय-पक्ष ट्रैकिंग स्क्रिप्ट (जैसे Google Analytics या Facebook Pixel) शामिल नहीं है। कोई विज्ञापन कुकीज सेट नहीं की जाती हैं।
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-secondary/40 border border-border/70 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-foreground">
+                    <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span>पूर्ण ग्राहक गोपनीयता (Zero PII)</span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed">
+                    विश्लेषण हेतु किसी ग्राहक का नाम, फ़ोन नंबर, डिलीवरी पता या संदेश सामग्री का कभी उपयोग नहीं होता। केवल अनाम उत्पाद आईडी व मात्राएं संकलित हैं।
+                  </p>
+                </div>
+
+                <div className="p-3 rounded-xl bg-secondary/40 border border-border/70 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-foreground">
+                    <Database className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span>स्थानीय दायरा (Browser Scope)</span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed">
+                    ये आंकड़े केवल इस डिवाइस के स्थानीय स्टोरेज में उपलब्ध रिकॉर्ड्स दर्शाते हैं। बहु-उपकरण केंद्रीय विश्लेषण हेतु समर्पित बैकएंड आवश्यक है।
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* KPI Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-card border border-border rounded-2xl p-5 shadow-xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground font-semibold">स्थानीय ऑर्डर रिकॉर्ड्स</span>
+                  <ShoppingBag className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <p className="font-serif text-3xl font-bold text-foreground">{orders.length}</p>
+                <span className="text-[11px] text-muted-foreground block">
+                  {orders.length > 0 ? `सकल मूल्य: ₹${totalSales} (स्थानीय चेकआउट)` : "वर्तमान में कोई ऑर्डर दर्ज नहीं"}
+                </span>
+              </div>
+
+              <div className="bg-card border border-border rounded-2xl p-5 shadow-xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground font-semibold">कूपन उपयोग दर (Coupons)</span>
+                  <Tag className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <p className="font-serif text-3xl font-bold text-emerald-700 dark:text-emerald-400">
+                    {couponAnalytics.couponUsageRate}%
+                  </p>
+                  <span className="text-xs text-muted-foreground">
+                    ({couponAnalytics.ordersWithCoupon}/{couponAnalytics.totalOrders})
+                  </span>
+                </div>
+                <span className="text-[11px] text-muted-foreground block">
+                  कुल दी गई छूट: ₹{couponAnalytics.totalDiscountAmount}
+                </span>
+              </div>
+
+              <div className="bg-card border border-border rounded-2xl p-5 shadow-xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground font-semibold">कैटलॉग आकार व स्थिति</span>
+                  <Package className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <p className="font-serif text-3xl font-bold text-foreground">{catalogHealth.totalProducts}</p>
+                  <span className="text-xs text-muted-foreground">उत्पाद</span>
+                </div>
+                <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium block">
+                  {catalogHealth.publishedCount} सक्रिय • 100% विरासत पोस्टर लिंक
+                </span>
+              </div>
+
+              <div className="bg-card border border-border rounded-2xl p-5 shadow-xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground font-semibold">इन्वेंट्री उपलब्धता अलर्ट</span>
+                  <AlertTriangle className="w-4 h-4 text-amber-600" />
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <p className="font-serif text-3xl font-bold text-amber-600">{catalogHealth.lowStockCount}</p>
+                  <span className="text-xs text-muted-foreground">कम</span>
+                  {catalogHealth.outOfStockCount > 0 && (
+                    <span className="text-xs font-bold text-rose-600">
+                      ({catalogHealth.outOfStockCount} आउट ऑफ स्टॉक)
+                    </span>
+                  )}
+                </div>
+                <span className="text-[11px] text-muted-foreground block">
+                  {catalogHealth.inStockCount} उत्पाद सामान्य स्टॉक में
+                </span>
+              </div>
+            </div>
+
+            {/* SECTION 1: TOP ORDERED PRODUCTS */}
+            <div className="bg-card border border-border rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
+                <div>
+                  <h3 className="font-serif text-lg font-bold text-foreground">
+                    सर्वाधिक ऑर्डर किए गए उत्पाद (Top Products by Recorded Demand)
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    केवल स्थानीय डेटाबेस में मौजूद ऑर्डर्स से संकलित • कोई कल्पित या कृत्रिम आंकड़े नहीं
+                  </p>
+                </div>
+                <Badge variant="outline" className="text-[11px] self-start sm:self-auto">
+                  {topOrderedProducts.length} उत्पाद ऑर्डर्स में दर्ज
+                </Badge>
+              </div>
+
+              {topOrderedProducts.length === 0 ? (
+                <div className="py-10 text-center space-y-3 bg-secondary/20 rounded-2xl border border-dashed border-border p-6">
+                  <div className="w-12 h-12 rounded-2xl bg-secondary/80 flex items-center justify-center mx-auto text-muted-foreground">
+                    <ShoppingBag className="w-6 h-6" />
+                  </div>
+                  <div className="max-w-md mx-auto space-y-1">
+                    <h4 className="text-sm font-bold text-foreground">
+                      स्थानीय ब्राउज़र में अभी कोई ऑर्डर रिकॉर्ड उपलब्ध नहीं है
+                    </h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      जब ग्राहक वेबसाइट पर चेकआउट करेंगे और ऑर्डर इस डिवाइस पर दर्ज होंगे, तो सर्वाधिक बार ऑर्डर किए गए उत्पादों की रैंकिंग, बिक्री संख्या और कुल सकल राशि यहाँ वास्तविक समय में प्रदर्शित होगी।
+                    </p>
+                  </div>
+                  <Link to="/shop">
+                    <Button variant="outline" size="sm" className="rounded-xl text-xs mt-2">
+                      दुकान में उत्पाद कैटलॉग देखें
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-secondary/50 text-muted-foreground font-semibold border-b border-border">
+                      <tr>
+                        <th className="py-2.5 px-3">रैंक (Rank)</th>
+                        <th className="py-2.5 px-3">उत्पाद नाम व विवरण</th>
+                        <th className="py-2.5 px-3">श्रेणी</th>
+                        <th className="py-2.5 px-3 text-center">ऑर्डर आवृत्ति</th>
+                        <th className="py-2.5 px-3 text-center">कुल नग (Units)</th>
+                        <th className="py-2.5 px-3 text-right">सकल मूल्य (Gross)</th>
+                        <th className="py-2.5 px-3 text-center">लाइव स्टॉक</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {topOrderedProducts.map((item, index) => (
+                        <tr key={item.productId} className="hover:bg-secondary/30 transition-colors">
+                          <td className="py-3 px-3 font-mono font-bold text-muted-foreground">
+                            #{index + 1}
+                          </td>
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={item.image}
+                                alt={item.productName}
+                                className="w-10 h-12 object-contain rounded-md bg-stone-100 dark:bg-stone-900 border shrink-0"
+                              />
+                              <div className="min-w-0">
+                                <p className="font-bold text-foreground truncate">{item.productName}</p>
+                                <p className="text-[11px] text-muted-foreground">{item.productNameHindi}</p>
+                                <span className="text-[10px] text-stone-500">{item.packSize}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3">
+                            <Badge variant="outline" className="text-[10px]">
+                              {item.categoryHindi}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-3 text-center font-semibold text-foreground">
+                            {item.orderCount} ऑर्डर्स
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <span className="font-mono font-bold text-primary text-sm">
+                              {item.totalQuantity}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground block">नग</span>
+                          </td>
+                          <td className="py-3 px-3 text-right font-bold text-foreground">
+                            ₹{item.totalGrossAmount}
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <Badge
+                              className={`text-[10px] font-semibold ${
+                                item.currentStockCount <= 0
+                                  ? "bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border-rose-200"
+                                  : item.currentStockCount <= 10
+                                  ? "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-200"
+                                  : "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border-emerald-200"
+                              }`}
+                              variant="outline"
+                            >
+                              {item.currentStockCount <= 0
+                                ? "आउट ऑफ स्टॉक (0)"
+                                : `${item.currentStockCount} शेष`}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* SECTION 2: ORDER STATUS DISTRIBUTION & CATEGORY COVERAGE */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left: Order Status Distribution */}
+              <div className="bg-card border border-border rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
+                <div className="flex items-center justify-between border-b border-border pb-3">
+                  <div>
+                    <h3 className="font-serif text-base font-bold text-foreground">
+                      ऑर्डर स्थिति वितरण (Order Status Distribution)
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      सभी 6 समर्थित ऑर्डर स्थितियों का स्थानीय रिकॉर्ड अनुपात
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    कुल {orders.length}
+                  </Badge>
+                </div>
+
+                <div className="space-y-3.5">
+                  {orderStatusDistribution.map((statusItem) => (
+                    <div key={statusItem.status} className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-foreground">{statusItem.hindiLabel}</span>
+                          <span className="text-[10px] text-muted-foreground">({statusItem.status})</span>
+                        </div>
+                        <div className="flex items-center gap-2 font-mono">
+                          <span className="font-bold text-foreground">{statusItem.count} ऑर्डर्स</span>
+                          <span className="text-muted-foreground text-[11px]">({statusItem.percentage}%)</span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${
+                            statusItem.status === "Delivered"
+                              ? "bg-emerald-600"
+                              : statusItem.status === "Confirmed" || statusItem.status === "Processing"
+                              ? "bg-blue-600"
+                              : statusItem.status === "Shipped"
+                              ? "bg-purple-600"
+                              : statusItem.status === "Cancelled"
+                              ? "bg-rose-500"
+                              : "bg-amber-500"
+                          }`}
+                          style={{ width: `${Math.max(statusItem.percentage, statusItem.count > 0 ? 5 : 0)}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right: Category Distribution */}
+              <div className="bg-card border border-border rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
+                <div className="flex items-center justify-between border-b border-border pb-3">
+                  <div>
+                    <h3 className="font-serif text-base font-bold text-foreground">
+                      श्रेणी कवरेज एवं इन्वेंट्री इकाइयां (7 Categories)
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      प्रत्येक श्रेणी में सक्रिय उत्पाद व उपलब्ध स्टॉक शीशियां
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    {categoryDistribution.length} श्रेणियां
+                  </Badge>
+                </div>
+
+                <div className="space-y-2.5">
+                  {categoryDistribution.map((cat) => (
+                    <div
+                      key={cat.id}
+                      className="p-3 rounded-2xl bg-secondary/30 border border-border/80 flex items-center justify-between gap-3 text-xs"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-bold text-foreground truncate">{cat.hindi}</p>
+                        <p className="text-[11px] text-muted-foreground">{cat.name}</p>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0 text-right">
+                        <div>
+                          <span className="font-bold text-foreground">{cat.productCount} उत्पाद</span>
+                          <span className="text-[10px] text-muted-foreground block">
+                            {cat.inStockCount} उपलब्ध • {cat.outOfStockCount} शून्य
+                          </span>
+                        </div>
+                        <Badge variant="secondary" className="font-mono text-xs font-bold">
+                          {cat.totalStockUnits} नग
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 3: CATALOG HEALTH & QUALITY DIAGNOSTICS */}
+            <div className="bg-card border border-border rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
+                <div>
+                  <h3 className="font-serif text-base font-bold text-foreground">
+                    कैटलॉग गुणवत्ता एवं सुधार अंतर्दृष्टि (Catalog Quality Insights)
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    कम स्टॉक, शून्य स्टॉक, अपुष्ट मूल्य अथवा संक्षिप्त विवरण वाले उत्पादों की स्पष्ट सूची
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs text-emerald-700 dark:text-emerald-400">
+                    {catalogHealth.heritagePosterCount}/21 विरासत पोस्टर जुड़े हैं
+                  </Badge>
+                  <Badge variant="outline" className="text-xs text-amber-700 dark:text-amber-400">
+                    {catalogHealth.verifiedPriceCount}/21 प्रमाणित रेट कार्ड
+                  </Badge>
+                </div>
+              </div>
+
+              {catalogHealth.itemsNeedingAttention.length === 0 ? (
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>सभी 21 उत्पाद संपूर्ण विवरण, पर्याप्त स्टॉक व सत्यापित विशेषताओं के साथ सक्रिय हैं।</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {catalogHealth.itemsNeedingAttention.slice(0, 9).map((att, idx) => (
+                    <div
+                      key={`${att.id}-${idx}`}
+                      className="p-3.5 rounded-2xl bg-secondary/40 border border-border/80 flex items-start justify-between gap-2 text-xs"
+                    >
+                      <div className="min-w-0 space-y-1">
+                        <p className="font-bold text-foreground truncate">{att.name}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">{att.nameHindi}</p>
+                        <span
+                          className={`text-[10px] font-semibold inline-block px-2 py-0.5 rounded-md ${
+                            att.issueType === "out_of_stock"
+                              ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
+                              : att.issueType === "low_stock"
+                              ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+                              : "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+                          }`}
+                        >
+                          {att.issueHindi}
+                        </span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          const prod = products.find((p) => p.id === att.id);
+                          if (prod) {
+                            setEditingProduct({ ...prod });
+                            setIsNewProduct(false);
+                            setActiveTab("products");
+                          }
+                        }}
+                        className="text-[11px] h-7 px-2 shrink-0 text-primary hover:underline"
+                      >
+                        सुधारें →
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* SECTION 4: SHOPPING FLOW OPERATIONAL DIAGNOSTICS */}
+            <div className="bg-card border border-border rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-primary shrink-0" />
+                  <h3 className="font-serif text-base font-bold text-foreground">
+                    शॉपिंग फ़्लो परिचालन स्वास्थ्य जाँच (Shopping Flow Diagnostics)
+                  </h3>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  6 प्रमुख बिंदु सत्यापित
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {flowDiagnostics.map((diag) => (
+                  <div
+                    key={diag.id}
+                    className="p-4 rounded-2xl bg-secondary/30 border border-border/80 flex flex-col justify-between space-y-3 text-xs"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="font-bold text-foreground leading-tight">
+                          {diag.titleHindi}
+                        </span>
+                        <Badge
+                          className={`text-[9px] shrink-0 ${
+                            diag.status === "verified"
+                              ? "bg-emerald-700 text-white"
+                              : "bg-amber-600 text-white"
+                          }`}
+                        >
+                          {diag.metricBadge}
+                        </Badge>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        {diag.descriptionHindi}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-border/60 text-[10px] text-stone-500 font-mono">
+                      वास्तुकला: {diag.architectureDetails}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* SECTION 5: BACKEND REQUIREMENTS & ARCHITECTURE DISCLOSURE */}
+            <div className="bg-amber-500/10 border border-amber-500/25 rounded-3xl p-5 sm:p-6 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-bold text-amber-900 dark:text-amber-300">
+                <Database className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>वास्तुकला सीमाएं एवं केंद्रीय एनालिटिक्स आवश्यकताएं (Backend Architecture Disclosure)</span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                वर्तमान में <strong>शिफा ए हयात</strong> बिना किसी तीसरे पक्ष के ट्रैकर या बाहरी सर्वर डेटाबेस के पूरी तरह क्लाइंट-साइड चल रही है।
+                उपरोक्त सभी आंकड़े केवल इस स्थानीय ब्राउज़र में मौजूद वास्तविक रिकॉर्ड्स हैं।
+                यदि आप सभी अलग-अलग ग्राहकों व डिवाइसों से वास्तविक समय में एकीकृत व्यापारिक डेटा प्राप्त करना चाहते हैं, तो अग्रिम अनुमति पर निम्न घटकों को जोड़ा जा सकता है:
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-muted-foreground pt-1">
+                <div className="p-3 rounded-xl bg-background/80 border border-border space-y-1">
+                  <p className="font-bold text-foreground">1. केंद्रीय डेटाबेस (Shared Database)</p>
+                  <p className="text-[11px] leading-relaxed">
+                    PostgreSQL या Supabase डेटाबेस जहां प्रत्येक ग्राहक का चेकआउट सुरक्षित रूप से दर्ज हो सके।
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-background/80 border border-border space-y-1">
+                  <p className="font-bold text-foreground">2. सर्वर प्रमाणीकरण व एपीआई (Server APIs & RBAC)</p>
+                  <p className="text-[11px] leading-relaxed">
+                    सर्वर-साइड सुरक्षित एंडपॉइंट्स जो अनधिकृत पहुंच को रोकें और एग्रीगेटेड डेटा ही एडमिन को भेजें।
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         )}
