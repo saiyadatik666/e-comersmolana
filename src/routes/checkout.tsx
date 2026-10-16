@@ -112,7 +112,11 @@ function CheckoutPage() {
                       <div className="flex gap-3 items-center min-w-0">
                         <img
                           src={item.product.image}
-                          alt={item.product.name}
+                          alt={`${item.product.name} (${item.product.nameHindi}) - Shifa A Hayat`}
+                          width={48}
+                          height={56}
+                          loading="lazy"
+                          decoding="async"
                           onError={(e) => {
                             if (item.product.posterImage && e.currentTarget.src !== item.product.posterImage) {
                               e.currentTarget.src = item.product.posterImage;

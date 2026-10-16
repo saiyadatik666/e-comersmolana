@@ -297,12 +297,15 @@ function IndexPage() {
               <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col xs:flex-row gap-3 sm:gap-4 items-center xs:items-start text-center xs:text-left">
                 <div className="w-20 h-28 sm:w-24 sm:h-32 rounded-xl border bg-stone-50 dark:bg-stone-900 p-1.5 flex items-center justify-center shrink-0">
                   <img
-                    src="/assets/molana/IMG-20261009-WA0016.jpg"
-                    alt="Gas Ki Goliyan"
+                    src="/assets/products/gas-ki-goliyan.jpg"
+                    alt="Gas Ki Goliyan (गैस की गोलियां) - Shifa A Hayat"
                     loading="lazy"
                     decoding="async"
                     width={96}
                     height={128}
+                    onError={(e) => {
+                      e.currentTarget.src = "/assets/molana/IMG-20261009-WA0016.jpg";
+                    }}
                     className="w-full h-full object-contain"
                   />
                 </div>

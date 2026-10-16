@@ -159,7 +159,11 @@ function CartPage() {
                       <Link to="/product/$id" params={{ id: item.product.id }} className="shrink-0">
                         <img
                           src={item.product.image}
-                          alt={item.product.name}
+                          alt={`${item.product.name} (${item.product.nameHindi}) - Shifa A Hayat`}
+                          width={80}
+                          height={96}
+                          loading="lazy"
+                          decoding="async"
                           onError={(e) => {
                             if (item.product.posterImage && e.currentTarget.src !== item.product.posterImage) {
                               e.currentTarget.src = item.product.posterImage;

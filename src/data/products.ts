@@ -501,7 +501,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     compareAtPrice: 260,
     rating: 4.9,
     reviewCount: 104,
-    image: "/assets/molana/IMG-20261009-WA0016.jpg",
+    image: "/assets/products/gas-ki-goliyan.jpg",
     posterImage: "/assets/molana/IMG-20261009-WA0016.jpg",
     imageName: "IMG-20261009-WA0016.jpg",
     packSize: "Container with 60 Tablets",

@@ -63,8 +63,17 @@ export const QuickBuyModal: React.FC<QuickBuyModalProps> = ({
         <div className="flex items-center gap-3 sm:gap-4 border-b border-border pb-3 sm:pb-4 pr-10">
           <img
             src={product.image}
-            alt={product.name}
-            className="w-14 h-16 sm:w-16 sm:h-20 object-cover rounded-xl border border-border shrink-0"
+            alt={`${product.name} (${product.nameHindi}) - Shifa A Hayat`}
+            width={64}
+            height={80}
+            loading="lazy"
+            decoding="async"
+            onError={(e) => {
+              if (product.posterImage && e.currentTarget.src !== product.posterImage) {
+                e.currentTarget.src = product.posterImage;
+              }
+            }}
+            className="w-14 h-16 sm:w-16 sm:h-20 object-contain p-1 bg-stone-50 dark:bg-stone-900 rounded-xl border border-border shrink-0"
           />
           <div className="min-w-0">
             <span className="text-[10px] font-semibold text-emerald-800 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded">

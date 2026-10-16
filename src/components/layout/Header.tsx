@@ -151,7 +151,11 @@ export const Header: React.FC = () => {
                 >
                   <img
                     src={product.image}
-                    alt={product.name}
+                    alt={`${product.name} (${product.nameHindi}) - Shifa A Hayat`}
+                    width={36}
+                    height={36}
+                    loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                       if (product.posterImage && e.currentTarget.src !== product.posterImage) {
                         e.currentTarget.src = product.posterImage;

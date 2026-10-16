@@ -311,11 +311,11 @@ function ProductDetailPage() {
 
               {/* Active View Indicator Badge */}
               <div className="absolute bottom-3 left-3 bg-stone-900/80 text-white text-[10px] sm:text-[11px] font-medium px-2.5 py-1 rounded-full backdrop-blur-xs border border-white/10">
-                {activeView === "product" ? "उत्पाद फोटोग्राफी (Studio View)" : "मूल विरासत पोस्टर (Heritage Poster)"}
+                {activeView === "product" ? "वास्तविक उत्पाद फोटो (Authentic Photo)" : "मूल विरासत पोस्टर (Heritage Poster)"}
               </div>
             </div>
 
-            {/* Gallery Thumbnails (Amazon/Flipkart Style Dual-View Switcher) */}
+            {/* Gallery Thumbnails (Dual-View Switcher) */}
             {product.posterImage && product.posterImage !== product.image ? (
               <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <button
@@ -330,7 +330,7 @@ function ProductDetailPage() {
                   <div className="w-10 h-12 rounded-lg bg-stone-100 dark:bg-stone-900 p-1 flex items-center justify-center shrink-0 border">
                     <img
                       src={product.image}
-                      alt="Product studio packaging"
+                      alt="Real authentic product"
                       loading="lazy"
                       decoding="async"
                       width={40}
@@ -339,8 +339,8 @@ function ProductDetailPage() {
                     />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-bold text-foreground truncate">उत्पाद पैकेजिंग</p>
-                    <p className="text-[10px] text-muted-foreground truncate">स्टूडियो फोटोग्राफी</p>
+                    <p className="text-xs font-bold text-foreground truncate">वास्तविक उत्पाद फोटो</p>
+                    <p className="text-[10px] text-muted-foreground truncate">प्रामाणिक होममेड नुस्खा</p>
                   </div>
                 </button>
 
