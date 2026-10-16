@@ -178,6 +178,12 @@ export const Footer: React.FC = () => {
             </h4>
             <ul className="space-y-2.5 text-sm text-stone-400">
               <li>
+                <Link to="/track-order" className="hover:text-emerald-400 transition-colors flex items-center gap-1.5 font-medium text-emerald-400">
+                  <Truck className="w-3.5 h-3.5" />
+                  <span>ऑर्डर ट्रैक करें (Track Order)</span>
+                </Link>
+              </li>
+              <li>
                 <Link to="/account" className="hover:text-emerald-400 transition-colors">
                   माय अकाउंट व ऑर्डर हिस्ट्री
                 </Link>

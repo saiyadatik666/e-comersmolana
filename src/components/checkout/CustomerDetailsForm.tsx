@@ -945,6 +945,13 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
 
           {/* Post Order Options */}
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2 text-xs">
+            <a
+              href={`/track-order?orderId=${encodeURIComponent(createdOrderId)}&phone=${encodeURIComponent(phone.trim())}`}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary font-bold transition-colors border border-primary/30"
+            >
+              <Truck className="w-3.5 h-3.5" />
+              <span>ऑर्डर स्थिति ट्रैक करें (Track Order Live)</span>
+            </a>
             <Button
               type="button"
               variant="ghost"

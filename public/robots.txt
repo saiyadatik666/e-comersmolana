@@ -4,6 +4,7 @@ Disallow: /admin
 Disallow: /checkout
 Disallow: /account
 Disallow: /cart
+Disallow: /track-order
 Disallow: /api/
 
 # Sitemaps

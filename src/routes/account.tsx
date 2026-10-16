@@ -125,6 +125,12 @@ function AccountPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <Link to="/track-order">
+              <Button size="sm" className="rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5">
+                <Truck className="w-3.5 h-3.5" />
+                <span>ऑर्डर ट्रैक करें (Track Order)</span>
+              </Button>
+            </Link>
             <Link to="/admin">
               <Button variant="outline" size="sm" className="rounded-xl text-xs font-semibold">
                 <SlidersHorizontal className="w-3.5 h-3.5 mr-1 text-primary" />
@@ -257,8 +263,18 @@ function AccountPage() {
                         </span>
                       )}
                     </div>
-                    <div className="font-bold text-foreground text-sm">
-                      कुल भुगतान: <span className="text-primary font-bold">₹{order.total}</span>
+                    <div className="flex items-center gap-4">
+                      <Link
+                        to="/track-order"
+                        search={{ orderId: order.id, phone: order.customerPhone }}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline"
+                      >
+                        <Truck className="w-3.5 h-3.5" />
+                        <span>लाइव स्थिति ट्रैक करें →</span>
+                      </Link>
+                      <div className="font-bold text-foreground text-sm">
+                        कुल भुगतान: <span className="text-primary font-bold">₹{order.total}</span>
+                      </div>
                     </div>
                   </div>
                 </div>

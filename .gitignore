@@ -25,7 +25,8 @@ dist-ssr
 .dev.vars
 
 # Local server database files
-server-data/
+server-data/*
+!server-data/schema.sql
 
 # Editor directories and files
 .vscode/*

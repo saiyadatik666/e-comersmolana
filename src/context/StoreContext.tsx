@@ -43,10 +43,12 @@ export interface OrderItem {
 }
 
 export type OrderStatus =
+  | "Order Received"
   | "Pending Confirmation"
   | "Confirmed"
   | "Processing"
   | "Shipped"
+  | "Out for Delivery"
   | "Delivered"
   | "Cancelled";
 

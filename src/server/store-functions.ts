@@ -32,10 +32,27 @@ import {
   exportOrdersAdminServer,
   trackOrderCustomerServer,
   getInventoryServer,
+  getSettingsServer,
+  updateSettingsAdminServer,
+  getProductsServer,
+  updateProductAdminServer,
   ServerOrderStatus,
   StoredOrder,
   CreateOrderPayload,
+  ServerStoreSettings,
 } from "./order-store";
+import {
+  submitProductReviewServer,
+  getProductReviewsServer,
+  adminListReviewsServer,
+  adminModerateReviewServer,
+  adminDeleteReviewServer,
+  SubmitReviewInput,
+  AdminReviewFilter,
+  PublicProductReviewsPayload,
+  ReviewStatus,
+  StoredReview,
+} from "./review-store";
 
 function safeGetRequest(): Request | null {
   try {
@@ -301,13 +318,17 @@ export function updateOrderStatusSecure(
   orderId: string,
   status: string,
   token?: string | null,
-  clientIp = "admin-client"
+  clientIp = "admin-client",
+  notes?: string | undefined,
+  trackingNumber?: string | undefined
 ) {
   const result = updateOrderStatusAdminServer(
     orderId,
     status as ServerOrderStatus,
     token,
-    clientIp
+    clientIp,
+    notes,
+    trackingNumber
   );
 
   return {
@@ -315,6 +336,8 @@ export function updateOrderStatusSecure(
     orderId: result.order.id,
     updatedStatus: result.order.orderStatus,
     updatedAt: result.order.updatedAt,
+    trackingNumber: result.order.trackingNumber,
+    notes: result.order.notes,
   };
 }
 
@@ -373,6 +396,42 @@ export function getAuditLogsSecure(token?: string | null) {
     success: true,
     logs: getAdminAuditLogs(),
   };
+}
+
+/**
+ * Core Business Logic: Get Server Store Settings
+ */
+export function getStoreSettingsSecure() {
+  return getSettingsServer();
+}
+
+/**
+ * Core Business Logic: Update Server Store Settings with Admin Authorization & Audit Trail
+ */
+export function updateStoreSettingsSecure(
+  newSettings: Partial<ServerStoreSettings>,
+  token?: string | null,
+  clientIp = "admin-client"
+) {
+  return updateSettingsAdminServer(newSettings, token, clientIp);
+}
+
+/**
+ * Core Business Logic: Get Server Products Catalog
+ */
+export function getStoreProductsSecure() {
+  return getProductsServer();
+}
+
+/**
+ * Core Business Logic: Update Product Price and Catalog Details with Admin Authorization & Audit Trail
+ */
+export function updateStoreProductSecure(
+  product: Partial<import("@/data/products").Product> & { id: string },
+  token?: string | null,
+  clientIp = "admin-client"
+) {
+  return updateProductAdminServer(product, token, clientIp);
 }
 
 /**
@@ -544,13 +603,28 @@ export const adminUpdateProductStockServerFn = createServerFn({ method: "POST" }
  * Protected Admin Server Function: Update order status with server-side authorization & audit trail.
  */
 export const adminUpdateOrderStatusServerFn = createServerFn({ method: "POST" })
-  .validator((data: { orderId: string; status: string; adminToken?: string | undefined }) => data)
+  .validator(
+    (data: {
+      orderId: string;
+      status: string;
+      adminToken?: string | undefined;
+      notes?: string | undefined;
+      trackingNumber?: string | undefined;
+    }) => data
+  )
   .handler(async ({ data }) => {
     const req = safeGetRequest();
     const cookieToken = safeGetCookie("shifa_admin_session");
     const token = data.adminToken || cookieToken || (req?.headers?.get("authorization") ?? "");
     const clientIp = req?.headers?.get("x-forwarded-for") || "admin-client";
-    return updateOrderStatusSecure(data.orderId, data.status, token, clientIp);
+    return updateOrderStatusSecure(
+      data.orderId,
+      data.status,
+      token,
+      clientIp,
+      data.notes,
+      data.trackingNumber
+    );
   });
 
 /**
@@ -646,4 +720,136 @@ export const getInventoryStatusServerFn = createServerFn({ method: "GET" })
   .handler(async () => {
     return getServerInventoryStatus();
   });
+
+/**
+ * Public / Store Server Function: Get store settings.
+ */
+export const adminGetSettingsServerFn = createServerFn({ method: "GET" })
+  .handler(async () => {
+    return getStoreSettingsSecure();
+  });
+
+/**
+ * Protected Admin Server Function: Update store settings.
+ */
+export const adminUpdateSettingsServerFn = createServerFn({ method: "POST" })
+  .validator((data: { settings: Partial<ServerStoreSettings>; adminToken?: string | undefined }) => data)
+  .handler(async ({ data }) => {
+    const req = safeGetRequest();
+    const cookieToken = safeGetCookie("shifa_admin_session");
+    const token = data.adminToken || cookieToken || (req?.headers?.get("authorization") ?? "");
+    const clientIp = req?.headers?.get("x-forwarded-for") || "admin-client";
+    return updateStoreSettingsSecure(data.settings, token, clientIp);
+  });
+
+/**
+ * Public / Store Server Function: Get active products catalog.
+ */
+export const adminGetProductsServerFn = createServerFn({ method: "GET" })
+  .handler(async () => {
+    return getStoreProductsSecure();
+  });
+
+/**
+ * Protected Admin Server Function: Update product price or details.
+ */
+export const adminUpdateProductServerFn = createServerFn({ method: "POST" })
+  .validator(
+    (data: {
+      product: Partial<import("@/data/products").Product> & { id: string };
+      adminToken?: string | undefined;
+    }) => data
+  )
+  .handler(async ({ data }) => {
+    const req = safeGetRequest();
+    const cookieToken = safeGetCookie("shifa_admin_session");
+    const token = data.adminToken || cookieToken || (req?.headers?.get("authorization") ?? "");
+    const clientIp = req?.headers?.get("x-forwarded-for") || "admin-client";
+    return updateStoreProductSecure(data.product, token, clientIp);
+  });
+
+// =============================================================================
+// TRUSTWORTHY PRODUCT REVIEWS SERVER FUNCTIONS
+// =============================================================================
+
+/**
+ * Public Server Function: Get approved reviews and aggregate stats for a product.
+ * Returns honest calculated rating; 0 if no reviews exist.
+ */
+export const getProductReviewsServerFn = createServerFn({ method: "GET" })
+  .validator((data: { productId: string }) => data)
+  .handler(async ({ data }): Promise<PublicProductReviewsPayload> => {
+    return getProductReviewsServer(data.productId);
+  });
+
+/**
+ * Public Server Function: Submit a customer review with server-side validation,
+ * rate limiting, spam protection and purchase verification.
+ */
+export const submitProductReviewServerFn = createServerFn({ method: "POST" })
+  .validator((data: SubmitReviewInput) => data)
+  .handler(async ({ data }) => {
+    const req = safeGetRequest();
+    const clientIp =
+      req?.headers?.get("cf-connecting-ip") ||
+      req?.headers?.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      "127.0.0.1";
+    return submitProductReviewServer(data, clientIp);
+  });
+
+/**
+ * Protected Admin Server Function: List reviews for moderation.
+ */
+export const adminListReviewsServerFn = createServerFn({ method: "POST" })
+  .validator((data: { filter?: AdminReviewFilter; adminToken?: string }) => data)
+  .handler(async ({ data }): Promise<StoredReview[]> => {
+    const req = safeGetRequest();
+    const cookieToken = safeGetCookie("shifa_admin_session");
+    const token = data.adminToken || cookieToken || (req?.headers?.get("authorization") ?? "");
+    return adminListReviewsServer(data.filter || {}, token);
+  });
+
+/**
+ * Protected Admin Server Function: Moderate review (approve/reject/reply).
+ * Preserves genuine customer text without alterations.
+ */
+export const adminModerateReviewServerFn = createServerFn({ method: "POST" })
+  .validator(
+    (data: {
+      reviewId: string;
+      status: ReviewStatus;
+      adminReply?: string;
+      adminToken?: string;
+    }) => data
+  )
+  .handler(async ({ data }) => {
+    const req = safeGetRequest();
+    const cookieToken = safeGetCookie("shifa_admin_session");
+    const token = data.adminToken || cookieToken || (req?.headers?.get("authorization") ?? "");
+    const clientIp = req?.headers?.get("x-forwarded-for") || "admin-client";
+    return adminModerateReviewServer(
+      {
+        reviewId: data.reviewId,
+        status: data.status,
+        adminReply: data.adminReply,
+      },
+      token,
+      clientIp
+    );
+  });
+
+/**
+ * Protected Admin Server Function: Delete spam or abusive review.
+ */
+export const adminDeleteReviewServerFn = createServerFn({ method: "POST" })
+  .validator((data: { reviewId: string; adminToken?: string }) => data)
+  .handler(async ({ data }) => {
+    const req = safeGetRequest();
+    const cookieToken = safeGetCookie("shifa_admin_session");
+    const token = data.adminToken || cookieToken || (req?.headers?.get("authorization") ?? "");
+    const clientIp = req?.headers?.get("x-forwarded-for") || "admin-client";
+    return adminDeleteReviewServer(data.reviewId, token, clientIp);
+  });
+
+
 

@@ -18,6 +18,7 @@ import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as PoliciesRouteImport } from './routes/policies'
 import { Route as ShopRouteImport } from './routes/shop'
+import { Route as TrackOrderRouteImport } from './routes/track-order'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -65,6 +66,11 @@ const ShopRoute = ShopRouteImport.update({
   path: '/shop',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TrackOrderRoute = TrackOrderRouteImport.update({
+  id: '/track-order',
+  path: '/track-order',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProductIdRoute = ProductIdRouteImport.update({
   id: '/product/$id',
   path: '/product/$id',
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/policies': typeof PoliciesRoute
   '/shop': typeof ShopRoute
+  '/track-order': typeof TrackOrderRoute
   '/product/$id': typeof ProductIdRoute
 }
 export interface FileRoutesByTo {
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/policies': typeof PoliciesRoute
   '/shop': typeof ShopRoute
+  '/track-order': typeof TrackOrderRoute
   '/product/$id': typeof ProductIdRoute
 }
 export interface FileRoutesById {
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/policies': typeof PoliciesRoute
   '/shop': typeof ShopRoute
+  '/track-order': typeof TrackOrderRoute
   '/product/$id': typeof ProductIdRoute
 }
 export interface FileRouteTypes {
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/policies'
     | '/shop'
+    | '/track-order'
     | '/product/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/policies'
     | '/shop'
+    | '/track-order'
     | '/product/$id'
   id:
     | '__root__'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/policies'
     | '/shop'
+    | '/track-order'
     | '/product/$id'
   fileRoutesById: FileRoutesById
 }
@@ -157,6 +169,7 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   PoliciesRoute: typeof PoliciesRoute
   ShopRoute: typeof ShopRoute
+  TrackOrderRoute: typeof TrackOrderRoute
   ProductIdRoute: typeof ProductIdRoute
 }
 
@@ -225,6 +238,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/track-order': {
+      id: '/track-order'
+      path: '/track-order'
+      fullPath: '/track-order'
+      preLoaderRoute: typeof TrackOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/product/$id': {
       id: '/product/$id'
       path: '/product/$id'
@@ -245,6 +265,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   PoliciesRoute: PoliciesRoute,
   ShopRoute: ShopRoute,
+  TrackOrderRoute: TrackOrderRoute,
   ProductIdRoute: ProductIdRoute,
 }
 export const routeTree = rootRouteImport

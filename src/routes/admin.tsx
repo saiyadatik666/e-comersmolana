@@ -40,11 +40,15 @@ import {
   LogOut,
   Loader2,
   KeyRound,
+  Star,
+  ShieldCheck,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   createBackupPayload,
@@ -69,6 +73,14 @@ import {
   adminUpdateOrderStatusServerFn,
   adminChangePasswordServerFn,
   adminExportOrdersServerFn,
+  adminListOrdersServerFn,
+  adminUpdateSettingsServerFn,
+  adminUpdateProductServerFn,
+  adminListReviewsServerFn,
+  adminModerateReviewServerFn,
+  adminDeleteReviewServerFn,
+  StoredReview,
+  ReviewStatus,
 } from "@/lib/admin-api";
 
 export const Route = createFileRoute("/admin")({
@@ -101,7 +113,7 @@ interface SettingsFormErrors {
 }
 
 type StockFilter = "all" | "in_stock" | "low_stock" | "out_of_stock";
-type AdminTab = "overview" | "analytics" | "products" | "assets" | "orders" | "settings";
+type AdminTab = "overview" | "analytics" | "products" | "assets" | "orders" | "reviews" | "settings";
 
 function AdminPage() {
   const {
@@ -152,6 +164,197 @@ function AdminPage() {
   });
   const [failedAttempts, setFailedAttempts] = useState<number>(0);
   const [lockoutRemaining, setLockoutRemaining] = useState<number>(0);
+  const [serverOrders, setServerOrders] = useState<Order[] | null>(null);
+  const [isLoadingServerOrders, setIsLoadingServerOrders] = useState<boolean>(false);
+
+  const fetchServerOrders = async (tokenOverride?: string) => {
+    const activeToken =
+      tokenOverride ||
+      adminSessionToken ||
+      (typeof window !== "undefined" ? sessionStorage.getItem("shifa_admin_token") : null);
+    if (!activeToken) return;
+    setIsLoadingServerOrders(true);
+    try {
+      const res = await adminListOrdersServerFn({ data: { adminToken: activeToken } });
+      if (Array.isArray(res)) {
+        const mapped: Order[] = res.map((stored) => ({
+          id: stored.id,
+          createdAt: stored.createdAt,
+          customerName: stored.customerName,
+          customerPhone: stored.customerPhone,
+          customerEmail: stored.customerEmail,
+          shippingAddress: {
+            id: `addr-${stored.id}`,
+            fullName: stored.customerName,
+            phone: stored.customerPhone,
+            addressLine: stored.shippingAddress.addressLine,
+            city: stored.shippingAddress.cityVillage,
+            state: stored.shippingAddress.state,
+            pincode: stored.shippingAddress.pincode,
+          },
+          items: stored.items.map((it) => ({
+            productId: it.productId,
+            productName: it.productName,
+            productImage: it.productImage,
+            price: it.price,
+            quantity: it.quantity,
+            packSize: it.packSize,
+          })),
+          subtotal: stored.subtotal,
+          shippingCharge: stored.shippingCharge,
+          discount: stored.discount,
+          total: stored.total,
+          paymentMethod: stored.paymentMethod,
+          paymentStatus: stored.orderStatus === "Delivered" ? "Paid" : "Pending",
+          orderStatus: stored.orderStatus as OrderStatus,
+          trackingNumber: stored.trackingNumber,
+          notes: stored.notes,
+        }));
+        setServerOrders(mapped);
+      }
+    } catch (err) {
+      console.warn("[Admin] Could not load server orders:", err);
+    } finally {
+      setIsLoadingServerOrders(false);
+    }
+  };
+
+  // Reviews Moderation State
+  const [adminReviews, setAdminReviews] = useState<StoredReview[] | null>(null);
+  const [isLoadingReviews, setIsLoadingReviews] = useState<boolean>(false);
+  const [reviewStatusFilter, setReviewStatusFilter] = useState<ReviewStatus | "all">("all");
+  const [reviewProductFilter, setReviewProductFilter] = useState<string>("all");
+  const [reviewVerifiedOnly, setReviewVerifiedOnly] = useState<boolean>(false);
+  const [replyModalReview, setReplyModalReview] = useState<StoredReview | null>(null);
+  const [adminReplyText, setAdminReplyText] = useState<string>("");
+  const [isUpdatingReview, setIsUpdatingReview] = useState<boolean>(false);
+
+  const fetchAdminReviews = async (tokenOverride?: string) => {
+    const activeToken =
+      tokenOverride ||
+      adminSessionToken ||
+      (typeof window !== "undefined" ? sessionStorage.getItem("shifa_admin_token") : null);
+    if (!activeToken) return;
+    setIsLoadingReviews(true);
+    try {
+      const res = await adminListReviewsServerFn({
+        data: {
+          adminToken: activeToken,
+        },
+      });
+      if (Array.isArray(res)) {
+        setAdminReviews(res);
+      }
+    } catch (err) {
+      console.warn("[Admin] Could not load reviews for moderation:", err);
+    } finally {
+      setIsLoadingReviews(false);
+    }
+  };
+
+  const filteredAdminReviews = useMemo(() => {
+    if (!adminReviews) return [];
+    return adminReviews.filter((rev) => {
+      const matchesStatus =
+        reviewStatusFilter === "all" || rev.status === reviewStatusFilter;
+      const matchesProduct =
+        reviewProductFilter === "all" || rev.productId === reviewProductFilter;
+      const matchesVerified =
+        !reviewVerifiedOnly || rev.isVerifiedPurchase;
+      return matchesStatus && matchesProduct && matchesVerified;
+    });
+  }, [adminReviews, reviewStatusFilter, reviewProductFilter, reviewVerifiedOnly]);
+
+  const handleModerateReview = async (reviewId: string, newStatus: ReviewStatus) => {
+    const activeToken =
+      adminSessionToken ||
+      (typeof window !== "undefined" ? sessionStorage.getItem("shifa_admin_token") : null);
+    if (!activeToken) {
+      toast.error("सत्र समाप्त हो गया है। कृपया पुनः लॉगिन करें।");
+      return;
+    }
+    setIsUpdatingReview(true);
+    try {
+      await adminModerateReviewServerFn({
+        data: {
+          adminToken: activeToken,
+          reviewId,
+          status: newStatus,
+        },
+      });
+      toast.success(
+        newStatus === "approved"
+          ? "समीक्षा स्वीकृत एवं प्रकाशित कर दी गई है।"
+          : newStatus === "rejected"
+          ? "समीक्षा अस्वीकृत (छिपा दी गई) है।"
+          : "समीक्षा लंबित स्थिति में स्थानांतरित।"
+      );
+      await fetchAdminReviews(activeToken);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "समीक्षा स्थिति अपडेट करने में त्रुटि";
+      toast.error(msg);
+    } finally {
+      setIsUpdatingReview(false);
+    }
+  };
+
+  const handleSaveAdminReply = async () => {
+    if (!replyModalReview) return;
+    const activeToken =
+      adminSessionToken ||
+      (typeof window !== "undefined" ? sessionStorage.getItem("shifa_admin_token") : null);
+    if (!activeToken) return;
+    setIsUpdatingReview(true);
+    try {
+      await adminModerateReviewServerFn({
+        data: {
+          adminToken: activeToken,
+          reviewId: replyModalReview.id,
+          status: replyModalReview.status,
+          adminReply: adminReplyText.trim(),
+        },
+      });
+      toast.success("हकीम जी का उत्तर सफलतापूर्वक सहेज लिया गया।");
+      setReplyModalReview(null);
+      setAdminReplyText("");
+      await fetchAdminReviews(activeToken);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "उत्तर सहेजने में विफल";
+      toast.error(msg);
+    } finally {
+      setIsUpdatingReview(false);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (
+      !window.confirm(
+        "क्या आप वाकई इस अनुचित/स्पैम समीक्षा को स्थायी रूप से हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।"
+      )
+    ) {
+      return;
+    }
+    const activeToken =
+      adminSessionToken ||
+      (typeof window !== "undefined" ? sessionStorage.getItem("shifa_admin_token") : null);
+    if (!activeToken) return;
+    setIsUpdatingReview(true);
+    try {
+      await adminDeleteReviewServerFn({
+        data: {
+          adminToken: activeToken,
+          reviewId,
+        },
+      });
+      toast.success("समीक्षा स्थायी रूप से हटा दी गई है।");
+      await fetchAdminReviews(activeToken);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "समीक्षा हटाने में विफल";
+      toast.error(msg);
+    } finally {
+      setIsUpdatingReview(false);
+    }
+  };
 
   // Check server session on initial mount
   useEffect(() => {
@@ -169,11 +372,16 @@ function AdminPage() {
           if (res.authenticated) {
             setIsAuthenticated(true);
             setAdminEmail(res.adminEmail || "inaytchaudhri@gmail.com");
-            if (savedToken) setAdminSessionToken(savedToken);
+            if (savedToken) {
+              setAdminSessionToken(savedToken);
+              fetchServerOrders(savedToken);
+              fetchAdminReviews(savedToken);
+            }
           } else {
             setIsAuthenticated(false);
             setAdminEmail(null);
             setAdminSessionToken(null);
+            setServerOrders(null);
             if (typeof window !== "undefined") {
               sessionStorage.removeItem("shifa_admin_authenticated");
               sessionStorage.removeItem("shifa_admin_token");
@@ -283,6 +491,8 @@ function AdminPage() {
         setLoginError(null);
         setFailedAttempts(0);
         toast.success("सर्वर प्रमाणीकरण सफल! एडमिन डैशबोर्ड अनलॉक हो गया।");
+        fetchServerOrders(res.sessionToken);
+        fetchAdminReviews(res.sessionToken);
       }
     } catch (err: unknown) {
       const msg = (err as Error)?.message || "अमान्य क्रेडेंशियल्स। कृपया अपना पासवर्ड पुनः जाँचें।";
@@ -311,6 +521,7 @@ function AdminPage() {
     setIsAuthenticated(false);
     setAdminEmail(null);
     setAdminSessionToken(null);
+    setServerOrders(null);
     setAuthStep("email");
     setEmailInput("");
     setPasswordInput("");
@@ -514,11 +725,16 @@ function AdminPage() {
     });
   }, [products, productSearch, categoryFilter, stockFilter]);
 
+  // Active Orders (Prefers live server database records, falls back to local cache)
+  const activeOrders = useMemo(() => {
+    return serverOrders !== null ? serverOrders : orders;
+  }, [serverOrders, orders]);
+
   // Filtered Orders
   const filteredOrders = useMemo(() => {
-    if (orderStatusFilter === "all") return orders;
-    return orders.filter((ord) => ord.orderStatus === orderStatusFilter);
-  }, [orders, orderStatusFilter]);
+    if (orderStatusFilter === "all") return activeOrders;
+    return activeOrders.filter((ord) => ord.orderStatus === orderStatusFilter);
+  }, [activeOrders, orderStatusFilter]);
 
   // =========================================================================
   // PRODUCT VALIDATION & ACTIONS
@@ -594,6 +810,18 @@ function AdminPage() {
     } else {
       updateProduct(sanitized);
     }
+    (async () => {
+      try {
+        await adminUpdateProductServerFn({
+          data: {
+            product: sanitized,
+            adminToken: adminSessionToken || undefined,
+          },
+        });
+      } catch (err) {
+        console.warn("Server product sync notice:", err);
+      }
+    })();
     setEditingProduct(null);
     setProductErrors({});
   };
@@ -640,6 +868,11 @@ function AdminPage() {
       setPendingStatusChange({ orderId, newStatus: targetStatus });
     } else {
       updateOrderStatus(orderId, targetStatus);
+      if (serverOrders) {
+        setServerOrders((prev) =>
+          prev ? prev.map((o) => (o.id === orderId ? { ...o, orderStatus: targetStatus } : o)) : null
+        );
+      }
       try {
         await adminUpdateOrderStatusServerFn({
           data: {
@@ -658,6 +891,11 @@ function AdminPage() {
     if (!pendingStatusChange) return;
     const { orderId, newStatus } = pendingStatusChange;
     updateOrderStatus(orderId, newStatus);
+    if (serverOrders) {
+      setServerOrders((prev) =>
+        prev ? prev.map((o) => (o.id === orderId ? { ...o, orderStatus: newStatus } : o)) : null
+      );
+    }
     try {
       await adminUpdateOrderStatusServerFn({
         data: {
@@ -711,6 +949,19 @@ function AdminPage() {
     }
 
     updateSettings(settingsForm);
+    (async () => {
+      try {
+        await adminUpdateSettingsServerFn({
+          data: {
+            settings: settingsForm,
+            adminToken: adminSessionToken || undefined,
+          },
+        });
+        toast.success("दुकान सेटिंग्स सर्वर डेटाबेस में सुरक्षित रूप से अपडेट हो गईं (Server Synchronized)!");
+      } catch (err) {
+        console.warn("Server settings sync notice:", err);
+      }
+    })();
   };
 
   // =========================================================================
@@ -1112,6 +1363,21 @@ function AdminPage() {
           >
             <ShoppingBag className="w-4 h-4 shrink-0" />
             <span>ग्राहक ऑर्डर्स ({orders.length})</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab("reviews");
+              if (!adminReviews) fetchAdminReviews();
+            }}
+            className={`flex items-center gap-2 py-3 px-4 border-b-2 whitespace-nowrap shrink-0 transition-colors ${
+              activeTab === "reviews"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Star className="w-4 h-4 shrink-0" />
+            <span>ग्राहक समीक्षाएं ({adminReviews?.length ?? 0})</span>
           </button>
 
           <button
@@ -2114,16 +2380,40 @@ function AdminPage() {
             {/* Orders Header Banner */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-card border border-border rounded-2xl p-4">
               <div>
-                <h3 className="font-serif text-base font-bold text-foreground">
-                  ग्राहक ऑर्डर्स अभिलेख ({orders.length} कुल ऑर्डर्स)
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-serif text-base font-bold text-foreground">
+                    ग्राहक ऑर्डर्स अभिलेख ({activeOrders.length} कुल ऑर्डर्स)
+                  </h3>
+                  {serverOrders !== null ? (
+                    <Badge variant="outline" className="text-[10px] bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300">
+                      सर्वर डेटाबेस सिंक
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-300">
+                      लोकल कैश
+                    </Badge>
+                  )}
+                </div>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  ब्राउज़र चेकआउट द्वारा दर्ज किए गए ऑर्डर्स। स्थिति बदलने से पहले पुष्टि ली जाती है।
+                  सुरक्षित सर्वर डेटाबेस द्वारा प्रबंधित ऑर्डर्स। बहु-उपकरण केंद्रीय रिकॉर्ड्स।
                 </p>
               </div>
 
               {/* Actions & Status Filter */}
               <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isLoadingServerOrders}
+                  onClick={() => fetchServerOrders()}
+                  className="rounded-xl text-xs gap-1.5 h-8"
+                  title="सर्वर से ताज़ा ऑर्डर्स पुनः लोड करें"
+                >
+                  <RotateCcw className={`w-3.5 h-3.5 text-primary ${isLoadingServerOrders ? "animate-spin" : ""}`} />
+                  <span>{isLoadingServerOrders ? "लोड हो रहा है..." : "सिंक करें"}</span>
+                </Button>
+
                 <Button
                   type="button"
                   variant="outline"
@@ -2149,7 +2439,7 @@ function AdminPage() {
                     } catch (err) {
                       console.warn("Server export fallback:", err);
                     }
-                    downloadOrdersCsv(orders);
+                    downloadOrdersCsv(activeOrders);
                     toast.success("ऑर्डर्स CSV डाउनलोड हो गई (Orders Exported)!");
                   }}
                   className="rounded-xl text-xs gap-1.5 h-8"
@@ -2166,11 +2456,13 @@ function AdminPage() {
                     onChange={(e) => setOrderStatusFilter(e.target.value)}
                     className="bg-transparent text-xs font-semibold text-foreground focus:outline-none"
                   >
-                    <option value="all">सभी स्थितियां ({orders.length})</option>
+                    <option value="all">सभी स्थितियां ({activeOrders.length})</option>
+                    <option value="Order Received">Order Received</option>
                     <option value="Pending Confirmation">Pending Confirmation</option>
                     <option value="Confirmed">Confirmed</option>
                     <option value="Processing">Processing</option>
                     <option value="Shipped">Shipped</option>
+                    <option value="Out for Delivery">Out for Delivery</option>
                     <option value="Delivered">Delivered</option>
                     <option value="Cancelled">Cancelled</option>
                   </select>
@@ -2246,10 +2538,12 @@ function AdminPage() {
                               }
                               className="bg-secondary border border-border rounded-lg text-xs py-1 px-2 font-semibold"
                             >
+                              <option value="Order Received">Order Received</option>
                               <option value="Pending Confirmation">Pending Confirmation</option>
                               <option value="Confirmed">Confirmed</option>
                               <option value="Processing">Processing</option>
                               <option value="Shipped">Shipped</option>
+                              <option value="Out for Delivery">Out for Delivery</option>
                               <option value="Delivered">Delivered</option>
                               <option value="Cancelled">Cancelled</option>
                             </select>
@@ -2271,6 +2565,325 @@ function AdminPage() {
                 </table>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* TAB: CUSTOMER REVIEWS MODERATION */}
+        {/* ================================================================= */}
+        {activeTab === "reviews" && (
+          <div className="space-y-6">
+            {/* Reviews Header Banner */}
+            <div className="bg-card border border-border rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
+                <div>
+                  <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider mb-1">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                    <span>समीक्षा मॉडरेशन एवं प्रामाणिकता नियंत्रण</span>
+                  </div>
+                  <h3 className="font-serif text-2xl font-bold text-foreground">
+                    ग्राहक समीक्षाएं एवं रेटिंग मॉडरेशन
+                  </h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-3xl">
+                    समीक्षाओं की प्रामाणिकता जांचें, अनुचित अथवा स्पैम सामग्री रोकें एवं हकीम जी की ओर से उत्तर दर्ज करें। 
+                    <strong className="text-foreground"> ग्राहक के मूल शब्दों, अनुभव या रेटिंग में कभी चुपचाप बदलाव न करें।</strong>
+                  </p>
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fetchAdminReviews()}
+                  disabled={isLoadingReviews}
+                  className="rounded-xl text-xs self-start sm:self-auto shrink-0"
+                >
+                  {isLoadingReviews ? (
+                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  ) : (
+                    <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                  )}
+                  <span>ताज़ा करें (Refresh)</span>
+                </Button>
+              </div>
+
+              {/* Stats Counters */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                <div className="p-3.5 rounded-2xl bg-secondary/50 border border-border/60">
+                  <span className="text-[11px] text-muted-foreground block font-medium">कुल दर्ज समीक्षाएं</span>
+                  <span className="font-serif text-2xl font-bold text-foreground">
+                    {adminReviews?.length ?? 0}
+                  </span>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800">
+                  <span className="text-[11px] text-emerald-800 dark:text-emerald-300 block font-medium">सत्यापित खरीदार</span>
+                  <span className="font-serif text-2xl font-bold text-emerald-900 dark:text-emerald-200">
+                    {adminReviews?.filter((r) => r.isVerifiedPurchase).length ?? 0}
+                  </span>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800">
+                  <span className="text-[11px] text-amber-800 dark:text-amber-300 block font-medium">समीक्षाधीन (Pending)</span>
+                  <span className="font-serif text-2xl font-bold text-amber-900 dark:text-amber-200">
+                    {adminReviews?.filter((r) => r.status === "pending").length ?? 0}
+                  </span>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800">
+                  <span className="text-[11px] text-rose-800 dark:text-rose-300 block font-medium">अस्वीकृत (Rejected)</span>
+                  <span className="font-serif text-2xl font-bold text-rose-900 dark:text-rose-200">
+                    {adminReviews?.filter((r) => r.status === "rejected").length ?? 0}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Filters Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-card border border-border rounded-2xl">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-muted-foreground mr-1">स्थिति:</span>
+                {(["all", "approved", "pending", "rejected"] as const).map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => {
+                      setReviewStatusFilter(st);
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
+                      reviewStatusFilter === st
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "bg-secondary text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {st === "all"
+                      ? "सभी"
+                      : st === "approved"
+                      ? "स्वीकृत (Live)"
+                      : st === "pending"
+                      ? "लंबित (Pending)"
+                      : "अस्वीकृत (Hidden)"}
+                  </button>
+                ))}
+
+                <label className="flex items-center gap-1.5 ml-2 text-xs font-medium cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={reviewVerifiedOnly}
+                    onChange={(e) => setReviewVerifiedOnly(e.target.checked)}
+                    className="rounded-md border-border text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer"
+                  />
+                  <span>केवल सत्यापित खरीद (Verified)</span>
+                </label>
+              </div>
+
+              {/* Product selector filter */}
+              <div className="flex items-center gap-2">
+                <Label htmlFor="review-product-filter" className="text-xs text-muted-foreground shrink-0 font-semibold">
+                  उत्पाद:
+                </Label>
+                <select
+                  id="review-product-filter"
+                  value={reviewProductFilter}
+                  onChange={(e) => setReviewProductFilter(e.target.value)}
+                  className="text-xs rounded-xl bg-secondary border border-border px-3 py-1.5 focus:outline-hidden"
+                >
+                  <option value="all">सभी उत्पाद (All Products)</option>
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Reviews Table / Cards */}
+            {isLoadingReviews ? (
+              <div className="p-12 text-center bg-card border border-border rounded-3xl space-y-3">
+                <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto" />
+                <p className="text-xs text-muted-foreground font-medium">समीक्षाएं लोड हो रही हैं...</p>
+              </div>
+            ) : filteredAdminReviews.length === 0 ? (
+              <div className="p-12 text-center bg-card border border-dashed border-border rounded-3xl space-y-3">
+                <MessageSquare className="w-10 h-10 text-muted-foreground mx-auto opacity-50" />
+                <h4 className="font-serif text-lg font-bold text-foreground">कोई समीक्षा नहीं मिली</h4>
+                <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                  वर्तमान फ़िल्टर के अनुसार कोई समीक्षा मौजूद नहीं है। ग्राहक जब उत्पाद पृष्ठ से समीक्षा सबमिट करेंगे तो वह यहाँ प्रदर्शित होगी।
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredAdminReviews.map((rev) => (
+                  <div
+                    key={rev.id}
+                    className="bg-card border border-border rounded-3xl p-5 sm:p-6 space-y-4 shadow-xs"
+                  >
+                    {/* Top Row: Review ID, Product, Verified badge, Date, Status */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono text-xs font-bold text-foreground bg-secondary px-2.5 py-1 rounded-lg">
+                          {rev.id}
+                        </span>
+                        <Link
+                          to="/product/$id"
+                          params={{ id: rev.productId }}
+                          target="_blank"
+                          className="text-xs font-bold text-primary hover:underline"
+                        >
+                          {rev.productName || rev.productId} ↗
+                        </Link>
+                        {rev.isVerifiedPurchase ? (
+                          <Badge className="bg-emerald-700 hover:bg-emerald-700 text-white font-bold text-[10px] flex items-center gap-1">
+                            <ShieldCheck className="w-3 h-3" />
+                            <span>सत्यापित खरीद (Order: {rev.verifiedOrderId || rev.verifiedOrderIdMasked})</span>
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                            सामान्य समीक्षा
+                          </Badge>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(rev.createdAt).toLocaleDateString("hi-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                        <Badge
+                          className={`text-[10px] font-bold ${
+                            rev.status === "approved"
+                              ? "bg-emerald-700 text-white"
+                              : rev.status === "pending"
+                              ? "bg-amber-600 text-white"
+                              : "bg-rose-700 text-white"
+                          }`}
+                        >
+                          {rev.status === "approved"
+                            ? "✓ स्वीकृत (Live)"
+                            : rev.status === "pending"
+                            ? "⏳ समीक्षाधीन"
+                            : "✕ अस्वीकृत (Hidden)"}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {/* Customer & Rating details */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-secondary/30 p-3 rounded-2xl">
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block">ग्राहक का नाम (Admin View):</span>
+                        <span className="font-bold text-foreground">{rev.authorName}</span>
+                        <span className="text-[10px] text-muted-foreground block mt-0.5">
+                          सार्वजनिक प्रदर्शन: {rev.authorMasked}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block">स्थान / मोबाइल (सुरक्षित):</span>
+                        <span className="font-medium text-foreground">{rev.city || "उल्लेखित नहीं"}</span>
+                        {rev.customerPhoneMasked && (
+                          <span className="text-[10px] font-mono text-muted-foreground block mt-0.5">
+                            फ़ोन: {rev.customerPhoneMasked}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground block">ग्राहक रेटिंग:</span>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star
+                              key={s}
+                              className={`w-3.5 h-3.5 ${
+                                s <= rev.rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"
+                              }`}
+                            />
+                          ))}
+                          <span className="font-bold ml-1 text-foreground">{rev.rating}★</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Review Title & Content (Read-only, preserving customer voice) */}
+                    <div className="space-y-1.5">
+                      <h4 className="font-serif text-base font-bold text-foreground">
+                        "{rev.title}"
+                      </h4>
+                      <p className="text-xs sm:text-sm text-stone-700 dark:text-stone-300 leading-relaxed bg-card p-3 rounded-xl border border-border/50">
+                        {rev.comment}
+                      </p>
+                    </div>
+
+                    {/* Admin Response Section (if exists) */}
+                    {rev.adminReply && (
+                      <div className="p-3 rounded-2xl bg-secondary/70 border border-border/80 space-y-1 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-primary flex items-center gap-1">
+                            <span>हकीम जी / Shifa A Hayat का उत्तर:</span>
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {rev.adminReplyAt ? new Date(rev.adminReplyAt).toLocaleDateString("hi-IN") : ""}
+                          </span>
+                        </div>
+                        <p className="text-stone-800 dark:text-stone-200 leading-relaxed">
+                          {rev.adminReply}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Moderation Actions Bar */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border">
+                      <div className="flex items-center gap-2">
+                        {rev.status !== "approved" && (
+                          <Button
+                            size="sm"
+                            disabled={isUpdatingReview}
+                            onClick={() => handleModerateReview(rev.id, "approved")}
+                            className="bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs h-8 px-3"
+                          >
+                            ✓ स्वीकृत करें (Approve)
+                          </Button>
+                        )}
+                        {rev.status !== "rejected" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={isUpdatingReview}
+                            onClick={() => handleModerateReview(rev.id, "rejected")}
+                            className="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 border-rose-300 dark:border-rose-900 rounded-xl text-xs h-8 px-3"
+                          >
+                            ✕ अस्वीकृत करें (Reject)
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={isUpdatingReview}
+                          onClick={() => {
+                            setReplyModalReview(rev);
+                            setAdminReplyText(rev.adminReply || "");
+                          }}
+                          className="rounded-xl text-xs h-8 px-3"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5 mr-1" />
+                          <span>{rev.adminReply ? "उत्तर संपादित करें" : "हकीम जी का उत्तर जोड़ें"}</span>
+                        </Button>
+                      </div>
+
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={isUpdatingReview}
+                        onClick={() => handleDeleteReview(rev.id)}
+                        className="text-muted-foreground hover:text-rose-600 rounded-xl text-xs h-8 px-2"
+                        title="स्पैम या अश्लील समीक्षा स्थायी रूप से हटाएं"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1" />
+                        <span>हटाएं (Delete)</span>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -2673,6 +3286,76 @@ function AdminPage() {
               </div>
             </div>
           </form>
+        )}
+
+        {/* Reply Modal */}
+        {replyModalReview && (
+          <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-card border border-border rounded-3xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl">
+              <div className="flex items-start justify-between border-b border-border pb-3">
+                <div>
+                  <h3 className="font-serif text-lg font-bold text-foreground">
+                    हकीम जी / स्टोर का उत्तर जोड़ें
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    समीक्षक: {replyModalReview.authorName} ({replyModalReview.productName})
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setReplyModalReview(null)}
+                  className="text-muted-foreground hover:text-foreground p-1 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="admin-reply-input" className="text-xs font-semibold">
+                  उत्तर सामग्री (Official Store Reply) *
+                </Label>
+                <Textarea
+                  id="admin-reply-input"
+                  rows={4}
+                  maxLength={1000}
+                  value={adminReplyText}
+                  onChange={(e) => setAdminReplyText(e.target.value)}
+                  placeholder="उदा. आपके विश्वास एवं स्वास्थ्य सुधार की जानकारी के लिए शुक्रिया। आगे भी परहेज़ का पालन करते रहें..."
+                  className="text-xs rounded-xl bg-secondary/50 resize-none"
+                />
+                <span className="text-[10px] text-muted-foreground block text-right">
+                  {adminReplyText.length} / 1000 अक्षर
+                </span>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setReplyModalReview(null)}
+                  disabled={isUpdatingReview}
+                  className="rounded-xl text-xs"
+                >
+                  रद्द करें
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleSaveAdminReply}
+                  disabled={isUpdatingReview}
+                  className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs"
+                >
+                  {isUpdatingReview ? (
+                    <span className="flex items-center gap-1.5">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>सहेजा जा रहा है...</span>
+                    </span>
+                  ) : (
+                    <span>उत्तर सहेजें (Save Reply)</span>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* ================================================================= */}

@@ -73,7 +73,15 @@ export const adminUpdateProductStockServerFn = createServerFn({ method: "POST" }
   });
 
 export const adminUpdateOrderStatusServerFn = createServerFn({ method: "POST" })
-  .validator((data: { orderId: string; status: string; adminToken?: string | undefined }) => data)
+  .validator(
+    (data: {
+      orderId: string;
+      status: string;
+      adminToken?: string | undefined;
+      notes?: string | undefined;
+      trackingNumber?: string | undefined;
+    }) => data
+  )
   .handler(async ({ data }) => {
     let cookieToken: string | null = null;
     try {
@@ -82,7 +90,14 @@ export const adminUpdateOrderStatusServerFn = createServerFn({ method: "POST" })
       void err;
     }
     const { updateOrderStatusSecure } = await import("@/server/store-functions");
-    return updateOrderStatusSecure(data.orderId, data.status, data.adminToken || cookieToken);
+    return updateOrderStatusSecure(
+      data.orderId,
+      data.status,
+      data.adminToken || cookieToken,
+      "admin-client",
+      data.notes,
+      data.trackingNumber
+    );
   });
 
 export const adminChangePasswordServerFn = createServerFn({ method: "POST" })
@@ -160,4 +175,131 @@ export const trackOrderServerFn = createServerFn({ method: "POST" })
     const { trackCustomerOrderSecure } = await import("@/server/store-functions");
     return trackCustomerOrderSecure(data.orderId, data.phone);
   });
+
+export const adminGetSettingsServerFn = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { getStoreSettingsSecure } = await import("@/server/store-functions");
+    return getStoreSettingsSecure();
+  });
+
+export const adminUpdateSettingsServerFn = createServerFn({ method: "POST" })
+  .validator(
+    (data: {
+      settings: Partial<import("@/server/order-store").ServerStoreSettings>;
+      adminToken?: string | undefined;
+    }) => data
+  )
+  .handler(async ({ data }) => {
+    let cookieToken: string | null = null;
+    try {
+      cookieToken = getCookie("shifa_admin_session") || null;
+    } catch (err) {
+      void err;
+    }
+    const { updateStoreSettingsSecure } = await import("@/server/store-functions");
+    return updateStoreSettingsSecure(data.settings, data?.adminToken || cookieToken);
+  });
+
+export const adminGetProductsServerFn = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { getStoreProductsSecure } = await import("@/server/store-functions");
+    return getStoreProductsSecure();
+  });
+
+export const adminUpdateProductServerFn = createServerFn({ method: "POST" })
+  .validator(
+    (data: {
+      product: Partial<import("@/data/products").Product> & { id: string };
+      adminToken?: string | undefined;
+    }) => data
+  )
+  .handler(async ({ data }) => {
+    let cookieToken: string | null = null;
+    try {
+      cookieToken = getCookie("shifa_admin_session") || null;
+    } catch (err) {
+      void err;
+    }
+    const { updateStoreProductSecure } = await import("@/server/store-functions");
+    return updateStoreProductSecure(data.product, data?.adminToken || cookieToken);
+  });
+
+export type ReviewStatus = "approved" | "pending" | "rejected";
+
+export interface StoredReview {
+  id: string;
+  productId: string;
+  productName: string;
+  rating: number;
+  title: string;
+  comment: string;
+  authorName: string;
+  authorMasked: string;
+  city?: string | undefined;
+  isVerifiedPurchase: boolean;
+  verifiedOrderId?: string | undefined;
+  verifiedOrderIdMasked?: string | undefined;
+  customerPhoneMasked?: string | undefined;
+  status: ReviewStatus;
+  adminReply?: string | undefined;
+  adminReplyAt?: string | undefined;
+  createdAt: string;
+  updatedAt: string;
+  ipHash?: string | undefined;
+}
+
+export const adminListReviewsServerFn = createServerFn({ method: "POST" })
+  .validator((data: { filter?: import("@/server/review-store").AdminReviewFilter; adminToken?: string } = {}) => data)
+  .handler(async ({ data }) => {
+    let cookieToken: string | null = null;
+    try {
+      cookieToken = getCookie("shifa_admin_session") || null;
+    } catch (err) {
+      void err;
+    }
+    const { adminListReviewsServer } = await import("@/server/review-store");
+    return adminListReviewsServer(data?.filter || {}, data?.adminToken || cookieToken);
+  });
+
+export const adminModerateReviewServerFn = createServerFn({ method: "POST" })
+  .validator(
+    (data: {
+      reviewId: string;
+      status: import("@/server/review-store").ReviewStatus;
+      adminReply?: string;
+      adminToken?: string;
+    }) => data
+  )
+  .handler(async ({ data }) => {
+    let cookieToken: string | null = null;
+    try {
+      cookieToken = getCookie("shifa_admin_session") || null;
+    } catch (err) {
+      void err;
+    }
+    const { adminModerateReviewServer } = await import("@/server/review-store");
+    return adminModerateReviewServer(
+      {
+        reviewId: data.reviewId,
+        status: data.status,
+        adminReply: data.adminReply,
+      },
+      data?.adminToken || cookieToken
+    );
+  });
+
+export const adminDeleteReviewServerFn = createServerFn({ method: "POST" })
+  .validator((data: { reviewId: string; adminToken?: string }) => data)
+  .handler(async ({ data }) => {
+    let cookieToken: string | null = null;
+    try {
+      cookieToken = getCookie("shifa_admin_session") || null;
+    } catch (err) {
+      void err;
+    }
+    const { adminDeleteReviewServer } = await import("@/server/review-store");
+    return adminDeleteReviewServer(data.reviewId, data?.adminToken || cookieToken);
+  });
+
+
 

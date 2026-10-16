@@ -436,13 +436,13 @@ function ContactAndHelpCenterPage() {
             {/* Guide 4 */}
             <div className="p-4 rounded-2xl bg-secondary/30 border border-border/80 space-y-2">
               <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">
-                चरण 4 • ऑर्डर रिकॉर्ड्स व ट्रैकिंग
+                चरण 4 • ऑर्डर रिकॉर्ड्स व लाइव ट्रैकिंग
               </span>
               <h3 className="font-serif text-sm font-bold text-foreground">
-                स्थानीय ऑर्डर रिकॉर्ड्स और व्यापारिक पुष्टि
+                ऑर्डर स्थिति व लाइव ट्रैकिंग कैसे देखें?
               </h3>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                चेकआउट पूरा करने पर आपके ऑर्डर का रिकॉर्ड आपके इस डिवाइस के ब्राउज़र में सुरक्षित होता है, जिसे आप <Link to="/account" className="text-primary hover:underline font-semibold">माय अकाउंट (/account)</Link> में देख सकते हैं। वास्तविक पार्सल प्रेषण की पुष्टि हकीम जी द्वारा WhatsApp या कॉल पर की जाती है।
+                चेकआउट पूरा करने पर आपको एक अद्वितीय ऑर्डर आईडी (उदा: ORD-XXXX) प्राप्त होती है। आप हमारे समर्पित <Link to="/track-order" className="text-primary hover:underline font-semibold">ऑर्डर ट्रैकिंग पेज (/track-order)</Link> पर ऑर्डर आईडी और 10-अंकीय मोबाइल नंबर दर्ज कर वास्तविक समय में डिस्पैच और डाक/कूरियर प्रगति देख सकते हैं।
               </p>
             </div>
           </div>

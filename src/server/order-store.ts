@@ -89,6 +89,48 @@ export interface InventoryItem {
 const STORAGE_DIR = path.resolve(process.cwd(), "server-data");
 const ORDERS_FILE = path.join(STORAGE_DIR, "orders.json");
 const INVENTORY_FILE = path.join(STORAGE_DIR, "inventory.json");
+const SETTINGS_FILE = path.join(STORAGE_DIR, "settings.json");
+const PRODUCTS_FILE = path.join(STORAGE_DIR, "products.json");
+
+export interface ServerStoreSettings {
+  storeName: string;
+  tagline: string;
+  founderName: string;
+  phone: string;
+  whatsapp: string;
+  email: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  freeShippingThreshold: number;
+  standardShippingFee: number;
+  announcementText: string;
+  codAvailable: boolean;
+  onlinePaymentAvailable: boolean;
+  upiId: string;
+  adminPin: string;
+}
+
+export const DEFAULT_SERVER_SETTINGS: ServerStoreSettings = {
+  storeName: "Shifa A Hayat",
+  tagline: "आयुर्वेदिक एवं यूनानी हर्बल सेंटर • शुद्ध प्राकृतिक इलाज",
+  founderName: "Hakeem Inayat Ahmadi (Inayat Palanpuri)",
+  phone: "+91 9586037331",
+  whatsapp: "9586037331",
+  email: "contact@shifaahayat.com",
+  address: "Shifa Khana Ayurvedic & Unani Centre, Station Road",
+  city: "Palanpur",
+  state: "Gujarat",
+  country: "India",
+  freeShippingThreshold: 499,
+  standardShippingFee: 49,
+  announcementText: "✨ ऑल इंडिया फ्री डिलीवरी ₹499 के ऑर्डर्स पर • WhatsApp Direct Ordering",
+  codAvailable: true,
+  onlinePaymentAvailable: true,
+  upiId: "9586037331@upi",
+  adminPin: "9586",
+};
 
 function ensureStorageDir(): void {
   try {
@@ -101,11 +143,13 @@ function ensureStorageDir(): void {
 }
 
 // In-Memory Authority Cache (Thread-Safe within Node process)
-let memoryOrders: StoredOrder[] = [];
+export let memoryOrders: StoredOrder[] = [];
 const memoryInventory: Map<string, InventoryItem> = new Map();
+let memorySettings: ServerStoreSettings = { ...DEFAULT_SERVER_SETTINGS };
+let memoryProducts: Product[] = [...INITIAL_PRODUCTS];
 let isInitialized = false;
 
-function initializeStore(): void {
+export function initializeStore(): void {
   if (isInitialized) return;
   ensureStorageDir();
 
@@ -167,6 +211,35 @@ function initializeStore(): void {
     console.warn("[OrderStore] Could not load persisted orders, initializing empty", err);
   }
 
+  // Load Settings from disk if available
+  try {
+    if (fs.existsSync(SETTINGS_FILE)) {
+      const raw = fs.readFileSync(SETTINGS_FILE, "utf-8");
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        memorySettings = { ...DEFAULT_SERVER_SETTINGS, ...parsed };
+      }
+    }
+  } catch (err) {
+    console.warn("[OrderStore] Could not load persisted settings, using defaults", err);
+  }
+
+  // Load Products from disk if available
+  try {
+    if (fs.existsSync(PRODUCTS_FILE)) {
+      const raw = fs.readFileSync(PRODUCTS_FILE, "utf-8");
+      const parsed: Product[] = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        memoryProducts = INITIAL_PRODUCTS.map((initP) => {
+          const customP = parsed.find((p) => p.id === initP.id);
+          return customP ? { ...initP, ...customP } : initP;
+        });
+      }
+    }
+  } catch (err) {
+    console.warn("[OrderStore] Could not load persisted products, using catalog defaults", err);
+  }
+
   isInitialized = true;
 }
 
@@ -189,12 +262,39 @@ function persistInventoryToDisk(): void {
   }
 }
 
+function persistSettingsToDisk(): void {
+  try {
+    ensureStorageDir();
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(memorySettings, null, 2), "utf-8");
+  } catch (err) {
+    console.warn("[OrderStore] Could not persist settings to disk", err);
+  }
+}
+
+function persistProductsToDisk(): void {
+  try {
+    ensureStorageDir();
+    fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(memoryProducts, null, 2), "utf-8");
+  } catch (err) {
+    console.warn("[OrderStore] Could not persist products to disk", err);
+  }
+}
+
 // Reset store state (used for testing and explicit admin catalog resets)
 export function resetServerStoreForTesting(): void {
   memoryOrders = [];
   memoryInventory.clear();
-  isInitialized = false;
-  initializeStore();
+  memorySettings = { ...DEFAULT_SERVER_SETTINGS };
+  memoryProducts = [...INITIAL_PRODUCTS];
+  INITIAL_PRODUCTS.forEach((p) => {
+    memoryInventory.set(p.id, {
+      id: p.id,
+      stockCount: p.stockCount !== undefined ? p.stockCount : 50,
+      inStock: p.inStock !== false && (p.stockCount === undefined || p.stockCount > 0),
+      updatedAt: new Date().toISOString(),
+    });
+  });
+  isInitialized = true;
 }
 
 // =============================================================================
@@ -444,12 +544,19 @@ export function updateOrderStatusAdminServer(
 
   persistOrdersToDisk();
 
+  const auditDetails: Record<string, string | number | boolean | null> = {
+    previousStatus: prevStatus,
+    newStatus,
+  };
+  if (notes) auditDetails["notes"] = notes;
+  if (trackingNumber) auditDetails["trackingNumber"] = trackingNumber;
+
   logAdminAudit({
     adminEmail: authCheck.adminEmail || AUTHORIZED_ADMIN_EMAIL,
     action: "UPDATE_ORDER_STATUS",
     entityType: "ORDER",
     entityId: orderId,
-    details: { previousStatus: prevStatus, newStatus, notes, trackingNumber },
+    details: auditDetails,
     ipAddress: clientIp,
   });
 
@@ -507,6 +614,16 @@ export function updateProductStockServer(
   }
 
   persistInventoryToDisk();
+
+  const prodIdx = memoryProducts.findIndex((p) => p.id === productId);
+  if (prodIdx !== -1) {
+    memoryProducts[prodIdx] = {
+      ...memoryProducts[prodIdx]!,
+      stockCount: safeCount,
+      inStock: safeCount > 0,
+    };
+    persistProductsToDisk();
+  }
 
   logAdminAudit({
     adminEmail: authCheck.adminEmail || AUTHORIZED_ADMIN_EMAIL,
@@ -631,44 +748,300 @@ export function exportOrdersAdminServer(
 // Prevents enumeration / IDOR attacks while allowing customers to verify status
 // =============================================================================
 
-export function trackOrderCustomerServer(orderId: string, phoneInput: string): {
+export interface CustomerTrackingItem {
+  productId: string;
+  productName: string;
+  productImage: string;
+  packSize: string;
+  quantity: number;
+  price: number;
+  lineTotal: number;
+}
+
+export interface CustomerTrackingResponse {
   id: string;
   orderStatus: ServerOrderStatus;
   createdAt: string;
+  updatedAt: string;
+  customerNameMasked: string;
+  customerPhoneMasked: string;
+  deliveryCity: string;
+  deliveryState: string;
+  deliveryPincode: string;
+  items: CustomerTrackingItem[];
+  subtotal: number;
+  shippingCharge: number;
+  discount: number;
   total: number;
   itemsCount: number;
+  paymentMethod: string;
+  paymentStatus: string;
   trackingNumber: string;
-  deliveryCity: string;
-} {
+  hasTrackingNumber: boolean;
+  statusHistory: OrderStatusHistoryItem[];
+  carrierNotes: string;
+  isWhatsAppConfirmedByCustomer: boolean;
+  estimatedDeliveryWindow: string;
+}
+
+function maskCustomerName(name: string): string {
+  if (!name) return "ग्राहक (Customer)";
+  const parts = name.trim().split(/\s+/);
+  return parts
+    .map((p) => {
+      if (p.length <= 1) return p;
+      return p[0] + "*".repeat(Math.min(3, p.length - 1));
+    })
+    .join(" ");
+}
+
+function maskCustomerPhone(phone: string): string {
+  const digits = phone.replace(/[^0-9]/g, "");
+  if (digits.length <= 4) return "******";
+  return "******" + digits.slice(-4);
+}
+
+export function trackOrderCustomerServer(orderId: string, phoneInput: string): CustomerTrackingResponse {
   initializeStore();
   const cleanId = (orderId || "").trim();
   const cleanPhone = (phoneInput || "").replace(/[^0-9]/g, "");
 
   if (!cleanId) {
-    throw new Error("Order ID is required");
+    throw new Error("Order ID is required (ऑर्डर संदर्भ आईडी आवश्यक है)");
   }
   if (!cleanPhone || cleanPhone.length < 10) {
-    throw new Error("Valid 10-digit mobile number is required to look up your order");
+    throw new Error("Valid 10-digit mobile number is required to look up your order (मान्य 10-अंकीय मोबाइल नंबर आवश्यक है)");
   }
 
   const order = memoryOrders.find((o) => o.id.toLowerCase() === cleanId.toLowerCase());
   if (!order) {
-    throw new Error("No matching order found with provided ID and mobile number");
+    throw new Error("No matching order found with provided ID and mobile number (इस ऑर्डर आईडी और मोबाइल नंबर से मेल खाता कोई ऑर्डर नहीं मिला)");
   }
 
   const orderPhoneClean = order.customerPhone.replace(/[^0-9]/g, "");
   // Compare last 10 digits
   if (!orderPhoneClean.endsWith(cleanPhone.slice(-10))) {
-    throw new Error("No matching order found with provided ID and mobile number");
+    throw new Error("No matching order found with provided ID and mobile number (इस ऑर्डर आईडी और मोबाइल नंबर से मेल खाता कोई ऑर्डर नहीं मिला)");
   }
+
+  let carrierNotes = "पार्सल स्पीड पोस्ट अथवा स्थानीय कूरियर द्वारा प्रेषित किया जाता है।";
+  let estimatedDeliveryWindow = "3-5 कार्यदिवस";
+
+  if (order.orderStatus === "Order Received" || order.orderStatus === "Pending Confirmation") {
+    carrierNotes = "आपका ऑर्डर अनुरोध सिस्टम में दर्ज है। हकीम जी द्वारा उत्पाद उपलब्धता और पते की समीक्षा उपरांत पुष्टि की जाएगी।";
+    estimatedDeliveryWindow = "पुष्टि उपरांत 4-7 कार्यदिवस";
+  } else if (order.orderStatus === "Confirmed") {
+    carrierNotes = "हकीम जी द्वारा आपके ऑर्डर की पुष्टि कर दी गई है। दवाइयां तैयार करने की प्रक्रिया शुरू हो चुकी है।";
+    estimatedDeliveryWindow = "पुष्टि से 3-6 कार्यदिवस";
+  } else if (order.orderStatus === "Processing") {
+    carrierNotes = "दवाइयों का शुद्ध आयुर्वेदिक फार्मूलेशन तैयार कर सुरक्षित एवं गोपनीय (Discreet) पैकेजिंग की जा रही है।";
+    estimatedDeliveryWindow = "डिस्पैच उपरांत 3-5 कार्यदिवस";
+  } else if (order.orderStatus === "Shipped") {
+    carrierNotes = order.trackingNumber
+      ? `पार्सल स्पीड पोस्ट / कूरियर द्वारा डिस्पैच किया जा चुका है। डाक/कूरियर संदर्भ: ${order.trackingNumber}`
+      : "पार्सल डाक सेवा / कूरियर को सुपुर्द कर दिया गया है। सामान्यतः 3-5 कार्यदिवसों में सुपुर्दगी होती है।";
+    estimatedDeliveryWindow = "2-4 कार्यदिवस";
+  } else if (order.orderStatus === "Out for Delivery") {
+    carrierNotes = "पार्सल आपके निकटतम डाकघर/कूरियर वितरण केंद्र से सुपुर्दगी हेतु निकल चुका है।";
+    estimatedDeliveryWindow = "आज अथवा 24 घंटे के भीतर";
+  } else if (order.orderStatus === "Delivered") {
+    carrierNotes = "पार्सल सफलतापूर्वक सुपुर्द हो चुका है। किसी भी स्वास्थ्य परामर्श या प्रश्न हेतु हकीम जी से संपर्क करें।";
+    estimatedDeliveryWindow = "डिलीवर हो चुका है";
+  } else if (order.orderStatus === "Cancelled") {
+    carrierNotes = "यह ऑर्डर निरस्त/रद्द किया जा चुका है।" + (order.notes ? ` (विवरण: ${order.notes})` : "");
+    estimatedDeliveryWindow = "लागू नहीं";
+  }
+
+  const statusHistory =
+    Array.isArray(order.statusHistory) && order.statusHistory.length > 0
+      ? order.statusHistory
+      : [
+          {
+            status: order.orderStatus,
+            timestamp: order.createdAt,
+            notes: "Order recorded in Shifa A Hayat backend",
+            updatedBy: "System",
+          },
+        ];
 
   return {
     id: order.id,
     orderStatus: order.orderStatus,
     createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
+    customerNameMasked: maskCustomerName(order.customerName),
+    customerPhoneMasked: maskCustomerPhone(order.customerPhone),
+    deliveryCity: order.shippingAddress.cityVillage,
+    deliveryState: order.shippingAddress.state,
+    deliveryPincode: order.shippingAddress.pincode,
+    items: order.items.map((i) => ({
+      productId: i.productId,
+      productName: i.productName,
+      productImage: i.productImage,
+      packSize: i.packSize,
+      quantity: i.quantity,
+      price: i.price,
+      lineTotal: i.lineTotal,
+    })),
+    subtotal: order.subtotal,
+    shippingCharge: order.shippingCharge,
+    discount: order.discount,
     total: order.total,
     itemsCount: order.items.length,
-    trackingNumber: order.trackingNumber,
-    deliveryCity: order.shippingAddress.cityVillage,
+    paymentMethod: order.paymentMethod,
+    paymentStatus: order.paymentStatus,
+    trackingNumber: order.trackingNumber || "",
+    hasTrackingNumber: Boolean(order.trackingNumber && order.trackingNumber.trim().length > 0),
+    statusHistory,
+    carrierNotes,
+    isWhatsAppConfirmedByCustomer: order.isWhatsAppConfirmedByCustomer,
+    estimatedDeliveryWindow,
   };
 }
+
+// =============================================================================
+// BUSINESS LOGIC: STORE SETTINGS RETRIEVAL & ADMIN MUTATION
+// =============================================================================
+
+export function getSettingsServer(): ServerStoreSettings {
+  initializeStore();
+  return { ...memorySettings };
+}
+
+export function updateSettingsAdminServer(
+  newSettings: Partial<ServerStoreSettings>,
+  token?: string | null,
+  clientIp = "admin-client"
+): ServerStoreSettings {
+  initializeStore();
+  const authCheck = verifyServerAdminToken(token);
+  if (!authCheck.authorized) {
+    throw new Error(authCheck.error || "Unauthorized: Administrator session required to update store settings");
+  }
+
+  // Input validation
+  if (newSettings.storeName !== undefined && newSettings.storeName.trim().length < 2) {
+    throw new Error("Store name must be at least 2 characters");
+  }
+  if (newSettings.phone !== undefined) {
+    const clean = newSettings.phone.replace(/[^0-9]/g, "");
+    if (clean.length < 10) throw new Error("Phone number must have at least 10 digits");
+  }
+  if (newSettings.whatsapp !== undefined) {
+    const clean = newSettings.whatsapp.replace(/[^0-9]/g, "");
+    if (clean.length < 10) throw new Error("WhatsApp number must have at least 10 digits");
+  }
+  if (
+    newSettings.freeShippingThreshold !== undefined &&
+    (typeof newSettings.freeShippingThreshold !== "number" || newSettings.freeShippingThreshold < 0)
+  ) {
+    throw new Error("Free shipping threshold cannot be negative");
+  }
+  if (
+    newSettings.standardShippingFee !== undefined &&
+    (typeof newSettings.standardShippingFee !== "number" || newSettings.standardShippingFee < 0)
+  ) {
+    throw new Error("Standard shipping fee cannot be negative");
+  }
+
+  memorySettings = {
+    ...memorySettings,
+    ...newSettings,
+    adminPin: memorySettings.adminPin || "9586", // Protect server admin PIN
+  };
+
+  persistSettingsToDisk();
+
+  logAdminAudit({
+    adminEmail: authCheck.adminEmail || AUTHORIZED_ADMIN_EMAIL,
+    action: "UPDATE_STORE_SETTINGS",
+    entityType: "SETTINGS",
+    entityId: "STORE",
+    details: {
+      storeName: memorySettings.storeName,
+      freeShippingThreshold: memorySettings.freeShippingThreshold,
+      standardShippingFee: memorySettings.standardShippingFee,
+    },
+    ipAddress: clientIp,
+  });
+
+  return { ...memorySettings };
+}
+
+// =============================================================================
+// BUSINESS LOGIC: PRODUCT CATALOG RETRIEVAL & ADMIN MUTATION
+// =============================================================================
+
+export function getProductsServer(): Product[] {
+  initializeStore();
+  return [...memoryProducts];
+}
+
+export function updateProductAdminServer(
+  updated: Partial<Product> & { id: string },
+  token?: string | null,
+  clientIp = "admin-client"
+): Product {
+  initializeStore();
+  const authCheck = verifyServerAdminToken(token);
+  if (!authCheck.authorized) {
+    throw new Error(authCheck.error || "Unauthorized: Administrator session required to update product catalog");
+  }
+
+  const idx = memoryProducts.findIndex((p) => p.id === updated.id);
+  if (idx === -1) {
+    throw new Error(`Product not found: ${updated.id}`);
+  }
+
+  if (updated.price !== undefined && (typeof updated.price !== "number" || updated.price < 1)) {
+    throw new Error("Product price must be at least ₹1");
+  }
+  if (updated.stockCount !== undefined && (typeof updated.stockCount !== "number" || updated.stockCount < 0)) {
+    throw new Error("Stock count cannot be negative");
+  }
+
+  const existing = memoryProducts[idx]!;
+  const merged: Product = {
+    ...existing,
+    ...updated,
+    price: updated.price !== undefined ? Math.max(1, Math.floor(updated.price)) : existing.price,
+    stockCount: updated.stockCount !== undefined ? Math.max(0, Math.floor(updated.stockCount)) : existing.stockCount,
+  };
+  merged.inStock = (merged.stockCount ?? 0) > 0 && merged.inStock !== false;
+
+  memoryProducts[idx] = merged;
+  persistProductsToDisk();
+
+  // Also update memoryInventory
+  let inv = memoryInventory.get(merged.id);
+  if (inv) {
+    inv.stockCount = merged.stockCount ?? 0;
+    inv.inStock = merged.inStock;
+    inv.updatedAt = new Date().toISOString();
+  } else {
+    inv = {
+      id: merged.id,
+      stockCount: merged.stockCount ?? 0,
+      inStock: merged.inStock,
+      updatedAt: new Date().toISOString(),
+    };
+    memoryInventory.set(merged.id, inv);
+  }
+  persistInventoryToDisk();
+
+  logAdminAudit({
+    adminEmail: authCheck.adminEmail || AUTHORIZED_ADMIN_EMAIL,
+    action: "UPDATE_PRODUCT",
+    entityType: "PRODUCT",
+    entityId: merged.id,
+    details: {
+      name: merged.name,
+      price: merged.price,
+      stockCount: merged.stockCount ?? 0,
+    },
+    ipAddress: clientIp,
+  });
+
+  return merged;
+}
+

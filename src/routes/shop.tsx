@@ -26,8 +26,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { searchCatalogProducts, SearchResult } from "@/lib/smart-search";
 
 export type PriceRange = "all" | "under-500" | "500-1000" | "above-1000";
+export type SortOption = "featured" | "price-asc" | "price-desc" | "rating" | "relevance";
 
 export interface ShopSearch {
   category?: string | undefined;
@@ -81,7 +83,7 @@ function ShopPage() {
     }
     return "all";
   });
-  const [sortBy, setSortBy] = useState<"featured" | "price-asc" | "price-desc" | "rating">("featured");
+  const [sortBy, setSortBy] = useState<SortOption>("featured");
   const [inStockOnly, setInStockOnly] = useState(false);
   const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
 
@@ -105,70 +107,17 @@ function ShopPage() {
     }
   }, [searchParams.category, searchParams.q, searchParams.price]);
 
-  // Comprehensive Multi-criteria Search & Sort Logic
-  const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      // Category filter
-      if (selectedCategory !== "all" && product.category !== selectedCategory) {
-        return false;
-      }
-      // In-stock filter
-      if (inStockOnly && !product.inStock) {
-        return false;
-      }
-      // Price range filter
-      if (priceRange === "under-500" && product.price >= 500) {
-        return false;
-      }
-      if (priceRange === "500-1000" && (product.price < 500 || product.price > 1000)) {
-        return false;
-      }
-      if (priceRange === "above-1000" && product.price <= 1000) {
-        return false;
-      }
-      // Search query
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim();
-        const matchesName = product.name.toLowerCase().includes(query);
-        const matchesHindi = product.nameHindi.toLowerCase().includes(query);
-        const matchesDesc = product.description.toLowerCase().includes(query);
-        const matchesSub = product.subtitle.toLowerCase().includes(query);
-        const matchesCategory = product.category.toLowerCase().includes(query);
-        const matchesCategoryHindi = product.categoryHindi.toLowerCase().includes(query);
-        const matchesIngredients = product.ingredients?.some((ing) => ing.toLowerCase().includes(query));
-        const matchesBenefits = product.benefits?.some((b) => b.toLowerCase().includes(query));
-        const matchesDosage = product.dosage?.toLowerCase().includes(query);
-        const matchedTaxonomy = CATEGORIES.find(
-          (c) => c.id !== "all" && (c.name.toLowerCase().includes(query) || c.hindi.toLowerCase().includes(query))
-        );
-        const matchesMappedCategory = matchedTaxonomy ? product.category === matchedTaxonomy.id : false;
-
-        if (
-          !matchesName &&
-          !matchesHindi &&
-          !matchesDesc &&
-          !matchesSub &&
-          !matchesCategory &&
-          !matchesCategoryHindi &&
-          !matchesIngredients &&
-          !matchesBenefits &&
-          !matchesDosage &&
-          !matchesMappedCategory
-        ) {
-          return false;
-        }
-      }
-      return true;
-    }).sort((a, b) => {
-      if (sortBy === "price-asc") return a.price - b.price;
-      if (sortBy === "price-desc") return b.price - a.price;
-      if (sortBy === "rating") return b.rating - a.rating;
-      // Default: featured (bestsellers first)
-      if (a.isBestseller && !b.isBestseller) return -1;
-      if (!a.isBestseller && b.isBestseller) return 1;
-      return 0;
+  // Comprehensive Smart Hindi & English Search, Filter & Sort Logic
+  const searchResults: SearchResult[] = useMemo(() => {
+    return searchCatalogProducts(products, searchQuery, {
+      category: selectedCategory,
+      priceRange,
+      inStockOnly,
+      sortBy: sortBy === "featured" && searchQuery.trim() ? "relevance" : sortBy,
     });
   }, [products, selectedCategory, searchQuery, inStockOnly, sortBy, priceRange]);
+
+  const filteredProducts = useMemo(() => searchResults.map((r) => r.product), [searchResults]);
 
   const hasActiveFilters =
     searchQuery.trim() !== "" ||
@@ -261,7 +210,7 @@ function ShopPage() {
             <div className="sm:col-span-6 md:col-span-3">
               <Select
                 value={sortBy}
-                onValueChange={(val: "featured" | "price-asc" | "price-desc" | "rating") =>
+                onValueChange={(val: SortOption) =>
                   setSortBy(val)
                 }
               >
@@ -270,6 +219,9 @@ function ShopPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="featured">लोकप्रियता (Featured)</SelectItem>
+                  {searchQuery.trim() && (
+                    <SelectItem value="relevance">सटीक मेल (Best Match)</SelectItem>
+                  )}
                   <SelectItem value="price-asc">कीमत: कम से ज्यादा</SelectItem>
                   <SelectItem value="price-desc">कीमत: ज्यादा से कम</SelectItem>
                   <SelectItem value="rating">सर्वोच्च रेटिंग</SelectItem>
@@ -374,7 +326,7 @@ function ShopPage() {
 
               {sortBy !== "featured" && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary text-foreground border border-border font-medium">
-                  क्रम: {sortBy === "price-asc" ? "कम से ज्यादा" : sortBy === "price-desc" ? "ज्यादा से कम" : "रेटिंग"}
+                  क्रम: {sortBy === "relevance" ? "सटीक मेल" : sortBy === "price-asc" ? "कम से ज्यादा" : sortBy === "price-desc" ? "ज्यादा से कम" : "रेटिंग"}
                   <button
                     type="button"
                     onClick={() => setSortBy("featured")}
@@ -420,9 +372,35 @@ function ShopPage() {
             </h3>
             <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
               {searchQuery.trim()
-                ? `"${searchQuery}" के लिए कोई उत्पाद मेल नहीं खाता। कृपया स्पेलिंग जांचें या सामान्य शब्द खोजें।`
+                ? `"${searchQuery}" के लिए कोई उत्पाद मेल नहीं खाता। कृपया स्पेलिंग जांचें या नीचे दिए गए लोकप्रिय शब्द खोजें।`
                 : "चयनित श्रेणी या फ़िल्टर के अनुसार कोई उत्पाद नहीं मिला।"}
             </p>
+
+            {searchQuery.trim() && (
+              <div className="pt-2">
+                <p className="text-xs font-semibold text-foreground mb-2">लोकप्रिय उत्पाद खोजें:</p>
+                <div className="flex flex-wrap justify-center gap-1.5 max-w-sm mx-auto">
+                  {[
+                    "ज़ाफरानी",
+                    "पहलवान कैप्सूल",
+                    "तनावई तेल",
+                    "राहते दर्द",
+                    "अर्क आबे हयात",
+                    "पेट की समस्या",
+                    "माजून",
+                  ].map((term) => (
+                    <button
+                      key={term}
+                      type="button"
+                      onClick={() => setSearchQuery(term)}
+                      className="px-2.5 py-1 text-xs rounded-full bg-secondary hover:bg-primary/10 hover:text-primary transition-colors border border-border cursor-pointer"
+                    >
+                      {term}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Button

@@ -14,16 +14,20 @@ import {
   Sparkles,
   SlidersHorizontal,
   Globe,
+  Truck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { getProductSuggestions, SearchSuggestion } from "@/lib/smart-search";
 
 export const Header: React.FC = () => {
   const { cartCount, cartGrandTotal, wishlist, settings, currentUser, products } = useStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
+  const [mobileSearchFocused, setMobileSearchFocused] = useState(false);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const [language, setLanguage] = useState<"hi" | "en">(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("shifa_lang");
@@ -61,27 +65,53 @@ export const Header: React.FC = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [mobileMenuOpen]);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate({ to: "/shop", search: { q: searchQuery.trim() } });
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const clean = searchQuery.trim();
+    if (clean) {
+      navigate({ to: "/shop", search: { q: clean } });
       setSearchFocused(false);
+      setMobileSearchFocused(false);
       setMobileMenuOpen(false);
+      setActiveSuggestionIndex(-1);
     }
   };
 
-  const filteredSuggestions = useMemo(() => {
+  const suggestions: SearchSuggestion[] = useMemo(() => {
     if (!searchQuery.trim()) return [];
-    const q = searchQuery.toLowerCase().trim();
-    return products
-      .filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.nameHindi.includes(searchQuery) ||
-          p.category.toLowerCase().includes(q)
-      )
-      .slice(0, 5);
+    return getProductSuggestions(products, searchQuery, 6);
   }, [searchQuery, products]);
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (suggestions.length > 0) {
+        setSearchFocused(true);
+        setActiveSuggestionIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : 0));
+      }
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (suggestions.length > 0) {
+        setSearchFocused(true);
+        setActiveSuggestionIndex((prev) => (prev > 0 ? prev - 1 : suggestions.length - 1));
+      }
+    } else if (e.key === "Enter") {
+      if (activeSuggestionIndex >= 0 && suggestions[activeSuggestionIndex]) {
+        e.preventDefault();
+        const selected = suggestions[activeSuggestionIndex];
+        navigate({ to: "/product/$id", params: { id: selected.id } });
+        setSearchFocused(false);
+        setMobileSearchFocused(false);
+        setActiveSuggestionIndex(-1);
+      } else {
+        handleSearchSubmit(e);
+      }
+    } else if (e.key === "Escape") {
+      setSearchFocused(false);
+      setMobileSearchFocused(false);
+      setActiveSuggestionIndex(-1);
+    }
+  };
 
   return (
     <>
@@ -158,20 +188,39 @@ export const Header: React.FC = () => {
             <form onSubmit={handleSearchSubmit} className="w-full relative">
               <Input
                 type="text"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-expanded={searchFocused && suggestions.length > 0}
+                aria-controls="desktop-search-suggestions"
+                aria-activedescendant={
+                  activeSuggestionIndex >= 0 && suggestions[activeSuggestionIndex]
+                    ? `desktop-suggestion-${suggestions[activeSuggestionIndex].id}`
+                    : undefined
+                }
+                autoComplete="off"
+                aria-label="उत्पाद खोजें (Search products)"
                 placeholder="सर्च करें: ज़ाफरानी, तेल, दर्द..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setActiveSuggestionIndex(-1);
+                  setSearchFocused(true);
+                }}
                 onFocus={() => setSearchFocused(true)}
-                onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+                onBlur={() => setTimeout(() => setSearchFocused(false), 250)}
+                onKeyDown={handleSearchKeyDown}
                 className="w-full pl-9 pr-9 py-2 bg-secondary/50 border-border/80 focus:bg-background rounded-full text-xs sm:text-sm h-9 sm:h-10"
               />
               <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               {searchQuery && (
                 <button
                   type="button"
-                  onClick={() => setSearchQuery("")}
+                  onClick={() => {
+                    setSearchQuery("");
+                    setActiveSuggestionIndex(-1);
+                  }}
                   aria-label="Clear search"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -179,23 +228,41 @@ export const Header: React.FC = () => {
             </form>
 
             {/* Quick Search Suggestions Dropdown */}
-            {searchFocused && filteredSuggestions.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-xl p-2 z-50">
-                <div className="text-[11px] font-semibold text-muted-foreground px-3 py-1 uppercase tracking-wider">
-                  Matching Products
+            {searchFocused && suggestions.length > 0 && (
+              <div
+                id="desktop-search-suggestions"
+                role="listbox"
+                aria-label="उत्पाद सुझाव"
+                className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-2xl p-2 z-50 max-h-[75vh] overflow-y-auto"
+              >
+                <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider border-b border-border/60 mb-1">
+                  <span>सुझावित उत्पाद ({suggestions.length})</span>
+                  <span className="text-[10px] lowercase text-muted-foreground/80">↑↓ से चुनें • Enter</span>
                 </div>
-                {filteredSuggestions.map((product) => (
+                {suggestions.map((product, idx) => (
                   <Link
                     key={product.id}
+                    id={`desktop-suggestion-${product.id}`}
+                    role="option"
+                    aria-selected={idx === activeSuggestionIndex}
                     to="/product/$id"
                     params={{ id: product.id }}
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/70 transition-colors"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      setSearchFocused(false);
+                      setActiveSuggestionIndex(-1);
+                    }}
+                    className={`flex items-center gap-2.5 p-2 rounded-lg transition-colors cursor-pointer ${
+                      idx === activeSuggestionIndex
+                        ? "bg-primary/10 text-primary border border-primary/20"
+                        : "hover:bg-secondary/70"
+                    }`}
                   >
                     <img
                       src={product.image}
                       alt={`${product.name} (${product.nameHindi}) - Shifa A Hayat`}
-                      width={36}
-                      height={36}
+                      width={38}
+                      height={38}
                       loading="lazy"
                       decoding="async"
                       onError={(e) => {
@@ -206,12 +273,57 @@ export const Header: React.FC = () => {
                       className="w-9 h-9 rounded object-contain p-0.5 bg-stone-50 dark:bg-stone-900 border shrink-0"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{product.nameHindi}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-xs sm:text-sm font-semibold text-foreground truncate">{product.name}</p>
+                        <span className="text-[10px] text-muted-foreground bg-secondary px-1.5 py-0.2 rounded shrink-0">
+                          {product.packSize}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground truncate mt-0.5">
+                        <span className="truncate">{product.nameHindi}</span>
+                        <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium truncate shrink-0">
+                          • {product.categoryHindi}
+                        </span>
+                      </div>
                     </div>
-                    <span className="text-sm font-semibold text-primary">₹{product.price}</span>
+                    <div className="text-right shrink-0">
+                      <span className="text-xs sm:text-sm font-bold text-primary">₹{product.price}</span>
+                      {product.compareAtPrice && product.compareAtPrice > product.price && (
+                        <span className="block text-[10px] text-muted-foreground line-through">₹{product.compareAtPrice}</span>
+                      )}
+                    </div>
                   </Link>
                 ))}
+                <div className="pt-2 mt-1 border-t border-border/70 flex items-center justify-between text-xs px-2">
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={handleSearchSubmit}
+                    className="text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>"{searchQuery.trim()}" के सभी 21 परिणाम देखें</span>
+                    <span>→</span>
+                  </button>
+                  <span className="text-[10px] text-muted-foreground">Esc दबाकर बंद करें</span>
+                </div>
+              </div>
+            )}
+            {searchFocused && searchQuery.trim().length > 1 && suggestions.length === 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-xl p-4 z-50 text-center">
+                <p className="text-xs text-muted-foreground">
+                  "{searchQuery}" के लिए कोई उत्पाद नहीं मिला।
+                </p>
+                <p className="text-[11px] text-muted-foreground/80 mt-1">
+                  सुझाव: ज़ाफरानी, तेल, दर्द, अर्क, माजून या पाचन खोजें।
+                </p>
+                <Link
+                  to="/shop"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => setSearchFocused(false)}
+                  className="inline-block mt-2 text-xs font-semibold text-primary hover:underline"
+                >
+                  सभी 21 उत्पाद देखें →
+                </Link>
               </div>
             )}
           </div>
@@ -292,31 +404,147 @@ export const Header: React.FC = () => {
         </div>
 
       {/* Mobile-only Search Bar (Phones < 768px) */}
-      <div className="md:hidden px-3 pb-2.5 pt-0">
+      <div className="md:hidden px-3 pb-2.5 pt-0 relative">
         <form onSubmit={handleSearchSubmit} className="relative">
           <Input
             type="text"
             name="q"
             id="mobile-search-input"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={mobileSearchFocused && suggestions.length > 0}
+            aria-controls="mobile-search-suggestions"
+            aria-activedescendant={
+              activeSuggestionIndex >= 0 && suggestions[activeSuggestionIndex]
+                ? `mobile-suggestion-${suggestions[activeSuggestionIndex].id}`
+                : undefined
+            }
             autoComplete="off"
             aria-label="उत्पाद खोजें (Search products)"
             placeholder="उत्पाद खोजें (ज़ाफरानी गोल्ड, तेल, दर्द...)"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setActiveSuggestionIndex(-1);
+              setMobileSearchFocused(true);
+            }}
+            onFocus={() => setMobileSearchFocused(true)}
+            onBlur={() => setTimeout(() => setMobileSearchFocused(false), 250)}
+            onKeyDown={handleSearchKeyDown}
             className="w-full pl-9 pr-9 py-2 bg-secondary/60 border-border/80 rounded-xl text-xs sm:text-sm h-10"
           />
           <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           {searchQuery && (
             <button
               type="button"
-              onClick={() => setSearchQuery("")}
+              onClick={() => {
+                setSearchQuery("");
+                setActiveSuggestionIndex(-1);
+              }}
               aria-label="Clear search query"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           )}
         </form>
+
+        {/* Mobile Suggestions Dropdown */}
+        {mobileSearchFocused && suggestions.length > 0 && (
+          <div
+            id="mobile-search-suggestions"
+            role="listbox"
+            aria-label="उत्पाद सुझाव"
+            className="absolute top-full left-3 right-3 mt-1.5 bg-card border border-border rounded-2xl shadow-2xl p-2 z-50 max-h-[65vh] overflow-y-auto space-y-1"
+          >
+            <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider border-b border-border/60 mb-1">
+              <span>सुझावित उत्पाद ({suggestions.length})</span>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => setMobileSearchFocused(false)}
+                className="text-muted-foreground hover:text-foreground text-xs"
+              >
+                ✕ बंद करें
+              </button>
+            </div>
+            {suggestions.map((product, idx) => (
+              <Link
+                key={product.id}
+                id={`mobile-suggestion-${product.id}`}
+                role="option"
+                aria-selected={idx === activeSuggestionIndex}
+                to="/product/$id"
+                params={{ id: product.id }}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setMobileSearchFocused(false);
+                  setActiveSuggestionIndex(-1);
+                }}
+                className={`flex items-center gap-2.5 p-2 rounded-xl transition-colors cursor-pointer ${
+                  idx === activeSuggestionIndex
+                    ? "bg-primary/10 text-primary border border-primary/20"
+                    : "hover:bg-secondary/70 active:bg-secondary"
+                }`}
+              >
+                <img
+                  src={product.image}
+                  alt={`${product.name} (${product.nameHindi}) - Shifa A Hayat`}
+                  width={38}
+                  height={38}
+                  loading="lazy"
+                  decoding="async"
+                  onError={(e) => {
+                    if (product.posterImage && e.currentTarget.src !== product.posterImage) {
+                      e.currentTarget.src = product.posterImage;
+                    }
+                  }}
+                  className="w-9 h-9 rounded-lg object-contain p-0.5 bg-stone-50 dark:bg-stone-900 border shrink-0"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-1">
+                    <p className="text-xs font-semibold text-foreground truncate">{product.name}</p>
+                    <span className="text-xs font-bold text-primary shrink-0">₹{product.price}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
+                    <span className="truncate">{product.nameHindi}</span>
+                    <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium shrink-0">
+                      • {product.packSize}
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+            <div className="pt-2 border-t border-border/70 text-center">
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={handleSearchSubmit}
+                className="text-xs text-primary font-bold hover:underline py-1 w-full cursor-pointer"
+              >
+                "{searchQuery.trim()}" के सभी परिणाम देखें →
+              </button>
+            </div>
+          </div>
+        )}
+        {mobileSearchFocused && searchQuery.trim().length > 1 && suggestions.length === 0 && (
+          <div className="absolute top-full left-3 right-3 mt-1.5 bg-card border border-border rounded-2xl shadow-2xl p-4 z-50 text-center">
+            <p className="text-xs text-muted-foreground">
+              "{searchQuery}" के लिए कोई उत्पाद नहीं मिला।
+            </p>
+            <p className="text-[11px] text-muted-foreground/80 mt-1">
+              सुझाव: ज़ाफरानी, तेल, दर्द, अर्क, माजून या पाचन खोजें।
+            </p>
+            <Link
+              to="/shop"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setMobileSearchFocused(false)}
+              className="inline-block mt-2 text-xs font-semibold text-primary hover:underline"
+            >
+              सभी 21 उत्पाद देखें →
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Desktop Navigation Links */}
@@ -372,10 +600,12 @@ export const Header: React.FC = () => {
               हकीम जी का परिचय (About)
             </Link>
             <Link
-              to="/contact"
-              className="text-muted-foreground hover:text-primary transition-colors"
+              to="/track-order"
+              className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-400"
+              activeProps={{ className: "text-primary font-bold" }}
             >
-              सहायता व संपर्क (Help & FAQ)
+              <Truck className="w-3.5 h-3.5" />
+              <span>ऑर्डर ट्रैक करें (Track Order)</span>
             </Link>
           </div>
 
@@ -505,6 +735,17 @@ export const Header: React.FC = () => {
               >
                 <span>विशलिस्ट ({wishlist.length} सहेजे गए)</span>
                 <span className="text-xs text-rose-500 font-semibold">{wishlist.length}</span>
+              </Link>
+              <Link
+                to="/track-order"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2.5 px-3 rounded-xl hover:bg-secondary text-foreground flex items-center justify-between font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/20"
+              >
+                <div className="flex items-center gap-2">
+                  <Truck className="w-4 h-4 text-emerald-600" />
+                  <span>ऑर्डर ट्रैक करें (Track Order)</span>
+                </div>
+                <span className="text-xs">→</span>
               </Link>
               <Link
                 to="/account"

@@ -29,6 +29,12 @@ import {
 import { INITIAL_PRODUCTS, Product } from "@/data/products";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ProductReviewsSection } from "@/components/product/ProductReviewsSection";
+import {
+  getProductReviewsServerFn,
+  PublicProductReview,
+  ProductReviewStats,
+} from "@/lib/reviews-api";
 
 export const Route = createFileRoute("/product/$id")({
   head: ({ params }) => {
@@ -164,6 +170,74 @@ function ProductDetailPage() {
   const [showQuickBuy, setShowQuickBuy] = useState(false);
   const [added, setAdded] = useState(false);
   const [activeView, setActiveView] = useState<"product" | "poster">("product");
+
+  // Trustworthy Customer Reviews State
+  const [reviewsData, setReviewsData] = useState<{
+    reviews: PublicProductReview[];
+    stats: ProductReviewStats;
+  }>({
+    reviews: [],
+    stats: {
+      averageRating: 0,
+      totalReviews: 0,
+      verifiedCount: 0,
+      ratingDistribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+      ratingPercentages: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+    },
+  });
+  const [isLoadingReviews, setIsLoadingReviews] = useState<boolean>(true);
+
+  const fetchReviews = async () => {
+    if (!product?.id) return;
+    try {
+      const res = await getProductReviewsServerFn({ data: { productId: product.id } });
+      if (res && res.stats) {
+        setReviewsData({
+          reviews: res.reviews,
+          stats: res.stats,
+        });
+      }
+    } catch (err) {
+      console.warn("[Product] Could not fetch reviews:", err);
+    } finally {
+      setIsLoadingReviews(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReviews();
+  }, [product?.id]);
+
+  const handleReviewSubmitted = (newReview: PublicProductReview) => {
+    setReviewsData((prev) => {
+      const updatedReviews = [newReview, ...prev.reviews.filter((r) => r.id !== newReview.id)];
+      const total = updatedReviews.length;
+      const sum = updatedReviews.reduce((acc, r) => acc + r.rating, 0);
+      const avg = total > 0 ? Number((sum / total).toFixed(1)) : 0;
+      const verified = updatedReviews.filter((r) => r.isVerifiedPurchase).length;
+      const dist = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+      for (const r of updatedReviews) {
+        const star = Math.min(5, Math.max(1, Math.floor(r.rating))) as 1 | 2 | 3 | 4 | 5;
+        dist[star] += 1;
+      }
+      return {
+        reviews: updatedReviews,
+        stats: {
+          averageRating: avg,
+          totalReviews: total,
+          verifiedCount: verified,
+          ratingDistribution: dist,
+          ratingPercentages: {
+            5: Math.round((dist[5] / total) * 100),
+            4: Math.round((dist[4] / total) * 100),
+            3: Math.round((dist[3] / total) * 100),
+            2: Math.round((dist[2] / total) * 100),
+            1: Math.round((dist[1] / total) * 100),
+          },
+        },
+      };
+    });
+  };
 
   useEffect(() => {
     if (product?.id) {
@@ -417,14 +491,52 @@ function ProductDetailPage() {
               </p>
               <p className="text-sm text-muted-foreground mt-2">{product.subtitle}</p>
 
-              {/* Rating */}
-              <div className="flex items-center gap-2 mt-3 text-xs">
-                <div className="flex items-center gap-1 text-amber-500">
-                  <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                  <span className="font-bold text-foreground text-sm">{product.rating}</span>
-                </div>
-                <span className="text-muted-foreground">•</span>
-                <span className="text-muted-foreground">{product.reviewCount} संतुष्ट ग्राहक समीक्षाएं</span>
+              {/* Genuine Rating & Review Count Header */}
+              <div className="flex items-center gap-2 mt-3 text-xs flex-wrap">
+                {reviewsData.stats.totalReviews > 0 ? (
+                  <>
+                    <a
+                      href="#customer-reviews-section"
+                      className="flex items-center gap-1 text-amber-500 hover:text-amber-600 transition-colors"
+                      title="समीक्षा अनुभाग पर जाएं"
+                    >
+                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                      <span className="font-bold text-foreground text-sm">
+                        {reviewsData.stats.averageRating.toFixed(1)}
+                      </span>
+                    </a>
+                    <span className="text-muted-foreground">•</span>
+                    <a
+                      href="#customer-reviews-section"
+                      className="text-muted-foreground hover:text-primary transition-colors font-medium underline underline-offset-2"
+                    >
+                      {reviewsData.stats.totalReviews} प्रमाणित ग्राहक समीक्षाएं
+                    </a>
+                    {reviewsData.stats.verifiedCount > 0 && (
+                      <>
+                        <span className="text-muted-foreground">•</span>
+                        <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold text-[11px]">
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>{reviewsData.stats.verifiedCount} सत्यापित खरीदार</span>
+                        </span>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <span className="inline-flex items-center gap-1 font-semibold text-muted-foreground">
+                      <Star className="w-3.5 h-3.5 text-muted-foreground/40" />
+                      <span>अभी कोई समीक्षा नहीं (No reviews yet)</span>
+                    </span>
+                    <span className="text-muted-foreground">•</span>
+                    <a
+                      href="#customer-reviews-section"
+                      className="text-primary hover:underline font-semibold"
+                    >
+                      पहला अनुभव साझा करें (Be first to review)
+                    </a>
+                  </>
+                )}
               </div>
             </div>
 
@@ -770,6 +882,16 @@ function ProductDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Genuine Customer Product Reviews Section */}
+        <ProductReviewsSection
+          productId={product.id}
+          productName={product.name}
+          reviews={reviewsData.reviews}
+          stats={reviewsData.stats}
+          isLoading={isLoadingReviews}
+          onReviewSubmitted={handleReviewSubmitted}
+        />
 
         {/* Related Products Section */}
         {relatedProducts.length > 0 && (
