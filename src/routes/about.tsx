@@ -102,6 +102,10 @@ function AboutPage() {
               <img
                 src="/assets/molana/IMG-20261009-WA0023.jpg"
                 alt="हकीम इनायत अहमदी (इनायत पालनपुरी) - संस्थापक"
+                width={224}
+                height={224}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover object-top"
               />
             </div>

@@ -228,6 +228,10 @@ function AccountPage() {
                           <img
                             src={item.productImage}
                             alt={item.productName}
+                            width={40}
+                            height={48}
+                            loading="lazy"
+                            decoding="async"
                             className="w-10 h-12 object-contain p-0.5 bg-stone-50 dark:bg-stone-900 rounded-md border shrink-0"
                           />
                           <div>
