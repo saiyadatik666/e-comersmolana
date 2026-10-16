@@ -3,7 +3,7 @@ import { INITIAL_PRODUCTS, Product } from "@/data/products";
 export interface ServerOrderItemInput {
   productId: string;
   quantity: number;
-  packSize?: string;
+  packSize?: string | undefined;
 }
 
 export interface ServerCustomerInput {
@@ -13,9 +13,9 @@ export interface ServerCustomerInput {
   cityVillage: string;
   state: string;
   pincode: string;
-  country?: string;
-  landmark?: string;
-  email?: string;
+  country?: string | undefined;
+  landmark?: string | undefined;
+  email?: string | undefined;
 }
 
 export interface ValidatedOrderItem {
@@ -65,10 +65,10 @@ export const STORE_WHATSAPP_NUMBER = "+91 95860 37331";
 export function validateAndCalculateOrder(payload: {
   customer: ServerCustomerInput;
   items: ServerOrderItemInput[];
-  couponCode?: string | null;
-  clientClaimedSubtotal?: number;
-  clientClaimedTotal?: number;
-  origin?: string;
+  couponCode?: string | null | undefined;
+  clientClaimedSubtotal?: number | undefined;
+  clientClaimedTotal?: number | undefined;
+  origin?: string | undefined;
 }): ValidatedOrderCalculation {
   const errors: string[] = [];
   const rawCustomer = payload.customer || {};

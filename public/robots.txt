@@ -1,6 +1,10 @@
 User-agent: *
 Allow: /
 Disallow: /admin
+Disallow: /checkout
+Disallow: /account
+Disallow: /cart
+Disallow: /api/
 
 # Sitemaps
 Sitemap: https://shifa-a-hayat.com/sitemap.xml

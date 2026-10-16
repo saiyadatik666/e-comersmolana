@@ -3,6 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useStore } from "@/context/StoreContext";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { ProductCard } from "@/components/product/ProductCard";
 import {
   ShoppingBag,
   Trash2,
@@ -49,6 +50,7 @@ function CartPage() {
 
   const [couponInput, setCouponInput] = useState("");
   const [couponError, setCouponError] = useState("");
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const navigate = useNavigate();
 
   // Out of stock detection in cart
@@ -93,13 +95,27 @@ function CartPage() {
       <Header />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <div className="mb-6">
-          <h1 className="font-serif text-3xl font-bold text-foreground">
-            शॉपिंग कार्ट (Shopping Cart)
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            अपने चुने हुए आयुर्वेदिक एवं यूनानी उत्पादों की समीक्षा करें।
-          </p>
+        <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="font-serif text-3xl font-bold text-foreground">
+              शॉपिंग कार्ट (Shopping Cart)
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+              अपने चुने हुए आयुर्वेदिक एवं यूनानी उत्पादों की समीक्षा करें।
+            </p>
+          </div>
+          {cart.length > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowClearConfirm(true)}
+              className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 border-rose-200 dark:border-rose-900/40 rounded-xl cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1" />
+              <span>कार्ट खाली करें (Clear Cart)</span>
+            </Button>
+          )}
         </div>
 
         {cart.length > 0 ? (
@@ -411,26 +427,99 @@ function CartPage() {
             </div>
           </div>
         ) : (
-          <div className="text-center py-20 bg-card border border-border rounded-3xl p-8 max-w-md mx-auto space-y-4">
-            <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-800 flex items-center justify-center mx-auto">
-              <ShoppingBag className="w-8 h-8" />
+          <div className="space-y-12">
+            <div className="text-center py-16 bg-card border border-border rounded-3xl p-8 max-w-md mx-auto space-y-4">
+              <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-800 flex items-center justify-center mx-auto">
+                <ShoppingBag className="w-8 h-8" />
+              </div>
+              <h2 className="font-serif text-2xl font-bold text-foreground">
+                आपकी कार्ट खाली है
+              </h2>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                आपने अभी तक कोई आयुर्वेदिक उत्पाद नहीं जोड़ा है। अपनी स्वास्थ्य जरूरत के अनुसार उत्पाद चुनें।
+              </p>
+              <div className="pt-2">
+                <Link to="/shop">
+                  <Button size="lg" className="rounded-full bg-primary text-primary-foreground font-semibold px-8 text-xs">
+                    उत्पाद कैटलॉग देखें (Explore Products)
+                  </Button>
+                </Link>
+              </div>
             </div>
-            <h2 className="font-serif text-2xl font-bold text-foreground">
-              आपकी कार्ट खाली है
-            </h2>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              आपने अभी तक कोई आयुर्वेदिक उत्पाद नहीं जोड़ा है। अपनी स्वास्थ्य जरूरत के अनुसार उत्पाद चुनें।
-            </p>
-            <div className="pt-2">
-              <Link to="/shop">
-                <Button size="lg" className="rounded-full bg-primary text-primary-foreground font-semibold px-8 text-xs">
-                  उत्पाद कैटलॉग देखें (Explore Products)
-                </Button>
-              </Link>
+
+            {/* Recommendations below Empty Cart */}
+            <div className="border-t border-border pt-10">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
+                    सर्वाधिक लोकप्रिय नुस्खे (Recommended For You)
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    हकीम इनायत अहमदी के सबसे ज्यादा पसंद किए जाने वाले प्रमाणित नुस्खे
+                  </p>
+                </div>
+                <Link to="/shop" className="text-xs font-semibold text-primary hover:underline">
+                  सभी 21 उत्पाद देखें →
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+                {products
+                  .filter((p) => p.isBestseller)
+                  .slice(0, 4)
+                  .map((p) => (
+                    <ProductCard key={p.id} product={p} />
+                  ))}
+              </div>
             </div>
           </div>
         )}
       </main>
+
+      {/* Confirmation Modal before Clearing Cart */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="clear-cart-title"
+            className="bg-card border border-border rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200"
+          >
+            <div className="w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <div className="text-center space-y-1">
+              <h3 id="clear-cart-title" className="font-serif text-lg font-bold text-foreground">
+                कार्ट खाली करना चाहते हैं?
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                कार्ट से सभी {cart.length} उत्पाद हट जाएंगे। क्या आप आगे बढ़ना चाहते हैं?
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowClearConfirm(false)}
+                className="rounded-xl text-xs"
+              >
+                रद्द करें (Cancel)
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  clearCart();
+                  setShowClearConfirm(false);
+                }}
+                className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold"
+              >
+                हाँ, खाली करें (Clear)
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

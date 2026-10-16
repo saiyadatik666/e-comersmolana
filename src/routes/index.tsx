@@ -62,7 +62,7 @@ export const Route = createFileRoute("/")({
 });
 
 function IndexPage() {
-  const { products, settings } = useStore();
+  const { products, settings, recentlyViewed, clearRecentlyViewed } = useStore();
   const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
   const [activeCategory, setActiveCategory] = useState("all");
 
@@ -73,6 +73,13 @@ function IndexPage() {
     activeCategory === "all"
       ? products.slice(0, 12)
       : products.filter((p) => p.category === activeCategory);
+
+  const recentlyViewedProducts = React.useMemo(() => {
+    return recentlyViewed
+      .map((vId) => products.find((p) => p.id === vId))
+      .filter((p): p is Product => p !== undefined)
+      .slice(0, 4);
+  }, [recentlyViewed, products]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background selection:bg-emerald-500/20">
@@ -423,6 +430,45 @@ function IndexPage() {
             </Link>
           </div>
         </section>
+
+        {/* RECENTLY VIEWED PRODUCTS (SMART SHOPPING EXPERIENCE - PHASE 2A) */}
+        {recentlyViewedProducts.length > 0 && (
+          <section className="py-10 sm:py-14 px-3 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-border/60">
+            <div className="flex items-center justify-between mb-6 sm:mb-8">
+              <div>
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-primary uppercase tracking-wider mb-1">
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                  <span>आपके लिए (Personalized For You)</span>
+                </div>
+                <h2 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
+                  हाल ही में देखे गए उत्पाद (Recently Viewed)
+                </h2>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                  आपके द्वारा इस डिवाइस पर हाल ही में देखे गए नुस्खे
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={clearRecentlyViewed}
+                className="text-xs text-muted-foreground hover:text-rose-600 transition-colors font-medium border border-border px-3 py-1.5 rounded-full hover:bg-secondary cursor-pointer"
+                aria-label="हाल ही में देखे गए इतिहास को साफ़ करें"
+              >
+                इतिहास साफ़ करें (Clear)
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+              {recentlyViewedProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onOpenPoster={(p) => setSelectedPoster(p)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* HAKEEM INAYAT AHMADI HERITAGE SECTION */}
         <section className="py-16 bg-stone-900 text-stone-100 border-y border-stone-800 px-4 sm:px-6 lg:px-8">

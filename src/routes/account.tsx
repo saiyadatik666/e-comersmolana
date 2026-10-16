@@ -297,22 +297,49 @@ function AccountPage() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-16 bg-card border border-border rounded-3xl p-8 max-w-md mx-auto space-y-4">
-                <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto text-muted-foreground border border-border">
-                  <Heart className="w-8 h-8 text-rose-500/70" />
+              <div className="space-y-10">
+                <div className="text-center py-16 bg-card border border-border rounded-3xl p-8 max-w-md mx-auto space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto text-muted-foreground border border-border">
+                    <Heart className="w-8 h-8 text-rose-500/70" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-lg font-bold text-foreground">आपकी विशलिस्ट खाली है</h3>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                      दुकान में किसी भी उत्पाद के दिल (Heart) आइकन पर क्लिक करके उसे बाद के लिए यहां सहेज सकते हैं।
+                    </p>
+                  </div>
+                  <div className="pt-2">
+                    <Link to="/shop">
+                      <Button size="sm" className="rounded-full text-xs px-6">
+                        उत्पाद खोजें (Explore Store)
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-serif text-lg font-bold text-foreground">आपकी विशलिस्ट खाली है</h3>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    दुकान में किसी भी उत्पाद के दिल (Heart) आइकन पर क्लिक करके उसे बाद के लिए यहां सहेज सकते हैं।
-                  </p>
-                </div>
-                <div className="pt-2">
-                  <Link to="/shop">
-                    <Button size="sm" className="rounded-full text-xs px-6">
-                      उत्पाद खोजें (Explore Store)
-                    </Button>
-                  </Link>
+
+                {/* Recommended Formulations below Empty Wishlist */}
+                <div className="border-t border-border pt-8">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="font-serif text-xl sm:text-2xl font-bold text-foreground">
+                        सर्वाधिक लोकप्रिय नुस्खे (Recommended For You)
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        हकीम जी द्वारा तैयार किए गए सबसे लोकप्रिय प्रमाणित नुस्खे
+                      </p>
+                    </div>
+                    <Link to="/shop" className="text-xs font-semibold text-primary hover:underline">
+                      सभी 21 उत्पाद देखें →
+                    </Link>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+                    {products
+                      .filter((p) => p.isBestseller)
+                      .slice(0, 4)
+                      .map((p) => (
+                        <ProductCard key={p.id} product={p} />
+                      ))}
+                  </div>
                 </div>
               </div>
             )}

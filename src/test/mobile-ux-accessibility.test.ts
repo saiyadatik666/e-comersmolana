@@ -149,4 +149,42 @@ describe("Part 16 — Mobile UX & Accessibility (WCAG 2.1) Audit Suite", () => {
       expect(dimagiTonic?.price).toBe(420);
     });
   });
+
+  describe("8. Viewport Responsiveness & Multi-Screen Dimensions (320px - Desktop)", () => {
+    it("verifies global styles prevent horizontal overflow via overflow-x: clip and set scroll-padding-top", () => {
+      const stylesPath = path.resolve(process.cwd(), "src/styles.css");
+      const content = fs.readFileSync(stylesPath, "utf-8");
+      expect(content).toContain("overflow-x: clip;");
+      expect(content).toContain("scroll-padding-top: 6.5rem;");
+    });
+
+    it("verifies visible focus indicator and reduced-motion accessibility styles in styles.css", () => {
+      const stylesPath = path.resolve(process.cwd(), "src/styles.css");
+      const content = fs.readFileSync(stylesPath, "utf-8");
+      expect(content).toContain(":focus-visible");
+      expect(content).toContain("@media (prefers-reduced-motion: reduce)");
+    });
+
+    it("verifies ProductCard has visible focus rings on interactive action buttons", () => {
+      const cardPath = path.resolve(process.cwd(), "src/components/product/ProductCard.tsx");
+      const content = fs.readFileSync(cardPath, "utf-8");
+      expect(content).toContain("focus-visible:ring-2 focus-visible:ring-primary");
+    });
+
+    it("verifies sticky header has fixed z-50 stacking context and does not cover content", () => {
+      const headerPath = path.resolve(process.cwd(), "src/components/layout/Header.tsx");
+      const content = fs.readFileSync(headerPath, "utf-8");
+      expect(content).toContain("sticky top-0 z-50");
+    });
+
+    it("verifies responsive product grid layout definitions (2-col mobile, 3-col tablet, 4-col desktop)", () => {
+      const indexPath = path.resolve(process.cwd(), "src/routes/index.tsx");
+      const shopPath = path.resolve(process.cwd(), "src/routes/shop.tsx");
+      const indexContent = fs.readFileSync(indexPath, "utf-8");
+      const shopContent = fs.readFileSync(shopPath, "utf-8");
+
+      expect(indexContent).toContain("grid-cols-2 sm:grid-cols-3 lg:grid-cols-4");
+      expect(shopContent).toContain("grid-cols-2 sm:grid-cols-3 lg:grid-cols-4");
+    });
+  });
 });

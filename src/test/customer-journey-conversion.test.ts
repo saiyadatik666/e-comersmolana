@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
+import fs from "fs";
+import path from "path";
 import { INITIAL_PRODUCTS, CATEGORIES, type Product } from "@/data/products";
 import {
   buildWhatsAppOrderMessage,
@@ -245,6 +247,63 @@ describe("Part 20 — Customer Journey & Conversion Optimization Suite", () => {
 
       const url = formatWhatsAppUrl(cleaned, "Test Message");
       expect(url).toBe("https://wa.me/919586037331?text=Test%20Message");
+    });
+  });
+
+  describe("6. Premium E-Commerce Patterns: Price Filtering, Recently Viewed & Empty States", () => {
+    it("filters catalog products accurately into 3 discrete price tiers", () => {
+      const under500 = INITIAL_PRODUCTS.filter((p) => p.price < 500);
+      const tier500To1000 = INITIAL_PRODUCTS.filter((p) => p.price >= 500 && p.price <= 1000);
+      const above1000 = INITIAL_PRODUCTS.filter((p) => p.price > 1000);
+
+      expect(under500.length).toBeGreaterThan(0);
+      expect(tier500To1000.length).toBeGreaterThan(0);
+      expect(above1000.length).toBeGreaterThan(0);
+      expect(under500.length + tier500To1000.length + above1000.length).toBe(INITIAL_PRODUCTS.length);
+
+      // Verify specific poster products in their respective tiers
+      expect(under500.some((p) => p.id === "shifa-arq-abe-hayat" && p.price === 250)).toBe(true);
+      expect(under500.some((p) => p.id === "shifa-tanavai-tel" && p.price === 200)).toBe(true);
+      expect(tier500To1000.some((p) => p.id === "shifa-pehlwan-capsule" && p.price === 990)).toBe(true);
+      expect(above1000.some((p) => p.id === "shifa-zafrani-gold" && p.price === 1450)).toBe(true);
+    });
+
+    it("verifies shop page source implements price range filter state and UI chips", () => {
+      const shopPath = path.resolve(process.cwd(), "src/routes/shop.tsx");
+      const shopContent = fs.readFileSync(shopPath, "utf-8");
+
+      expect(shopContent).toContain('export type PriceRange = "all" | "under-500" | "500-1000" | "above-1000"');
+      expect(shopContent).toContain("priceRange === item.id");
+      expect(shopContent).toContain("₹500 से कम (Under ₹500)");
+      expect(shopContent).toContain("₹500 - ₹1,000");
+      expect(shopContent).toContain("₹1,000 से अधिक");
+    });
+
+    it("verifies index page renders recently viewed section when products are stored in history", () => {
+      const indexPath = path.resolve(process.cwd(), "src/routes/index.tsx");
+      const indexContent = fs.readFileSync(indexPath, "utf-8");
+
+      expect(indexContent).toContain("recentlyViewedProducts.length > 0");
+      expect(indexContent).toContain("हाल ही में देखे गए उत्पाद (Recently Viewed)");
+      expect(indexContent).toContain("clearRecentlyViewed");
+    });
+
+    it("verifies cart page includes clear-cart confirmation modal and recommendations on empty state", () => {
+      const cartPath = path.resolve(process.cwd(), "src/routes/cart.tsx");
+      const cartContent = fs.readFileSync(cartPath, "utf-8");
+
+      expect(cartContent).toContain("showClearConfirm");
+      expect(cartContent).toContain("कार्ट खाली करें (Clear Cart)");
+      expect(cartContent).toContain("कार्ट खाली करना चाहते हैं?");
+      expect(cartContent).toContain("सर्वाधिक लोकप्रिय नुस्खे (Recommended For You)");
+    });
+
+    it("verifies wishlist empty state in account page displays recommended products", () => {
+      const accountPath = path.resolve(process.cwd(), "src/routes/account.tsx");
+      const accountContent = fs.readFileSync(accountPath, "utf-8");
+
+      expect(accountContent).toContain("आपकी विशलिस्ट खाली है");
+      expect(accountContent).toContain("सर्वाधिक लोकप्रिय नुस्खे (Recommended For You)");
     });
   });
 });

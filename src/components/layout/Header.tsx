@@ -13,6 +13,7 @@ import {
   User as UserIcon,
   Sparkles,
   SlidersHorizontal,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,29 @@ export const Header: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
+  const [language, setLanguage] = useState<"hi" | "en">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("shifa_lang");
+      if (saved === "en" || saved === "hi") return saved;
+    }
+    return "hi";
+  });
+
+  const toggleLanguage = () => {
+    const next = language === "hi" ? "en" : "hi";
+    setLanguage(next);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("shifa_lang", next);
+      document.documentElement.lang = next;
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      document.documentElement.lang = language;
+    }
+  }, [language]);
+
   const navigate = useNavigate();
 
   // Escape key listener for mobile drawer dismissal (WCAG 2.1 Keyboard Navigation)
@@ -60,9 +84,9 @@ export const Header: React.FC = () => {
   }, [searchQuery, products]);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur-md shadow-xs transition-all">
-      {/* Top Heritage & Trust Bar */}
-      <div className="bg-primary text-primary-foreground text-xs py-1.5 px-3 sm:px-4">
+    <>
+      {/* Top Heritage & Trust Bar (Scrolls away cleanly so the main header locks firmly at top:0) */}
+      <div className="bg-primary text-primary-foreground text-xs py-1.5 px-3 sm:px-4 border-b border-emerald-900/40">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 text-[11px] sm:text-xs">
           <div className="flex items-center gap-1.5 sm:gap-2 truncate">
             <span className="font-serif tracking-wider text-amber-300 font-medium whitespace-nowrap">
@@ -91,161 +115,181 @@ export const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Header Bar */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-4">
-        {/* Brand Logo */}
-        <Link to="/" className="flex items-center gap-2 sm:gap-3 group shrink-0 min-w-0">
-          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-emerald-800 to-primary flex items-center justify-center text-amber-300 shadow-md border border-amber-400/30 group-hover:scale-105 transition-transform shrink-0">
-            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
-          </div>
-          <div className="flex flex-col min-w-0">
-            <span className="font-serif text-base xs:text-lg sm:text-2xl font-bold tracking-tight text-primary leading-tight flex items-center gap-1 sm:gap-1.5 truncate">
-              Shifa A Hayat
-              <span className="text-[9px] sm:text-[10px] font-sans px-1 sm:px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-700 font-semibold border border-amber-400/30 shrink-0">
-                हर्बल
-              </span>
-            </span>
-            <span className="text-[10px] sm:text-xs text-muted-foreground font-medium tracking-wide truncate max-w-[130px] xs:max-w-[200px] sm:max-w-none">
-              हकीम इनायत अहमदी (पालनपुर)
-            </span>
-          </div>
-        </Link>
-
-        {/* Desktop & Tablet Search Bar */}
-        <div className="hidden md:flex flex-1 max-w-xs lg:max-w-md relative mx-2 lg:mx-4">
-          <form onSubmit={handleSearchSubmit} className="w-full relative">
-            <Input
-              type="text"
-              placeholder="सर्च करें: ज़ाफरानी, तेल, दर्द..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
-              className="w-full pl-9 pr-9 py-2 bg-secondary/50 border-border/80 focus:bg-background rounded-full text-xs sm:text-sm h-9 sm:h-10"
-            />
-            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                aria-label="Clear search"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </form>
-
-          {/* Quick Search Suggestions Dropdown */}
-          {searchFocused && filteredSuggestions.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-xl p-2 z-50">
-              <div className="text-[11px] font-semibold text-muted-foreground px-3 py-1 uppercase tracking-wider">
-                Matching Products
-              </div>
-              {filteredSuggestions.map((product) => (
-                <Link
-                  key={product.id}
-                  to="/product/$id"
-                  params={{ id: product.id }}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/70 transition-colors"
-                >
-                  <img
-                    src={product.image}
-                    alt={`${product.name} (${product.nameHindi}) - Shifa A Hayat`}
-                    width={36}
-                    height={36}
-                    loading="lazy"
-                    decoding="async"
-                    onError={(e) => {
-                      if (product.posterImage && e.currentTarget.src !== product.posterImage) {
-                        e.currentTarget.src = product.posterImage;
-                      }
-                    }}
-                    className="w-9 h-9 rounded object-contain p-0.5 bg-stone-50 dark:bg-stone-900 border shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{product.nameHindi}</p>
-                  </div>
-                  <span className="text-sm font-semibold text-primary">₹{product.price}</span>
-                </Link>
-              ))}
+      {/* Main Sticky Header Row — Locked firmly at top:0 with z-50 and backdrop blur */}
+      <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/95 backdrop-blur-md shadow-xs transition-all">
+        {/* Main Header Bar */}
+        <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 py-2.5 sm:py-3.5 flex items-center justify-between gap-1.5 sm:gap-4">
+          {/* Brand Logo & Name */}
+          <Link to="/" className="flex items-center gap-2 sm:gap-3 group shrink min-w-0">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-emerald-800 to-primary flex items-center justify-center text-amber-300 shadow-md border border-amber-400/30 group-hover:scale-105 transition-transform shrink-0">
+              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-          )}
-        </div>
-
-        {/* Action Controls */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-          {/* WhatsApp Direct Consult Button (Large Tablet & Desktop) */}
-          <a
-            href={formatWhatsAppUrl(
-              settings.whatsapp,
-              "السلام علیکم Hakim Ji, I need guidance for a health problem."
-            )}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden xl:inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold bg-emerald-600/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-600/20 border border-emerald-600/30 transition-colors min-h-[40px]"
-          >
-            <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>हकीम जी से सलाह</span>
-          </a>
-
-          {/* Wishlist Link */}
-          <Link
-            to="/account"
-            search={{ tab: "wishlist" }}
-            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-secondary text-foreground relative transition-colors"
-            title="विशलिस्ट (Wishlist)"
-            aria-label={`विशलिस्ट: ${wishlist.length} सहेजे गए उत्पाद (Wishlist with ${wishlist.length} items)`}
-          >
-            <Heart className="w-5 h-5 text-muted-foreground hover:text-red-500 transition-colors" />
-            {wishlist.length > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center shadow-xs">
-                {wishlist.length}
+            <div className="flex flex-col min-w-0">
+              <span className="font-serif text-sm xs:text-base sm:text-2xl font-bold tracking-tight text-primary leading-tight flex items-center gap-1 sm:gap-1.5 truncate">
+                Shifa A Hayat
+                <span className="text-[9px] sm:text-[10px] font-sans px-1 sm:px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-700 font-semibold border border-amber-400/30 shrink-0">
+                  हर्बल
+                </span>
               </span>
-            )}
+              <span className="text-[10px] sm:text-xs text-muted-foreground font-medium tracking-wide truncate max-w-[110px] xs:max-w-[190px] sm:max-w-none">
+                हकीम इनायत अहमदी (पालनपुर)
+              </span>
+            </div>
           </Link>
 
-          {/* Cart Drawer / Page Link */}
-          <Link
-            to="/cart"
-            className="flex items-center gap-1.5 h-10 px-3 rounded-full bg-primary/10 hover:bg-primary/15 text-primary font-semibold text-sm transition-colors border border-primary/20 min-w-[44px] justify-center"
-            aria-label={`Shopping cart with ${cartCount} items`}
+          {/* Hindi / English Language Selector */}
+          <button
+            type="button"
+            onClick={toggleLanguage}
+            aria-label={`वर्तमान भाषा: ${language === "hi" ? "हिन्दी" : "English"}। भाषा बदलने के लिए क्लिक करें (Switch language)`}
+            title="भाषा बदलें / Change Language (Hindi / English)"
+            className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full text-xs font-semibold bg-secondary/80 hover:bg-secondary text-foreground border border-border/80 transition-colors cursor-pointer h-8 sm:h-9 shrink-0 shadow-xs"
           >
-            <div className="relative">
-              <ShoppingBag className="w-5 h-5" />
-              {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2.5 bg-amber-600 text-white rounded-full text-[10px] font-bold px-1.5 min-w-4 h-4 flex items-center justify-center text-center shadow-xs">
-                  {cartCount}
+            <Globe className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span className="text-[11px] sm:text-xs tracking-tight select-none">
+              <span className={language === "hi" ? "text-primary font-bold" : "text-muted-foreground"}>हिं</span>
+              <span className="text-muted-foreground/40 mx-0.5">/</span>
+              <span className={language === "en" ? "text-primary font-bold" : "text-muted-foreground"}>EN</span>
+            </span>
+          </button>
+
+          {/* Desktop & Tablet Search Bar */}
+          <div className="hidden md:flex flex-1 max-w-xs lg:max-w-md relative mx-1.5 lg:mx-3">
+            <form onSubmit={handleSearchSubmit} className="w-full relative">
+              <Input
+                type="text"
+                placeholder="सर्च करें: ज़ाफरानी, तेल, दर्द..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+                className="w-full pl-9 pr-9 py-2 bg-secondary/50 border-border/80 focus:bg-background rounded-full text-xs sm:text-sm h-9 sm:h-10"
+              />
+              <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Clear search"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </form>
+
+            {/* Quick Search Suggestions Dropdown */}
+            {searchFocused && filteredSuggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-xl p-2 z-50">
+                <div className="text-[11px] font-semibold text-muted-foreground px-3 py-1 uppercase tracking-wider">
+                  Matching Products
+                </div>
+                {filteredSuggestions.map((product) => (
+                  <Link
+                    key={product.id}
+                    to="/product/$id"
+                    params={{ id: product.id }}
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-secondary/70 transition-colors"
+                  >
+                    <img
+                      src={product.image}
+                      alt={`${product.name} (${product.nameHindi}) - Shifa A Hayat`}
+                      width={36}
+                      height={36}
+                      loading="lazy"
+                      decoding="async"
+                      onError={(e) => {
+                        if (product.posterImage && e.currentTarget.src !== product.posterImage) {
+                          e.currentTarget.src = product.posterImage;
+                        }
+                      }}
+                      className="w-9 h-9 rounded object-contain p-0.5 bg-stone-50 dark:bg-stone-900 border shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{product.nameHindi}</p>
+                    </div>
+                    <span className="text-sm font-semibold text-primary">₹{product.price}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Action Controls */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            {/* WhatsApp Direct Consult Button (Large Tablet & Desktop: visible at 1024px & 1440px) */}
+            <a
+              href={formatWhatsAppUrl(
+                settings.whatsapp,
+                "السلام علیکم Hakim Ji, I need guidance for a health problem."
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden lg:inline-flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 xl:py-2 rounded-full text-xs font-semibold bg-emerald-600/10 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-600/20 border border-emerald-600/30 transition-colors min-h-[38px] shrink-0"
+            >
+              <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>हकीम जी से सलाह</span>
+            </a>
+
+            {/* Wishlist Link */}
+            <Link
+              to="/account"
+              search={{ tab: "wishlist" }}
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center hover:bg-secondary text-foreground relative transition-colors shrink-0"
+              title="विशलिस्ट (Wishlist)"
+              aria-label={`विशलिस्ट: ${wishlist.length} सहेजे गए उत्पाद (Wishlist with ${wishlist.length} items)`}
+            >
+              <Heart className="w-5 h-5 text-muted-foreground hover:text-red-500 transition-colors" />
+              {wishlist.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center shadow-xs">
+                  {wishlist.length}
                 </span>
               )}
-            </div>
-            <span className="hidden sm:inline text-xs font-bold ml-1">Cart</span>
-          </Link>
+            </Link>
 
-          {/* Account / Admin Link */}
-          <Link
-            to="/admin"
-            className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-secondary hover:bg-secondary/80 text-foreground transition-colors border border-border min-h-[40px]"
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
-            <span>Admin</span>
-          </Link>
+            {/* Cart Drawer / Page Link */}
+            <Link
+              to="/cart"
+              className="flex items-center gap-1.5 h-9 sm:h-10 px-2.5 sm:px-3 rounded-full bg-primary/10 hover:bg-primary/15 text-primary font-semibold text-sm transition-colors border border-primary/20 min-w-[38px] sm:min-w-[44px] justify-center shrink-0"
+              aria-label={`Shopping cart with ${cartCount} items`}
+            >
+              <div className="relative">
+                <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2.5 bg-amber-600 text-white rounded-full text-[10px] font-bold px-1.5 min-w-4 h-4 flex items-center justify-center text-center shadow-xs">
+                    {cartCount}
+                  </span>
+                )}
+              </div>
+              <span className="hidden sm:inline text-xs font-bold ml-1">Cart</span>
+            </Link>
 
-          {/* Mobile & Tablet Menu Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden text-foreground w-10 h-10 flex items-center justify-center rounded-xl"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label={mobileMenuOpen ? "नेविगेशन मेन्यू बंद करें (Close menu)" : "नेविगेशन मेन्यू खोलें (Open menu)"}
-            aria-expanded={mobileMenuOpen}
-            aria-controls="mobile-navigation-drawer"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </Button>
+            {/* Account / Admin Link */}
+            <Link
+              to="/admin"
+              className="hidden md:inline-flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 xl:py-2 rounded-lg text-xs font-semibold bg-secondary hover:bg-secondary/80 text-foreground transition-colors border border-border min-h-[38px] shrink-0"
+              title="Admin Portal"
+              aria-label="Admin Portal"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5 text-primary" />
+              <span>Admin</span>
+            </Link>
+
+            {/* Mobile & Tablet Menu Toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden text-foreground w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? "नेविगेशन मेन्यू बंद करें (Close menu)" : "नेविगेशन मेन्यू खोलें (Open menu)"}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-navigation-drawer"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </Button>
+          </div>
         </div>
-      </div>
 
       {/* Mobile-only Search Bar (Phones < 768px) */}
       <div className="md:hidden px-3 pb-2.5 pt-0">
@@ -369,15 +413,26 @@ export const Header: React.FC = () => {
                   <p className="text-[10px] text-muted-foreground">नेविगेशन एवं श्रेणियां</p>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full w-9 h-9"
-                onClick={() => setMobileMenuOpen(false)}
-                aria-label="Close navigation menu"
-              >
-                <X className="w-5 h-5" />
-              </Button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={toggleLanguage}
+                  className="px-2 py-1 rounded-full text-[11px] font-semibold bg-secondary text-foreground border border-border flex items-center gap-1"
+                  aria-label="भाषा बदलें (Switch Language)"
+                >
+                  <Globe className="w-3 h-3 text-primary" />
+                  <span>{language === "hi" ? "हिन्दी" : "English"}</span>
+                </button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full w-9 h-9"
+                  onClick={() => setMobileMenuOpen(false)}
+                  aria-label="Close navigation menu"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
 
             {/* Navigation Links */}
@@ -510,6 +565,7 @@ export const Header: React.FC = () => {
           </div>
         </div>
       )}
-    </header>
+      </header>
+    </>
   );
 };

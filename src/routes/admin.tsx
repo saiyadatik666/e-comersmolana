@@ -34,6 +34,12 @@ import {
   Download,
   Upload,
   FileText,
+  Mail,
+  EyeOff,
+  ArrowRight,
+  LogOut,
+  Loader2,
+  KeyRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +60,16 @@ import {
   computeCategoryDistribution,
   evaluateShoppingFlowDiagnostics,
 } from "@/lib/analytics";
+import {
+  adminCheckEmailServerFn,
+  adminLoginServerFn,
+  adminGetSessionServerFn,
+  adminLogoutServerFn,
+  adminUpdateProductStockServerFn,
+  adminUpdateOrderStatusServerFn,
+  adminChangePasswordServerFn,
+  adminExportOrdersServerFn,
+} from "@/lib/admin-api";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -107,58 +123,87 @@ function AdminPage() {
   const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
 
   // =========================================================================
-  // SECURITY ARCHITECTURE NOTICE — CLIENT-SIDE PIN GATEWAY
+  // SECURE SERVER-SIDE ADMIN AUTHENTICATION
   // =========================================================================
-  // NOTE: In this client-side SPA architecture without a dedicated backend server,
-  // the admin PIN check and sessionStorage lockout are front-of-house operational
-  // deterrents intended for authorized staff convenience on local devices.
-  //
-  // CRITICAL DISTINCTION:
-  // Client-side storage CANNOT provide cryptographic, server-side tamper-proof security.
-  // Enterprise-grade admin security requires:
-  // 1. Server-side authentication (e.g. HttpOnly session cookies or signed JWTs).
-  // 2. Server-side Role-Based Access Control (RBAC) middleware verifying every mutation.
-  // 3. Centralized rate limiting on the server / API gateway to prevent brute-force attacks.
-  // =========================================================================
-
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       return sessionStorage.getItem("shifa_admin_authenticated") === "true";
     }
     return false;
   });
-  const [pinInput, setPinInput] = useState("");
-  const [showPinError, setShowPinError] = useState(false);
-
-  // Persistent failed attempts state (retained across refresh within browser session)
-  const [failedAttempts, setFailedAttempts] = useState<number>(() => {
+  const [authChecking, setAuthChecking] = useState<boolean>(true);
+  const [authStep, setAuthStep] = useState<"email" | "password">("email");
+  const [emailInput, setEmailInput] = useState<string>("");
+  const [passwordInput, setPasswordInput] = useState<string>("");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [adminEmail, setAdminEmail] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
-      const saved = sessionStorage.getItem("shifa_admin_failed_attempts");
-      return saved ? parseInt(saved, 10) || 0 : 0;
+      return sessionStorage.getItem("shifa_admin_email");
     }
-    return 0;
+    return null;
   });
-
-  // Persistent lockout remaining calculation based on stored timestamp
-  const [lockoutRemaining, setLockoutRemaining] = useState<number>(() => {
+  const [adminSessionToken, setAdminSessionToken] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
-      const lockoutUntil = sessionStorage.getItem("shifa_admin_lockout_until");
-      if (lockoutUntil) {
-        const diff = Math.ceil((parseInt(lockoutUntil, 10) - Date.now()) / 1000);
-        return diff > 0 ? diff : 0;
+      return sessionStorage.getItem("shifa_admin_token");
+    }
+    return null;
+  });
+  const [failedAttempts, setFailedAttempts] = useState<number>(0);
+  const [lockoutRemaining, setLockoutRemaining] = useState<number>(0);
+
+  // Check server session on initial mount
+  useEffect(() => {
+    let isMounted = true;
+    const verifySession = async () => {
+      try {
+        const savedToken =
+          typeof window !== "undefined"
+            ? sessionStorage.getItem("shifa_admin_token") || undefined
+            : undefined;
+        const res = await adminGetSessionServerFn({
+          data: savedToken ? { adminToken: savedToken } : {},
+        });
+        if (isMounted) {
+          if (res.authenticated) {
+            setIsAuthenticated(true);
+            setAdminEmail(res.adminEmail || "inaytchaudhri@gmail.com");
+            if (savedToken) setAdminSessionToken(savedToken);
+          } else {
+            setIsAuthenticated(false);
+            setAdminEmail(null);
+            setAdminSessionToken(null);
+            if (typeof window !== "undefined") {
+              sessionStorage.removeItem("shifa_admin_authenticated");
+              sessionStorage.removeItem("shifa_admin_token");
+              sessionStorage.removeItem("shifa_admin_email");
+            }
+          }
+        }
+      } catch {
+        if (isMounted) {
+          setIsAuthenticated(false);
+        }
+      } finally {
+        if (isMounted) {
+          setAuthChecking(false);
+        }
       }
-    }
-    return 0;
-  });
+    };
 
+    verifySession();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Cooldown countdown timer
   useEffect(() => {
     if (lockoutRemaining <= 0) return;
     const timer = setInterval(() => {
       setLockoutRemaining((prev) => {
         if (prev <= 1) {
-          if (typeof window !== "undefined") {
-            sessionStorage.removeItem("shifa_admin_lockout_until");
-          }
           return 0;
         }
         return prev - 1;
@@ -167,53 +212,181 @@ function AdminPage() {
     return () => clearInterval(timer);
   }, [lockoutRemaining]);
 
-  const handleVerifyPin = (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (lockoutRemaining > 0) {
       toast.error(`अत्यधिक गलत प्रयास। कृपया ${lockoutRemaining} सेकंड प्रतीक्षा करें।`);
       return;
     }
-    const currentPin = settings.adminPin || "9586";
-    if (pinInput.trim() === currentPin) {
-      setIsAuthenticated(true);
-      setShowPinError(false);
-      setFailedAttempts(0);
-      setLockoutRemaining(0);
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("shifa_admin_authenticated", "true");
-        sessionStorage.removeItem("shifa_admin_failed_attempts");
-        sessionStorage.removeItem("shifa_admin_lockout_until");
-      }
-      toast.success("सुरक्षा पिन सत्यापित! एडमिन पोर्टल अनलॉक हो गया।");
-    } else {
-      const nextAttempts = failedAttempts + 1;
-      setFailedAttempts(nextAttempts);
-      setShowPinError(true);
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("shifa_admin_failed_attempts", String(nextAttempts));
-      }
+    const cleanEmail = emailInput.trim();
+    if (!cleanEmail) {
+      setLoginError("कृपया अपना व्यवस्थापक ईमेल पता दर्ज करें। (Please enter admin email)");
+      return;
+    }
 
-      if (nextAttempts >= 5) {
-        const cooldownSeconds = Math.min(30 + (nextAttempts - 5) * 15, 300);
-        const until = Date.now() + cooldownSeconds * 1000;
-        if (typeof window !== "undefined") {
-          sessionStorage.setItem("shifa_admin_lockout_until", String(until));
-        }
-        setLockoutRemaining(cooldownSeconds);
-        toast.error(`अत्यधिक गलत प्रयास (${nextAttempts} बार)। सुरक्षा कारणों से ${cooldownSeconds} सेकंड का कूलडाउन लागू है।`);
-      } else {
-        toast.error(`गलत सुरक्षा पिन। (शेष प्रयास: ${5 - nextAttempts})`);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      setLoginError("कृपया एक मान्य ईमेल प्रारूप दर्ज करें। (Invalid email format)");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setLoginError(null);
+
+    try {
+      const res = await adminCheckEmailServerFn({ data: { email: cleanEmail } });
+      if (res.authorized) {
+        setAuthStep("password");
+        setLoginError(null);
       }
+    } catch (err: unknown) {
+      const msg = (err as Error)?.message || "यह ईमेल अधिकृत व्यवस्थापक खाते के रूप में पंजीकृत नहीं है।";
+      setLoginError(msg);
+      toast.error(msg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleLogoutAdmin = () => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (lockoutRemaining > 0) {
+      toast.error(`अत्यधिक गलत प्रयास। कृपया ${lockoutRemaining} सेकंड प्रतीक्षा करें।`);
+      return;
+    }
+    if (!passwordInput) {
+      setLoginError("कृपया व्यवस्थापक पासवर्ड दर्ज करें। (Password required)");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setLoginError(null);
+
+    try {
+      const res = await adminLoginServerFn({
+        data: {
+          email: emailInput.trim(),
+          password: passwordInput,
+        },
+      });
+
+      if (res.success) {
+        setIsAuthenticated(true);
+        setAdminEmail(res.adminEmail);
+        setAdminSessionToken(res.sessionToken);
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("shifa_admin_authenticated", "true");
+          sessionStorage.setItem("shifa_admin_token", res.sessionToken);
+          sessionStorage.setItem("shifa_admin_email", res.adminEmail);
+        }
+        setPasswordInput("");
+        setLoginError(null);
+        setFailedAttempts(0);
+        toast.success("सर्वर प्रमाणीकरण सफल! एडमिन डैशबोर्ड अनलॉक हो गया।");
+      }
+    } catch (err: unknown) {
+      const msg = (err as Error)?.message || "अमान्य क्रेडेंशियल्स। कृपया अपना पासवर्ड पुनः जाँचें।";
+      setLoginError(msg);
+      toast.error(msg);
+      setFailedAttempts((prev) => prev + 1);
+
+      const match = msg.match(/(\d+)\s*सेकंड/);
+      if (match && match[1]) {
+        setLockoutRemaining(parseInt(match[1], 10));
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleLogoutAdmin = async () => {
+    try {
+      await adminLogoutServerFn({
+        data: adminSessionToken ? { adminToken: adminSessionToken } : {},
+      });
+    } catch (err) {
+      void err;
+    }
+
     setIsAuthenticated(false);
+    setAdminEmail(null);
+    setAdminSessionToken(null);
+    setAuthStep("email");
+    setEmailInput("");
+    setPasswordInput("");
+    setLoginError(null);
+
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("shifa_admin_authenticated");
+      sessionStorage.removeItem("shifa_admin_token");
+      sessionStorage.removeItem("shifa_admin_email");
     }
-    setPinInput("");
-    toast.info("एडमिन पोर्टल लॉक हो गया है।");
+
+    toast.info("एडमिन सत्र सुरक्षित रूप से समाप्त हो गया है।");
+  };
+
+  // =========================================================================
+  // PASSWORD ROTATION STATE & HANDLER
+  // =========================================================================
+  const [currentPwdInput, setCurrentPwdInput] = useState("");
+  const [newPwdInput, setNewPwdInput] = useState("");
+  const [confirmPwdInput, setConfirmPwdInput] = useState("");
+  const [showCurrentPwd, setShowCurrentPwd] = useState(false);
+  const [showNewPwd, setShowNewPwd] = useState(false);
+  const [isChangingPwd, setIsChangingPwd] = useState(false);
+  const [pwdChangeError, setPwdChangeError] = useState<string | null>(null);
+  const [pwdChangeSuccess, setPwdChangeSuccess] = useState<string | null>(null);
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwdChangeError(null);
+    setPwdChangeSuccess(null);
+
+    if (!currentPwdInput) {
+      setPwdChangeError("कृपया वर्तमान पासवर्ड दर्ज करें।");
+      return;
+    }
+    if (!newPwdInput) {
+      setPwdChangeError("कृपया नया पासवर्ड दर्ज करें।");
+      return;
+    }
+    if (newPwdInput.length < 10) {
+      setPwdChangeError("नया पासवर्ड कम से कम 10 अक्षरों का होना चाहिए।");
+      return;
+    }
+    if (newPwdInput !== confirmPwdInput) {
+      setPwdChangeError("नया पासवर्ड और पुष्टि पासवर्ड मेल नहीं खाते।");
+      return;
+    }
+    if (currentPwdInput === newPwdInput) {
+      setPwdChangeError("नया पासवर्ड वर्तमान पासवर्ड से भिन्न होना चाहिए।");
+      return;
+    }
+
+    setIsChangingPwd(true);
+    try {
+      const res = await adminChangePasswordServerFn({
+        data: {
+          currentPassword: currentPwdInput,
+          newPassword: newPwdInput,
+          adminToken: adminSessionToken || undefined,
+        },
+      });
+
+      if (res.success) {
+        setPwdChangeSuccess(res.message || "पासवर्ड सफलतापूर्वक अपडेट कर दिया गया है।");
+        toast.success("व्यवस्थापक पासवर्ड सफलतापूर्वक बदल दिया गया!");
+        setCurrentPwdInput("");
+        setNewPwdInput("");
+        setConfirmPwdInput("");
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "पासवर्ड अपडेट विफल रहा।";
+      setPwdChangeError(msg);
+      toast.error(msg);
+    } finally {
+      setIsChangingPwd(false);
+    }
   };
 
   // =========================================================================
@@ -425,7 +598,7 @@ function AdminPage() {
     setProductErrors({});
   };
 
-  const handleQuickStockAdjust = (productId: string, delta: number) => {
+  const handleQuickStockAdjust = async (productId: string, delta: number) => {
     const prod = products.find((p) => p.id === productId);
     if (!prod) return;
     const currentStock = prod.stockCount || 0;
@@ -435,6 +608,17 @@ function AdminPage() {
       stockCount: newStock,
       inStock: newStock > 0,
     });
+    try {
+      await adminUpdateProductStockServerFn({
+        data: {
+          productId,
+          newStockCount: newStock,
+          adminToken: adminSessionToken || undefined,
+        },
+      });
+    } catch (err) {
+      console.warn("Server stock sync notice:", err);
+    }
   };
 
   const handleConfirmDeleteProduct = () => {
@@ -449,19 +633,42 @@ function AdminPage() {
   };
 
   // =========================================================================
-  // ORDER STATUS UPDATE WITH CONFIRMATION
+  // ORDER STATUS UPDATE WITH CONFIRMATION & SERVER AUDIT SYNCHRONIZATION
   // =========================================================================
-  const handleInitiateStatusChange = (orderId: string, targetStatus: OrderStatus) => {
+  const handleInitiateStatusChange = async (orderId: string, targetStatus: OrderStatus) => {
     if (targetStatus === "Cancelled" || targetStatus === "Delivered") {
       setPendingStatusChange({ orderId, newStatus: targetStatus });
     } else {
       updateOrderStatus(orderId, targetStatus);
+      try {
+        await adminUpdateOrderStatusServerFn({
+          data: {
+            orderId,
+            status: targetStatus,
+            adminToken: adminSessionToken || undefined,
+          },
+        });
+      } catch (err) {
+        console.warn("Server order status sync notice:", err);
+      }
     }
   };
 
-  const handleConfirmStatusChange = () => {
+  const handleConfirmStatusChange = async () => {
     if (!pendingStatusChange) return;
-    updateOrderStatus(pendingStatusChange.orderId, pendingStatusChange.newStatus);
+    const { orderId, newStatus } = pendingStatusChange;
+    updateOrderStatus(orderId, newStatus);
+    try {
+      await adminUpdateOrderStatusServerFn({
+        data: {
+          orderId,
+          status: newStatus,
+          adminToken: adminSessionToken || undefined,
+        },
+      });
+    } catch (err) {
+      console.warn("Server order status sync notice:", err);
+    }
     setPendingStatusChange(null);
   };
 
@@ -507,93 +714,235 @@ function AdminPage() {
   };
 
   // =========================================================================
-  // AUTHENTICATION GATE VIEW
+  // SECURE AUTHENTICATION GATE VIEW (TWO-STEP ADMIN VERIFICATION)
   // =========================================================================
   if (!isAuthenticated) {
+    if (authChecking) {
+      return (
+        <div className="min-h-screen flex flex-col bg-background">
+          <Header />
+          <main className="flex-1 flex items-center justify-center p-8">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+              <p className="text-xs text-muted-foreground font-medium">सत्र सुरक्षा जांची जा रही है...</p>
+            </div>
+          </main>
+          <Footer />
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <Header />
 
-        <main className="flex-1 max-w-md w-full mx-auto px-4 py-16 sm:py-24 flex items-center justify-center">
-          <form
-            onSubmit={handleVerifyPin}
-            className="w-full bg-card border-2 border-border rounded-3xl p-6 sm:p-8 shadow-xl text-center space-y-6"
-          >
-            <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-700 flex items-center justify-center mx-auto border-2 border-amber-500 shadow-sm">
-              <Lock className="w-8 h-8" />
+        <main className="flex-1 max-w-md w-full mx-auto px-4 py-12 sm:py-20 flex items-center justify-center">
+          <div className="w-full bg-card border-2 border-border rounded-3xl p-6 sm:p-8 shadow-xl text-center space-y-6">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-800 to-primary text-amber-300 flex items-center justify-center mx-auto border-2 border-amber-400/50 shadow-md">
+              <Shield className="w-8 h-8" />
             </div>
 
             <div>
-              <span className="text-xs font-bold text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 px-3 py-1 rounded-full uppercase tracking-wider">
-                सुरक्षित एडमिन द्वार (Admin Gate)
+              <span className="text-[11px] font-bold text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/80 px-3 py-1 rounded-full uppercase tracking-wider border border-amber-400/30">
+                सुरक्षित एडमिन प्रवेश द्वार (Admin Gate)
               </span>
-              <h1 className="font-serif text-2xl font-bold text-foreground mt-2">
+              <h1 className="font-serif text-2xl font-bold text-foreground mt-2.5">
                 हकीम जी / स्टोर व्यवस्थापक लॉगिन
               </h1>
               <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-                यह क्षेत्र केवल अधिकृत व्यवस्थापक के लिए है। उत्पाद, इन्वेंट्री, ऑर्डर्स या स्टोर सेटिंग्स बदलने के लिए कृपया अपना स्टोर सुरक्षा पिन दर्ज करें।
+                यह क्षेत्र केवल अधिकृत व्यवस्थापक के लिए है। स्टोर सेटिंग्स, इन्वेंट्री व ऑर्डर्स प्रबंधित करने के लिए दो-चरणीय प्रमाणीकरण आवश्यक है।
               </p>
             </div>
 
-            {/* Security Architecture Notice */}
-            <div className="bg-secondary/50 border border-border/80 rounded-2xl p-3 text-left space-y-1">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                <Shield className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                <span>क्लाइंट-साइड सुरक्षा गेट</span>
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-normal">
-                यह पिन स्थानीय ब्राउज़र सत्र (sessionStorage) में सत्यापित होता है। सर्वर-ग्रेड आरबीएसी (RBAC) के लिए समर्पित बैकएंड प्रमाणीकरण आवश्यक है।
-              </p>
-            </div>
+            {/* Step 1: Email Verification */}
+            {authStep === "email" && (
+              <form onSubmit={handleEmailSubmit} className="space-y-4 text-left">
+                <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold border-b border-border pb-2">
+                  <span>चरण 1 / 2: अधिकृत ईमेल पहचान</span>
+                  <span className="text-primary font-bold">Step 1</span>
+                </div>
 
-            <div className="space-y-2 text-left">
-              <Label htmlFor="admin-pin" className="text-xs font-semibold">
-                स्टोर सुरक्षा पिन (Security PIN) *
-              </Label>
-              <Input
-                id="admin-pin"
-                type="password"
-                required
-                autoFocus
-                autoComplete="current-password"
-                placeholder="पिन दर्ज करें..."
-                value={pinInput}
-                disabled={lockoutRemaining > 0}
-                onChange={(e) => {
-                  setPinInput(e.target.value);
-                  if (showPinError) setShowPinError(false);
-                }}
-                className={`text-center font-mono tracking-widest text-lg bg-secondary/50 ${
-                  showPinError ? "border-rose-500 ring-rose-500/20" : ""
-                }`}
-              />
-              {showPinError && (
-                <p className="text-[11px] text-rose-600 font-medium text-center">
-                  अमान्य पिन। कृपया सही स्टोर सुरक्षा पिन दर्ज करें।
+                <div className="space-y-1.5">
+                  <Label htmlFor="admin-email" className="text-xs font-semibold text-foreground">
+                    व्यवस्थापक ईमेल पता (Admin Email) *
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="admin-email"
+                      type="email"
+                      required
+                      autoFocus
+                      autoComplete="email"
+                      placeholder="inaytchaudhri@gmail.com"
+                      value={emailInput}
+                      disabled={isSubmitting || lockoutRemaining > 0}
+                      onChange={(e) => {
+                        setEmailInput(e.target.value);
+                        if (loginError) setLoginError(null);
+                      }}
+                      className={`pl-10 text-sm bg-secondary/50 ${
+                        loginError ? "border-rose-500 ring-rose-500/20" : ""
+                      }`}
+                    />
+                    <Mail className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </div>
+
+                {loginError && (
+                  <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>{loginError}</span>
+                  </div>
+                )}
+
+                {lockoutRemaining > 0 && (
+                  <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 text-amber-800 dark:text-amber-300 text-xs flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span className="font-bold">सुरक्षा कूलडाउन सक्रिय: {lockoutRemaining} सेकंड शेष</span>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={isSubmitting || lockoutRemaining > 0}
+                  className="w-full rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm shadow-md"
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>ईमेल जांचा जा रहा है...</span>
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1.5 justify-center">
+                      <span>आगे बढ़ें (Continue)</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </span>
+                  )}
+                </Button>
+
+                <p className="text-[11px] text-muted-foreground text-center pt-1">
+                  केवल अधिकृत ईमेल <strong className="text-foreground">inaytchaudhri@gmail.com</strong> ही मान्य है। अन्य सभी पते अस्वीकृत किए जाते हैं।
                 </p>
-              )}
-              {lockoutRemaining > 0 && (
-                <p className="text-[11px] text-rose-600 font-bold text-center">
-                  सुरक्षा कूलडाउन सक्रिय: {lockoutRemaining} सेकंड शेष
-                </p>
-              )}
-            </div>
+              </form>
+            )}
 
-            <Button
-              type="submit"
-              size="lg"
-              disabled={lockoutRemaining > 0}
-              className="w-full rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm shadow-md"
-            >
-              डैशबोर्ड अनलॉक करें (Unlock Portal)
-            </Button>
+            {/* Step 2: Password Verification */}
+            {authStep === "password" && (
+              <form onSubmit={handlePasswordSubmit} className="space-y-4 text-left">
+                <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold border-b border-border pb-2">
+                  <span>चरण 2 / 2: सुरक्षा पासवर्ड सत्यापन</span>
+                  <span className="text-primary font-bold">Step 2</span>
+                </div>
 
-            <div className="pt-2">
-              <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">
-                ← मुख्य वेबसाइट पर वापस जाएँ
+                {/* Confirmed Authorized Email Banner */}
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-xs">
+                  <div className="flex items-center gap-2 truncate">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="font-semibold text-emerald-900 dark:text-emerald-200 truncate">
+                      {emailInput.trim()}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthStep("email");
+                      setPasswordInput("");
+                      setLoginError(null);
+                    }}
+                    className="text-xs text-emerald-700 dark:text-emerald-400 hover:underline font-semibold ml-2 shrink-0 cursor-pointer"
+                  >
+                    बदलें
+                  </button>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="admin-password" className="text-xs font-semibold text-foreground">
+                    व्यवस्थापक पासवर्ड (Admin Password) *
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="admin-password"
+                      type={showPassword ? "text" : "password"}
+                      required
+                      autoFocus
+                      autoComplete="current-password"
+                      placeholder="पासवर्ड दर्ज करें..."
+                      value={passwordInput}
+                      disabled={isSubmitting || lockoutRemaining > 0}
+                      onChange={(e) => {
+                        setPasswordInput(e.target.value);
+                        if (loginError) setLoginError(null);
+                      }}
+                      className={`pl-10 pr-10 text-sm bg-secondary/50 font-mono ${
+                        loginError ? "border-rose-500 ring-rose-500/20" : ""
+                      }`}
+                    />
+                    <Lock className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {loginError && (
+                  <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>{loginError}</span>
+                  </div>
+                )}
+
+                {lockoutRemaining > 0 && (
+                  <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 text-amber-800 dark:text-amber-300 text-xs flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span className="font-bold">सुरक्षा कूलडाउन सक्रिय: {lockoutRemaining} सेकंड शेष</span>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setAuthStep("email");
+                      setPasswordInput("");
+                      setLoginError(null);
+                    }}
+                    disabled={isSubmitting}
+                    className="rounded-2xl text-xs flex-1"
+                  >
+                    ← वापस
+                  </Button>
+                  <Button
+                    type="submit"
+                    size="lg"
+                    disabled={isSubmitting || lockoutRemaining > 0}
+                    className="rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-sm shadow-md flex-2"
+                  >
+                    {isSubmitting ? (
+                      <span className="flex items-center gap-2 justify-center">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>सत्यापित किया जा रहा है...</span>
+                      </span>
+                    ) : (
+                      <span>साइन इन करें (Sign In)</span>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            <div className="pt-2 border-t border-border/60">
+              <Link to="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                ← मुख्य वेबसाइट पर वापस जाएँ (Return to Storefront)
               </Link>
             </div>
-          </form>
+          </div>
         </main>
 
         <Footer />
@@ -616,8 +965,9 @@ function AdminPage() {
               <span className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
                 एडमिन एवं इन्वेंट्री पोर्टल
               </span>
-              <Badge className="bg-emerald-700 text-white font-bold text-[10px]">
-                Authorized Session
+              <Badge className="bg-emerald-700 text-white font-bold text-[10px] flex items-center gap-1">
+                <Shield className="w-3 h-3" />
+                <span>अधिकृत: {adminEmail || "inaytchaudhri@gmail.com"}</span>
               </Badge>
               {backendStatus.tablesLive ? (
                 <Badge className="bg-emerald-600 text-white font-bold text-[10px] flex items-center gap-1">
@@ -672,10 +1022,11 @@ function AdminPage() {
               variant="ghost"
               size="sm"
               onClick={handleLogoutAdmin}
-              className="rounded-xl text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950"
+              className="rounded-xl text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950 font-semibold"
+              title="प्रशासनिक सत्र सुरक्षित रूप से समाप्त करें"
             >
-              <Lock className="w-3.5 h-3.5 mr-1" />
-              <span>पोर्टल लॉक करें</span>
+              <LogOut className="w-3.5 h-3.5 mr-1" />
+              <span>लॉग आउट (Logout)</span>
             </Button>
           </div>
         </div>
@@ -1777,12 +2128,32 @@ function AdminPage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => {
+                  onClick={async () => {
+                    try {
+                      const res = await adminExportOrdersServerFn({
+                        data: { format: "csv", adminToken: adminSessionToken || undefined },
+                      });
+                      if (res && res.data) {
+                        const blob = new Blob([res.data], { type: res.mimeType });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = res.filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        toast.success("सर्वर ऑर्डर्स CSV डाउनलोड हो गई (Orders Exported)!");
+                        return;
+                      }
+                    } catch (err) {
+                      console.warn("Server export fallback:", err);
+                    }
                     downloadOrdersCsv(orders);
                     toast.success("ऑर्डर्स CSV डाउनलोड हो गई (Orders Exported)!");
                   }}
                   className="rounded-xl text-xs gap-1.5 h-8"
-                  title="सभी ऑर्डर्स को CSV स्प्रेडशीट में एक्सपोर्ट करें"
+                  title="सभी ऑर्डर्स को सुरक्षित CSV स्प्रेडशीट में एक्सपोर्ट करें"
                 >
                   <FileText className="w-3.5 h-3.5 text-blue-600" />
                   <span>CSV एक्सपोर्ट</span>
@@ -2167,6 +2538,137 @@ function AdminPage() {
                   {importFileError && (
                     <p className="text-[10px] text-rose-600 font-medium">{importFileError}</p>
                   )}
+                </div>
+              </div>
+            </div>
+
+            {/* ============================================================= */}
+            {/* ADMIN SECURITY & PASSWORD ROTATION CARD */}
+            {/* ============================================================= */}
+            <div className="bg-card border border-border rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-4 shadow-xs">
+              <div className="flex items-center justify-between pb-3 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600">
+                    <KeyRound className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-sm sm:text-base font-bold text-foreground">
+                      सुरक्षा एवं पासवर्ड रोटेशन (Admin Credentials)
+                    </h3>
+                    <p className="text-[11px] text-muted-foreground">
+                      अधिकृत व्यवस्थापक ईमेल: <span className="font-mono font-semibold text-emerald-600">{adminEmail || "inaytchaudhri@gmail.com"}</span>
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="text-[10px] text-emerald-600 bg-emerald-500/10 border-emerald-500/20">
+                  <Shield className="w-3 h-3 mr-1 inline" /> सर्वर द्वारा सुरक्षित
+                </Badge>
+              </div>
+
+              <div className="bg-secondary/40 border border-border/60 rounded-xl p-3 text-[11px] text-muted-foreground space-y-1">
+                <div className="font-semibold text-foreground flex items-center gap-1.5">
+                  <Info className="w-3.5 h-3.5 text-primary" />
+                  <span>उत्पादन सुरक्षा नीति (Production Security Notice)</span>
+                </div>
+                <p>
+                  नया पासवर्ड बदलते ही सर्वर पर पुराना क्रेडेंशियल तुरंत निष्क्रिय हो जाएगा और अन्य सभी सक्रिय सत्र सुरक्षा कारणों से लॉगआउट हो जाएंगे।
+                </p>
+              </div>
+
+              {pwdChangeSuccess && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{pwdChangeSuccess}</span>
+                </div>
+              )}
+
+              {pwdChangeError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{pwdChangeError}</span>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">वर्तमान पासवर्ड *</Label>
+                    <div className="relative">
+                      <Input
+                        type={showCurrentPwd ? "text" : "password"}
+                        value={currentPwdInput}
+                        onChange={(e) => setCurrentPwdInput(e.target.value)}
+                        placeholder="••••••••••••"
+                        className="text-xs pr-9 rounded-xl font-mono"
+                        autoComplete="current-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPwd(!showCurrentPwd)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showCurrentPwd ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">नया सुरक्षित पासवर्ड *</Label>
+                    <div className="relative">
+                      <Input
+                        type={showNewPwd ? "text" : "password"}
+                        value={newPwdInput}
+                        onChange={(e) => setNewPwdInput(e.target.value)}
+                        placeholder="न्यूनतम 10 अक्षर (A-Z, 0-9, @#$)"
+                        className="text-xs pr-9 rounded-xl font-mono"
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPwd(!showNewPwd)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showNewPwd ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">नया पासवर्ड पुनः दर्ज करें *</Label>
+                    <Input
+                      type={showNewPwd ? "text" : "password"}
+                      value={confirmPwdInput}
+                      onChange={(e) => setConfirmPwdInput(e.target.value)}
+                      placeholder="नया पासवर्ड पुनः दर्ज करें"
+                      className="text-xs rounded-xl font-mono"
+                      autoComplete="new-password"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2">
+                  <div className="text-[11px] text-muted-foreground space-y-0.5">
+                    <p className="font-medium">पासवर्ड नीति आवश्यकताएं:</p>
+                    <p>• न्यूनतम 10 अक्षर • बड़ा व छोटा अक्षर (A-Z, a-z) • अंक व विशेष वर्ण</p>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={handleChangePassword}
+                    disabled={isChangingPwd || !currentPwdInput || !newPwdInput || !confirmPwdInput}
+                    className="text-xs rounded-xl shrink-0"
+                  >
+                    {isChangingPwd ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                        <span>सत्यापित व अपडेट हो रहा है...</span>
+                      </>
+                    ) : (
+                      <>
+                        <KeyRound className="w-3.5 h-3.5 mr-1.5" />
+                        <span>पासवर्ड अपडेट करें</span>
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
             </div>

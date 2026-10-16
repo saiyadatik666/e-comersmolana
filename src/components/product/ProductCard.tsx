@@ -96,8 +96,9 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, on
         {/* Wishlist & Zoom Actions */}
         <div className="absolute top-2 right-2 flex flex-col gap-1.5 z-10">
           <button
+            type="button"
             onClick={handleWishlist}
-            className={`w-8.5 h-8.5 sm:w-9 sm:h-9 min-w-[34px] min-h-[34px] rounded-full flex items-center justify-center transition-transform active:scale-95 hover:scale-105 shadow-md ${
+            className={`w-8.5 h-8.5 sm:w-9 sm:h-9 min-w-[34px] min-h-[34px] rounded-full flex items-center justify-center transition-transform active:scale-95 hover:scale-105 shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
               inWish ? "bg-red-500 text-white" : "bg-white/90 text-stone-700 hover:bg-white"
             }`}
             title={inWish ? "विशलिस्ट से हटाएं" : "विशलिस्ट में जोड़ें"}
@@ -108,12 +109,13 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, on
 
           {onOpenPoster && (
             <button
+              type="button"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 onOpenPoster(product);
               }}
-              className="w-8.5 h-8.5 sm:w-9 sm:h-9 min-w-[34px] min-h-[34px] rounded-full bg-white/90 text-stone-700 hover:bg-white flex items-center justify-center transition-transform active:scale-95 hover:scale-105 shadow-md"
+              className="w-8.5 h-8.5 sm:w-9 sm:h-9 min-w-[34px] min-h-[34px] rounded-full bg-white/90 text-stone-700 hover:bg-white flex items-center justify-center transition-transform active:scale-95 hover:scale-105 shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               title="मूल प्रचार पोस्टर देखें"
               aria-label={`View full poster for ${product.name}`}
             >
@@ -229,7 +231,7 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, on
               )}
               target="_blank"
               rel="noopener noreferrer"
-              className="xs:hidden h-9 w-9 min-w-[36px] min-h-[36px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-xs transition-colors"
+              className="xs:hidden h-9 w-9 min-w-[36px] min-h-[36px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
               title="WhatsApp पर तुरंत ऑर्डर करें"
               aria-label={`WhatsApp order for ${product.name}`}
             >

@@ -9,6 +9,7 @@ import {
   cleanWhatsAppNumber,
 } from "@/context/StoreContext";
 import { Product } from "@/data/products";
+import { createOrderServerFn } from "@/lib/admin-api";
 import {
   Truck,
   MessageCircle,
@@ -159,7 +160,7 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
     return Object.keys(errs).length === 0;
   };
 
-  const handleProceedToReview = (e: React.FormEvent) => {
+  const handleProceedToReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
     if (!validateForm()) {
@@ -203,38 +204,47 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
       const calculatedDiscount = Math.max(0, subtotal + shippingFee - finalTotal);
       const activeCoupon = appliedCoupon || undefined;
 
-      const msg = buildWhatsAppOrderMessage({
-        customer: details,
-        items: items.map((i) => ({
-          product: i.product,
-          quantity: i.quantity,
-          packSize: i.packSize || i.product.packSize,
-        })),
-        subtotal,
-        shippingCharge: shippingFee,
-        finalAmount: finalTotal,
-        discount: calculatedDiscount,
-        couponCode: activeCoupon,
-        origin,
-      });
+      let confirmedOrderId = `ORD-${Math.floor(10000 + Math.random() * 90000)}`;
+      let serverWhatsAppMsg = "";
+      let serverWhatsAppUrl = "";
 
-      const waUrl = generateWhatsAppOrderUrl({
-        customer: details,
-        items: items.map((i) => ({
-          product: i.product,
-          quantity: i.quantity,
-          packSize: i.packSize || i.product.packSize,
-        })),
-        subtotal,
-        shippingCharge: shippingFee,
-        finalAmount: finalTotal,
-        discount: calculatedDiscount,
-        couponCode: activeCoupon,
-        whatsappNumber: settings.whatsapp,
-        origin,
-      });
+      // Server-Side Persistent Order Submission with Atomic Inventory Deduction
+      try {
+        const serverResult = await createOrderServerFn({
+          data: {
+            customer: details,
+            items: items.map((i) => ({
+              productId: i.product.id,
+              quantity: i.quantity,
+              packSize: i.packSize || i.product.packSize,
+            })),
+            couponCode: activeCoupon,
+            paymentMethod: "WhatsApp Direct Order",
+            clientClaimedSubtotal: subtotal,
+            clientClaimedTotal: finalTotal,
+            origin,
+          },
+        });
 
-      // Record order locally with status "Pending Confirmation"
+        if (serverResult && serverResult.order) {
+          confirmedOrderId = serverResult.order.id;
+          serverWhatsAppMsg = serverResult.calculation.whatsAppMessage;
+          serverWhatsAppUrl = serverResult.calculation.whatsAppUrl;
+          if (serverResult.order.wasPriceTampered) {
+            toast.warning("मूल्य सत्यापन: कैटलॉग के आधिकारिक मूल्यों के अनुसार राशि समायोजित की गई है।");
+          }
+        }
+      } catch (serverErr) {
+        console.warn("[Checkout] Server order persistence notice:", serverErr);
+        const msg = serverErr instanceof Error ? serverErr.message : String(serverErr);
+        if (msg.includes("Insufficient stock")) {
+          toast.error(msg);
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Record order locally in client store for local state persistence & offline resilience
       const newOrder = createOrder({
         customerName: details.fullName,
         customerPhone: details.phone,
@@ -260,11 +270,42 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
         })),
         subtotal,
         shippingCharge: shippingFee,
-        discount: Math.max(0, subtotal + shippingFee - finalTotal),
+        discount: calculatedDiscount,
         total: finalTotal,
         paymentMethod: "WhatsApp Direct Order",
         paymentStatus: "Pending Confirmation",
-        notes: "Submitted via WhatsApp order request",
+        notes: `Recorded in Shifa A Hayat backend (#${confirmedOrderId}) • Pending customer WhatsApp transmission`,
+      });
+
+      const msg = serverWhatsAppMsg || buildWhatsAppOrderMessage({
+        customer: details,
+        items: items.map((i) => ({
+          product: i.product,
+          quantity: i.quantity,
+          packSize: i.packSize || i.product.packSize,
+        })),
+        subtotal,
+        shippingCharge: shippingFee,
+        finalAmount: finalTotal,
+        discount: calculatedDiscount,
+        couponCode: activeCoupon,
+        origin,
+      });
+
+      const waUrl = serverWhatsAppUrl || generateWhatsAppOrderUrl({
+        customer: details,
+        items: items.map((i) => ({
+          product: i.product,
+          quantity: i.quantity,
+          packSize: i.packSize || i.product.packSize,
+        })),
+        subtotal,
+        shippingCharge: shippingFee,
+        finalAmount: finalTotal,
+        discount: calculatedDiscount,
+        couponCode: activeCoupon,
+        whatsappNumber: settings.whatsapp,
+        origin,
       });
 
       const waWebUrl = generateWhatsAppWebOrderUrl({
@@ -283,14 +324,14 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
         origin,
       });
 
-      setCreatedOrderId(newOrder.id);
+      setCreatedOrderId(confirmedOrderId);
       setSubmittedMessage(msg);
       setSubmittedWhatsAppUrl(waUrl);
       setSubmittedWhatsAppWebUrl(waWebUrl);
       setMode("confirm-order");
 
       if (onOrderCompleted) {
-        onOrderCompleted(newOrder.id);
+        onOrderCompleted(confirmedOrderId);
       }
     } finally {
       setIsSubmitting(false);

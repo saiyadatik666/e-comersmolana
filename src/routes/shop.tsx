@@ -27,18 +27,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+export type PriceRange = "all" | "under-500" | "500-1000" | "above-1000";
+
 export interface ShopSearch {
   category?: string | undefined;
   q?: string | undefined;
+  price?: string | undefined;
 }
 
 export const Route = createFileRoute("/shop")({
   validateSearch: (search: Record<string, unknown>): ShopSearch => {
     const category = typeof search["category"] === "string" ? search["category"] : undefined;
     const q = typeof search["q"] === "string" ? search["q"] : (typeof search["search"] === "string" ? search["search"] : undefined);
+    const price = typeof search["price"] === "string" ? search["price"] : undefined;
     return {
       category,
       q,
+      price,
     };
   },
   head: () => ({
@@ -70,6 +75,12 @@ function ShopPage() {
 
   const [searchQuery, setSearchQuery] = useState(searchParams.q || "");
   const [selectedCategory, setSelectedCategory] = useState(searchParams.category || "all");
+  const [priceRange, setPriceRange] = useState<PriceRange>(() => {
+    if (searchParams.price === "under-500" || searchParams.price === "500-1000" || searchParams.price === "above-1000") {
+      return searchParams.price;
+    }
+    return "all";
+  });
   const [sortBy, setSortBy] = useState<"featured" | "price-asc" | "price-desc" | "rating">("featured");
   const [inStockOnly, setInStockOnly] = useState(false);
   const [selectedPoster, setSelectedPoster] = useState<Product | null>(null);
@@ -85,7 +96,14 @@ function ShopPage() {
     if (searchParams.q !== undefined) {
       setSearchQuery(searchParams.q || "");
     }
-  }, [searchParams.category, searchParams.q]);
+    if (searchParams.price !== undefined) {
+      if (searchParams.price === "under-500" || searchParams.price === "500-1000" || searchParams.price === "above-1000") {
+        setPriceRange(searchParams.price);
+      } else {
+        setPriceRange("all");
+      }
+    }
+  }, [searchParams.category, searchParams.q, searchParams.price]);
 
   // Comprehensive Multi-criteria Search & Sort Logic
   const filteredProducts = useMemo(() => {
@@ -96,6 +114,16 @@ function ShopPage() {
       }
       // In-stock filter
       if (inStockOnly && !product.inStock) {
+        return false;
+      }
+      // Price range filter
+      if (priceRange === "under-500" && product.price >= 500) {
+        return false;
+      }
+      if (priceRange === "500-1000" && (product.price < 500 || product.price > 1000)) {
+        return false;
+      }
+      if (priceRange === "above-1000" && product.price <= 1000) {
         return false;
       }
       // Search query
@@ -140,17 +168,19 @@ function ShopPage() {
       if (!a.isBestseller && b.isBestseller) return 1;
       return 0;
     });
-  }, [products, selectedCategory, searchQuery, inStockOnly, sortBy]);
+  }, [products, selectedCategory, searchQuery, inStockOnly, sortBy, priceRange]);
 
   const hasActiveFilters =
     searchQuery.trim() !== "" ||
     selectedCategory !== "all" ||
+    priceRange !== "all" ||
     sortBy !== "featured" ||
     inStockOnly;
 
   const resetFilters = useCallback(() => {
     setSearchQuery("");
     setSelectedCategory("all");
+    setPriceRange("all");
     setSortBy("featured");
     setInStockOnly(false);
   }, []);
@@ -265,6 +295,33 @@ function ShopPage() {
             ))}
           </div>
 
+          {/* Quick Price Range Badges */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pt-1 pb-1 scrollbar-none text-xs">
+            <span className="text-[11px] font-semibold text-muted-foreground mr-1 shrink-0 flex items-center gap-1">
+              <SlidersHorizontal className="w-3 h-3 text-primary" />
+              मूल्य दायरा:
+            </span>
+            {[
+              { id: "all", label: "सभी मूल्य" },
+              { id: "under-500", label: "₹500 से कम (Under ₹500)" },
+              { id: "500-1000", label: "₹500 - ₹1,000" },
+              { id: "above-1000", label: "₹1,000 से अधिक" },
+            ].map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setPriceRange(item.id as PriceRange)}
+                className={`px-3 py-1.5 rounded-full font-medium whitespace-nowrap transition-colors border cursor-pointer ${
+                  priceRange === item.id
+                    ? "bg-amber-600 text-white border-amber-600 shadow-xs"
+                    : "bg-secondary/40 text-stone-700 dark:text-stone-300 border-border hover:bg-secondary"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
           {/* Active Filter Indicators & Quick Clear (Section 1) */}
           {hasActiveFilters && (
             <div className="pt-3 border-t border-border/60 flex flex-wrap items-center gap-2 text-xs">
@@ -295,6 +352,20 @@ function ShopPage() {
                     onClick={() => setSelectedCategory("all")}
                     className="hover:text-foreground ml-0.5 cursor-pointer"
                     aria-label="श्रेणी फ़िल्टर हटाएं"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+
+              {priceRange !== "all" && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 font-medium">
+                  मूल्य: {priceRange === "under-500" ? "₹500 से कम" : priceRange === "500-1000" ? "₹500 - ₹1,000" : "₹1,000 से अधिक"}
+                  <button
+                    type="button"
+                    onClick={() => setPriceRange("all")}
+                    className="hover:text-foreground ml-0.5 cursor-pointer"
+                    aria-label="मूल्य फ़िल्टर हटाएं"
                   >
                     <X className="w-3 h-3" />
                   </button>
