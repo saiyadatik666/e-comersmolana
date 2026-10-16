@@ -46,7 +46,7 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:url", content: "https://shifa-a-hayat.com/" },
       { property: "og:type", content: "website" },
-      { property: "og:image", content: "https://shifa-a-hayat.com/assets/products/zafrani-gold.jpg" },
+      { property: "og:image", content: "https://shifa-a-hayat.com/assets/molana/IMG-20261009-WA0003.jpg" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Shifa A Hayat — Premium Ayurvedic & Unani Wellness | Palanpur" },
       {
@@ -54,7 +54,7 @@ export const Route = createFileRoute("/")({
         content:
           "हकीम इनायत अहमदी (पालनपुर, गुजरात) के 100% शुद्ध कुदरती नुस्खे। ऑल इंडिया डिलीवरी एवं कैश ऑन डिलीवरी उपलब्ध।",
       },
-      { name: "twitter:image", content: "https://shifa-a-hayat.com/assets/products/zafrani-gold.jpg" },
+      { name: "twitter:image", content: "https://shifa-a-hayat.com/assets/molana/IMG-20261009-WA0003.jpg" },
     ],
     links: [{ rel: "canonical", href: "https://shifa-a-hayat.com/" }],
   }),
@@ -167,7 +167,7 @@ function IndexPage() {
 
                 <div className="aspect-4/5 rounded-2xl overflow-hidden mb-4 border border-emerald-700/50 relative group bg-gradient-to-b from-stone-900 via-stone-900 to-stone-950 flex items-center justify-center p-3">
                   <img
-                    src="/assets/products/zafrani-gold.jpg"
+                    src="/assets/molana/IMG-20261009-WA0003.jpg"
                     alt="Capsule Zafrani Gold (कैप्सूल ज़ाफरानी गोल्ड) - Shifa A Hayat"
                     fetchPriority="high"
                     decoding="async"
@@ -223,7 +223,7 @@ function IndexPage() {
               <div className="bg-card border-2 border-amber-500/40 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col xs:flex-row gap-3 sm:gap-4 items-center xs:items-start text-center xs:text-left">
                 <div className="w-20 h-28 sm:w-24 sm:h-32 rounded-xl border bg-stone-50 dark:bg-stone-900 p-1.5 flex items-center justify-center shrink-0">
                   <img
-                    src="/assets/products/arq-abe-hayat.jpg"
+                    src="/assets/molana/IMG-20261009-WA0013.jpg"
                     alt="Arq Abe Hayat"
                     loading="lazy"
                     decoding="async"
@@ -260,7 +260,7 @@ function IndexPage() {
               <div className="bg-card border-2 border-amber-500/40 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col xs:flex-row gap-3 sm:gap-4 items-center xs:items-start text-center xs:text-left">
                 <div className="w-20 h-28 sm:w-24 sm:h-32 rounded-xl border bg-stone-50 dark:bg-stone-900 p-1.5 flex items-center justify-center shrink-0">
                   <img
-                    src="/assets/products/tanavai-tel.jpg"
+                    src="/assets/molana/IMG-20261009-WA0021.jpg"
                     alt="Tanavai Tel"
                     loading="lazy"
                     decoding="async"
@@ -297,7 +297,7 @@ function IndexPage() {
               <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col xs:flex-row gap-3 sm:gap-4 items-center xs:items-start text-center xs:text-left">
                 <div className="w-20 h-28 sm:w-24 sm:h-32 rounded-xl border bg-stone-50 dark:bg-stone-900 p-1.5 flex items-center justify-center shrink-0">
                   <img
-                    src="/assets/products/gas-ki-goliyan.jpg"
+                    src="/assets/molana/IMG-20261009-WA0016.jpg"
                     alt="Gas Ki Goliyan (गैस की गोलियां) - Shifa A Hayat"
                     loading="lazy"
                     decoding="async"

@@ -138,7 +138,7 @@ describe("WhatsApp Order Request Generator (PRD Section 7)", () => {
     expect(message).toContain("Arq Abe Hayat Drops");
     expect(message).toContain("Product price: ₹250");
     expect(message).toContain("Selected quantity: 2");
-    expect(message).toContain("Product image URL: https://shifa-a-hayat.com/assets/products/arq-abe-hayat.jpg");
+    expect(message).toContain("Product image URL: https://shifa-a-hayat.com/assets/molana/IMG-20261009-WA0013.jpg");
     expect(message).toContain("Product page URL: https://shifa-a-hayat.com/product/shifa-arq-abe-hayat");
 
     expect(message).toContain("Tanavai Nabhi Tel");
@@ -556,7 +556,7 @@ describe("Part 7 Advanced Shopping Features", () => {
       expect(wishlistProducts.length).toBe(2);
       expect(wishlistProducts[0]?.price).toBe(1450);
       expect(wishlistProducts[1]?.price).toBe(200);
-      expect(wishlistProducts[1]?.image).toBe("/assets/products/tanavai-tel.jpg");
+      expect(wishlistProducts[1]?.image).toBe("/assets/molana/IMG-20261009-WA0021.jpg");
     });
   });
 

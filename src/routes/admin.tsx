@@ -1509,7 +1509,7 @@ function AdminPage() {
                       compareAtPrice: 650,
                       rating: 4.8,
                       reviewCount: 1,
-                      image: "/assets/products/zafrani-gold.jpg",
+                      image: "/assets/molana/IMG-20261009-WA0003.jpg",
                       posterImage: "/assets/molana/IMG-20261009-WA0003.jpg",
                       imageName: "IMG-20261009-WA0003.jpg",
                       packSize: "60 Capsules",

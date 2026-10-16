@@ -88,15 +88,9 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, on
               {discountPercent}% छूट
             </span>
           )}
-          {product.image.startsWith("/assets/products/") ? (
-            <span className="bg-stone-900/75 text-emerald-300 text-[8px] sm:text-[9px] font-medium px-1.5 py-0.5 rounded shadow-xs self-start backdrop-blur-xs border border-emerald-500/30">
-              वास्तविक उत्पाद
-            </span>
-          ) : (
-            <span className="bg-stone-900/75 text-amber-300 text-[8px] sm:text-[9px] font-medium px-1.5 py-0.5 rounded shadow-xs self-start backdrop-blur-xs border border-amber-500/30">
-              विरासत पोस्टर
-            </span>
-          )}
+          <span className="bg-stone-900/75 text-emerald-300 text-[8px] sm:text-[9px] font-medium px-1.5 py-0.5 rounded shadow-xs self-start backdrop-blur-xs border border-emerald-500/30">
+            वास्तविक उत्पाद
+          </span>
         </div>
 
         {/* Wishlist & Zoom Actions */}

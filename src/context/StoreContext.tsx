@@ -536,7 +536,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           {
             productId: "shifa-arq-abe-hayat",
             productName: "Arq Abe Hayat Drops",
-            productImage: "/assets/products/arq-abe-hayat.jpg",
+            productImage: "/assets/molana/IMG-20261009-WA0013.jpg",
             price: 250,
             quantity: 2,
             packSize: "15ml Amber Dropper Bottle",
@@ -544,7 +544,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           {
             productId: "shifa-tanavai-tel",
             productName: "Tanavai Nabhi Tel",
-            productImage: "/assets/products/tanavai-tel.jpg",
+            productImage: "/assets/molana/IMG-20261009-WA0021.jpg",
             price: 200,
             quantity: 1,
             packSize: "30ml Dropper Bottle",
@@ -579,7 +579,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           {
             productId: "shifa-zafrani-gold",
             productName: "Capsule Zafrani Gold",
-            productImage: "/assets/products/zafrani-gold.jpg",
+            productImage: "/assets/molana/IMG-20261009-WA0003.jpg",
             price: 1450,
             quantity: 1,
             packSize: "60 Capsules",

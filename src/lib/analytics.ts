@@ -151,7 +151,7 @@ export function computeTopOrderedProducts(
       productId,
       productName: catalogItem?.name || agg.productId,
       productNameHindi: catalogItem?.nameHindi || "हर्बल उत्पाद",
-      image: catalogItem?.image || "/assets/products/zafrani-gold.jpg",
+      image: catalogItem?.image || "/assets/molana/IMG-20261009-WA0003.jpg",
       packSize: catalogItem?.packSize || "-",
       category: catalogItem?.category || "general",
       categoryHindi: catalogItem?.categoryHindi || "सामान्य",
