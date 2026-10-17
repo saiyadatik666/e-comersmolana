@@ -38,7 +38,7 @@ export const Footer: React.FC = () => {
             </div>
             <div>
               <h4 className="text-sm font-semibold text-white">ऑल इंडिया कूरियर सेवा</h4>
-              <p className="text-xs text-stone-400">कैश ऑन डिलीवरी (COD) उपलब्ध</p>
+              <p className="text-xs text-stone-400">सुरक्षित एवं त्वरित डिलीवरी</p>
             </div>
           </div>
 
@@ -262,7 +262,7 @@ export const Footer: React.FC = () => {
             © {new Date().getFullYear()} Shifa A Hayat (शिफा ए हयात). All rights reserved.
           </div>
           <div className="flex items-center gap-4 text-stone-300">
-            <span>Palanpur, Gujarat • Cash on Delivery Available</span>
+            <span>Palanpur, Gujarat • All-India Delivery</span>
           </div>
         </div>
       </div>

@@ -219,9 +219,9 @@ function AccountPage() {
                       <span className="text-xs text-muted-foreground">
                         {order.paymentMethod === "WhatsApp Direct Order"
                           ? "WhatsApp ऑर्डर अनुरोध"
-                          : order.paymentMethod === "COD"
-                          ? "कैश ऑन डिलीवरी"
-                          : "ऑनलाइन UPI"}
+                          : order.paymentMethod === "ONLINE_UPI"
+                          ? "ऑनलाइन UPI"
+                          : "ऑर्डर"}
                       </span>
                     </div>
                   </div>

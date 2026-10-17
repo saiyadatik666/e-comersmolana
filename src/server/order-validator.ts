@@ -177,9 +177,9 @@ export function validateAndCalculateOrder(payload: {
   } else if (cleanCoupon === "AYURVEDA50") {
     discount = Math.min(50, computedSubtotal);
     appliedCoupon = "AYURVEDA50";
-  } else if (cleanCoupon === "FREECOD") {
+  } else if (cleanCoupon === "FREECOD" || cleanCoupon === "FREEDELIVERY") {
     discount = shippingCharge;
-    appliedCoupon = "FREECOD";
+    appliedCoupon = cleanCoupon;
   } else if (cleanCoupon.length > 0) {
     errors.push(`कूपन कोड "${cleanCoupon}" अमान्य है (Invalid coupon code)`);
   }
@@ -248,7 +248,7 @@ export function validateAndCalculateOrder(payload: {
     msg += `- Discount (${appliedCoupon}): -₹${discount}\n`;
   }
   msg += `- Total amount payable (कुल देय राशि): ₹${computedTotal}\n`;
-  msg += "- Payment method: Cash on Delivery / UPI upon merchant confirmation\n";
+  msg += "- Payment method: UPI / Online Payment upon merchant confirmation\n";
   msg += "\nNote: This order request has been verified by the Shifa A Hayat security server.";
 
   const cleanWaNumber = STORE_WHATSAPP_NUMBER.replace(/[^0-9]/g, "");

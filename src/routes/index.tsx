@@ -36,13 +36,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "हकीम इनायत अहमदी (पालनपुर, गुजरात) के 100% शुद्ध कुदरती नुस्खे। मर्दाना ताकत, पेट समस्या, जोड़ों का दर्द व शास्त्रीय यूनानी अर्क। ऑल इंडिया डिलीवरी एवं कैश ऑन डिलीवरी उपलब्ध।",
+          "हकीम इनायत अहमदी (पालनपुर, गुजरात) के 100% शुद्ध कुदरती नुस्खे। मर्दाना ताकत, पेट समस्या, जोड़ों का दर्द व शास्त्रीय यूनानी अर्क। ऑल इंडिया सुरक्षित डिलीवरी उपलब्ध।",
       },
       { property: "og:title", content: "Shifa A Hayat — Premium Ayurvedic & Unani Wellness | Palanpur" },
       {
         property: "og:description",
         content:
-          "हकीम इनायत अहमदी (पालनपुर, गुजरात) के 100% शुद्ध कुदरती नुस्खे। मर्दाना ताकत, पेट समस्या, जोड़ों का दर्द व शास्त्रीय यूनानी अर्क। ऑल इंडिया डिलीवरी एवं कैश ऑन डिलीवरी उपलब्ध।",
+          "हकीम इनायत अहमदी (पालनपुर, गुजरात) के 100% शुद्ध कुदरती नुस्खे। मर्दाना ताकत, पेट समस्या, जोड़ों का दर्द व शास्त्रीय यूनानी अर्क। ऑल इंडिया सुरक्षित डिलीवरी उपलब्ध।",
       },
       { property: "og:url", content: "https://shifa-a-hayat.com/" },
       { property: "og:type", content: "website" },
@@ -52,7 +52,7 @@ export const Route = createFileRoute("/")({
       {
         name: "twitter:description",
         content:
-          "हकीम इनायत अहमदी (पालनपुर, गुजरात) के 100% शुद्ध कुदरती नुस्खे। ऑल इंडिया डिलीवरी एवं कैश ऑन डिलीवरी उपलब्ध।",
+          "हकीम इनायत अहमदी (पालनपुर, गुजरात) के 100% शुद्ध कुदरती नुस्खे। ऑल इंडिया सुरक्षित डिलीवरी उपलब्ध।",
       },
       { name: "twitter:image", content: "https://shifa-a-hayat.com/assets/molana/IMG-20261009-WA0003.jpg" },
     ],
@@ -153,8 +153,8 @@ function IndexPage() {
                   <p className="text-xs text-stone-400">शुद्ध जड़ी-बूटी</p>
                 </div>
                 <div className="space-y-0.5">
-                  <span className="font-serif text-2xl font-bold text-amber-300">COD</span>
-                  <p className="text-xs text-stone-400">कैश ऑन डिलीवरी</p>
+                  <span className="font-serif text-2xl font-bold text-amber-300">UPI/ऑनलाइन</span>
+                  <p className="text-xs text-stone-400">सुरक्षित भुगतान</p>
                 </div>
                 <div className="space-y-0.5">
                   <span className="font-serif text-2xl font-bold text-amber-300">भारत भर</span>
@@ -577,10 +577,10 @@ function IndexPage() {
 
             <AccordionItem value="item-2" className="border rounded-xl px-4 bg-card">
               <AccordionTrigger className="text-sm font-semibold hover:no-underline">
-                डिलीवरी में कितना समय लगता है और क्या कैश ऑन डिलीवरी उपलब्ध है?
+                डिलीवरी में कितना समय लगता है और भुगतान का तरीका क्या है?
               </AccordionTrigger>
               <AccordionContent className="text-xs text-muted-foreground leading-relaxed">
-                हां, कैश ऑन डिलीवरी (COD) पूरे भारत में उपलब्ध है। सामान्यतः ऑर्डर पुष्टि के 3 से 6 कार्यदिवसों में पार्सल आपके दिए पते पर पहुंच जाता है।
+                हम पूरे भारत में सुरक्षित कूरियर से पार्सल भेजते हैं। वर्तमान में कैश ऑन डिलीवरी (COD) उपलब्ध नहीं है; सभी ऑर्डर सुरक्षित ऑनलाइन भुगतान (UPI/WhatsApp पुष्टि) के माध्यम से स्वीकार किए जाते हैं। सामान्यतः ऑर्डर पुष्टि के 3 से 6 कार्यदिवसों में पार्सल आपके दिए पते पर पहुंच जाता है।
               </AccordionContent>
             </AccordionItem>
 

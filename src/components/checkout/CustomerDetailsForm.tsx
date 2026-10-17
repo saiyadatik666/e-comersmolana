@@ -163,6 +163,10 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
   const handleProceedToReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
+    if (settings.onlinePaymentAvailable === false) {
+      toast.error("वर्तमान में कोई वैध ऑनलाइन भुगतान विधि उपलब्ध नहीं है।");
+      return;
+    }
     if (!validateForm()) {
       toast.error("कृपया सभी आवश्यक फ़ील्ड सही तरीके से भरें।");
       return;
@@ -340,6 +344,10 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
 
   const handleUseSavedAddress = () => {
     if (!savedCustomerDetails || isSubmitting) return;
+    if (settings.onlinePaymentAvailable === false) {
+      toast.error("वर्तमान में कोई वैध ऑनलाइन भुगतान विधि उपलब्ध नहीं है।");
+      return;
+    }
 
     // Inventory Reliability Check
     for (const item of items) {
@@ -488,6 +496,18 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
 
   return (
     <div className={`space-y-6 ${className}`}>
+      {settings.onlinePaymentAvailable === false && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2.5">
+          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div>
+            <strong className="block font-bold text-sm">ऑनलाइन भुगतान विधि अनुपलब्ध</strong>
+            <p className="mt-0.5">
+              क्षमा करें, वर्तमान में कोई मान्य ऑनलाइन भुगतान विधि सक्रिय नहीं है। चेकआउट अस्थायी रूप से रोका गया है। कृपया सीधे हकीम जी से हेल्पलाइन पर संपर्क करें।
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* 1. RETURNING CUSTOMER SAVED CARD */}
       {mode === "review-saved" && savedCustomerDetails && (
         <div className="bg-card border-2 border-primary/20 rounded-3xl p-4 sm:p-6 shadow-sm space-y-4 sm:space-y-5">
@@ -529,7 +549,7 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
             <Button
               type="button"
               size="lg"
-              disabled={isSubmitting}
+              disabled={isSubmitting || settings.onlinePaymentAvailable === false}
               onClick={handleUseSavedAddress}
               className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 disabled:opacity-60"
             >
@@ -844,7 +864,7 @@ export const CustomerDetailsForm: React.FC<CustomerDetailsFormProps> = ({
           <Button
             type="submit"
             size="lg"
-            disabled={isSubmitting}
+            disabled={isSubmitting || settings.onlinePaymentAvailable === false}
             className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 disabled:opacity-60"
           >
             <MessageCircle className="w-5 h-5 fill-white" />

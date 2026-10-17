@@ -69,9 +69,9 @@ const FAQS: FAQItem[] = [
     id: "faq-1",
     category: "ordering",
     categoryHindi: "ऑर्डर व भुगतान",
-    question: "कैश ऑन डिलीवरी (COD) की क्या सुविधा है?",
+    question: "भुगतान के क्या विकल्प उपलब्ध हैं?",
     answer:
-      "हाँ, शिफा ए हयात द्वारा पूरे भारत में कैश ऑन डिलीवरी (COD) उपलब्ध कराई जाती है। पार्सल मिलने पर आप कूरियर डिलीवरी एजेंट को नकद भुगतान कर सकते हैं। चेकआउट के समय COD विकल्प चुनें।",
+      "शिफा ए हयात द्वारा सभी ऑर्डर सुरक्षित ऑनलाइन माध्यम (UPI, WhatsApp Direct) से स्वीकार किए जाते हैं। वर्तमान में कैश ऑन डिलीवरी (COD) सेवा उपलब्ध नहीं है। चेकआउट के बाद आप WhatsApp पर हकीम जी से सुरक्षित भुगतान कर सकते हैं।",
   },
   {
     id: "faq-2",
@@ -492,7 +492,7 @@ function ContactAndHelpCenterPage() {
                 name="faqQuery"
                 id="faq-search-input"
                 aria-label="अक्सर पूछे जाने वाले सवालों में खोजें (Search FAQ)"
-                placeholder="सवालों में खोजें (उदा. 'डिलीवरी', 'COD', 'साइड इफेक्ट', 'कूपन')..."
+                placeholder="सवालों में खोजें (उदा. 'डिलीवरी', 'पेमेंट', 'साइड इफेक्ट', 'कूपन')..."
                 value={faqSearch}
                 onChange={(e) => setFaqSearch(e.target.value)}
                 className="pl-9 text-xs rounded-xl h-10 bg-card"

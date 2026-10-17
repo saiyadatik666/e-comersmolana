@@ -50,7 +50,7 @@ export const Route = createFileRoute("/product/$id")({
     const origin = "https://shifa-a-hayat.com";
     const prodUrl = `${origin}/product/${product.id}`;
     const imgUrl = product.image.startsWith("http") ? product.image : `${origin}${product.image}`;
-    const cleanDescription = `${product.name} (${product.nameHindi}) - ${product.subtitle}. शुद्ध आयुर्वेदिक एवं यूनानी नुस्खा। मूल्य: ₹${product.price}। कैश ऑन डिलीवरी एवं ऑल इंडिया डिलीवरी उपलब्ध।`;
+    const cleanDescription = `${product.name} (${product.nameHindi}) - ${product.subtitle}. शुद्ध आयुर्वेदिक एवं यूनानी नुस्खा। मूल्य: ₹${product.price}। सुरक्षित ऑल इंडिया डिलीवरी उपलब्ध।`;
 
     return {
       meta: [
@@ -558,7 +558,7 @@ function ProductDetailPage() {
                   )}
                 </div>
                 <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium mt-1">
-                  ✓ सभी कर (Taxes) शामिल • कैश ऑन डिलीवरी उपलब्ध
+                  ✓ सभी कर (Taxes) शामिल • सुरक्षित ऑल इंडिया डिलीवरी
                 </p>
               </div>
 
@@ -720,7 +720,7 @@ function ProductDetailPage() {
               <div className="space-y-1">
                 <Truck className="w-5 h-5 mx-auto text-primary" />
                 <p className="text-[11px] font-semibold text-foreground">ऑल इंडिया कूरियर</p>
-                <p className="text-[10px] text-muted-foreground">कैश ऑन डिलीवरी</p>
+                <p className="text-[10px] text-muted-foreground">सुरक्षित पार्सल</p>
               </div>
               <div className="space-y-1">
                 <Lock className="w-5 h-5 mx-auto text-primary" />

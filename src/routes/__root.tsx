@@ -84,7 +84,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Authentic Ayurvedic & Unani herbal wellness formulations by Hakeem Inayat Ahmadi (Palanpur, Gujarat). Pure natural remedies with All-India delivery and Cash on Delivery.",
+          "Authentic Ayurvedic & Unani herbal wellness formulations by Hakeem Inayat Ahmadi (Palanpur, Gujarat). Pure natural remedies with All-India delivery.",
       },
       { name: "author", content: "Shifa A Hayat" },
       { property: "og:title", content: "Shifa A Hayat — Premium Ayurvedic & Unani Store" },

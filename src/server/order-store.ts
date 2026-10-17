@@ -126,7 +126,7 @@ export const DEFAULT_SERVER_SETTINGS: ServerStoreSettings = {
   freeShippingThreshold: 499,
   standardShippingFee: 49,
   announcementText: "✨ ऑल इंडिया फ्री डिलीवरी ₹499 के ऑर्डर्स पर • WhatsApp Direct Ordering",
-  codAvailable: true,
+  codAvailable: false,
   onlinePaymentAvailable: true,
   upiId: "9586037331@upi",
   adminPin: "9586",
@@ -305,7 +305,7 @@ export interface CreateOrderPayload {
   customer: ServerCustomerInput;
   items: ServerOrderItemInput[];
   couponCode?: string | null | undefined;
-  paymentMethod?: "WhatsApp Direct Order" | "COD" | "ONLINE_UPI" | undefined;
+  paymentMethod?: "WhatsApp Direct Order" | "ONLINE_UPI" | undefined;
   clientClaimedSubtotal?: number | undefined;
   clientClaimedTotal?: number | undefined;
   origin?: string | undefined;
@@ -317,6 +317,18 @@ export function createOrderServer(payload: CreateOrderPayload): {
   calculation: ValidatedOrderCalculation;
 } {
   initializeStore();
+
+  // Reject Cash on Delivery (COD) orders unconditionally
+  const requestedPayment = (payload.paymentMethod || "").toUpperCase();
+  if (
+    requestedPayment === "COD" ||
+    requestedPayment.includes("COD") ||
+    requestedPayment.includes("CASH ON DELIVERY")
+  ) {
+    throw new Error(
+      "Cash on Delivery (COD) is disabled and not accepted on Shifa A Hayat. Please select a valid online payment method."
+    );
+  }
 
   // 1. Validate customer and recalculate prices strictly from authentic catalog
   const calculation = validateAndCalculateOrder({

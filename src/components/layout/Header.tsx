@@ -124,7 +124,7 @@ export const Header: React.FC = () => {
             </span>
             <span className="text-primary-foreground/40">•</span>
             <span className="truncate text-emerald-100 font-medium">
-              100% शुद्ध आयुर्वेदिक व यूनानी • COD उपलब्ध
+              100% शुद्ध आयुर्वेदिक व यूनानी • ऑल इंडिया डिलीवरी
             </span>
           </div>
 

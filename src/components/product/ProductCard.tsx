@@ -183,7 +183,7 @@ export const ProductCard: React.FC<ProductCardProps> = React.memo(({ product, on
               )}
             </div>
             <span className="text-[9px] sm:text-[10px] text-emerald-700 dark:text-emerald-400 font-medium">
-              COD उपलब्ध
+              सुरक्षित डिलीवरी
             </span>
           </div>
 

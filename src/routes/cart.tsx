@@ -71,7 +71,7 @@ function CartPage() {
         setCouponInput("");
         setCouponError("");
       } else {
-        setCouponError("अमान्य कूपन कोड। कृपया SHIFA10, AYURVEDA50 या FREECOD का उपयोग करें।");
+        setCouponError("अमान्य कूपन कोड। कृपया SHIFA10, AYURVEDA50 या FREEDELIVERY का उपयोग करें।");
       }
     }
   };
@@ -395,10 +395,10 @@ function CartPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleQuickCoupon("FREECOD")}
+                        onClick={() => handleQuickCoupon("FREEDELIVERY")}
                         className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300/60 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 transition-colors cursor-pointer"
                       >
-                        FREECOD (निःशुल्क शिपिंग)
+                        FREEDELIVERY (निःशुल्क शिपिंग)
                       </button>
                     </div>
                   </div>

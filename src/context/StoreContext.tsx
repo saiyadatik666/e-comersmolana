@@ -358,7 +358,7 @@ const DEFAULT_SETTINGS: StoreSettings = {
   freeShippingThreshold: 499,
   standardShippingFee: 49,
   announcementText: "✨ ऑल इंडिया फ्री डिलीवरी ₹499 के ऑर्डर्स पर • WhatsApp Direct Ordering",
-  codAvailable: true,
+  codAvailable: false,
   onlinePaymentAvailable: true,
   upiId: "9586037331@upi",
   adminPin: "9586",
@@ -857,12 +857,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       toast.success("Coupon AYURVEDA50 applied! Flat ₹50 off.");
       return true;
     }
-    if (clean === "FREECOD") {
-      setAppliedCoupon("FREECOD");
-      toast.success("Coupon FREECOD applied! Free shipping unlocked.");
+    if (clean === "FREECOD" || clean === "FREEDELIVERY") {
+      setAppliedCoupon(clean);
+      toast.success(`Coupon ${clean} applied! Free shipping unlocked.`);
       return true;
     }
-    toast.error("Invalid coupon code. Try SHIFA10 or AYURVEDA50");
+    toast.error("Invalid coupon code. Try SHIFA10, AYURVEDA50 or FREEDELIVERY");
     return false;
   };
 
@@ -876,7 +876,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return Math.round(cartSubtotal * 0.1);
     } else if (appliedCoupon === "AYURVEDA50") {
       return Math.min(50, cartSubtotal);
-    } else if (appliedCoupon === "FREECOD") {
+    } else if (appliedCoupon === "FREECOD" || appliedCoupon === "FREEDELIVERY") {
       return shippingFee;
     }
     return 0;
@@ -1023,12 +1023,22 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       verifiedDiscount = Math.round(verifiedSubtotal * 0.1);
     } else if (appliedCoupon === "AYURVEDA50") {
       verifiedDiscount = Math.min(50, verifiedSubtotal);
-    } else if (appliedCoupon === "FREECOD") {
+    } else if (appliedCoupon === "FREECOD" || appliedCoupon === "FREEDELIVERY") {
       verifiedDiscount = verifiedShipping;
     } else if (orderData.discount !== undefined && orderData.discount > 0) {
       verifiedDiscount = Math.min(orderData.discount, verifiedSubtotal);
     }
     const verifiedTotal = Math.max(0, verifiedSubtotal + verifiedShipping - verifiedDiscount);
+
+    // Strictly reject Cash on Delivery (COD)
+    const normalizedPayment = (orderData.paymentMethod || "").toUpperCase();
+    if (
+      normalizedPayment === "COD" ||
+      normalizedPayment.includes("COD") ||
+      normalizedPayment.includes("CASH ON DELIVERY")
+    ) {
+      throw new Error("Cash on Delivery (COD) is disabled and not available. Please use an accepted online payment method.");
+    }
 
     const newOrder: Order = {
       ...orderData,

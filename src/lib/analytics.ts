@@ -412,9 +412,9 @@ export function evaluateShoppingFlowDiagnostics(
       titleHindi: "कूपन सत्यापन तंत्र (Coupon Validation Engine)",
       titleEnglish: "Discount Calculation & Anti-Abuse Logic",
       status: "verified",
-      metricBadge: "SHIFA10, AYURVEDA50 & FREECOD सक्रिय",
+      metricBadge: "SHIFA10, AYURVEDA50 & FREEDELIVERY सक्रिय",
       descriptionHindi:
-        "सख्त कूपन सत्यापन लागू है: SHIFA10 (10% छूट), AYURVEDA50 (₹50 छूट) और FREECOD (निःशुल्क डिलीवरी) का सटीक स्थानीय मूल्यांकन।",
+        "सख्त कूपन सत्यापन लागू है: SHIFA10 (10% छूट), AYURVEDA50 (₹50 छूट) और FREEDELIVERY (निःशुल्क डिलीवरी) का सटीक स्थानीय मूल्यांकन।",
       architectureDetails: "चेकआउट व कार्ट में तुरंत स्थानीय रूप से पुनर्गणना, शून्य हेरफेर जोखिम।",
     },
     {
